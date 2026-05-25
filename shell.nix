@@ -10,6 +10,7 @@ mccShell {
     cmake
     gnumake
     # Rust toolchain
+    rustup
     rustc
     cargo
     rustfmt
