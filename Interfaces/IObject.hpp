@@ -44,8 +44,8 @@ private:
 struct STile {
     CTile tile;
 
-    STile *up;
-    STile *down;
-    STile *left;
-    STile *right;
+    std::shared_ptr<STile> up;
+    std::shared_ptr<STile> down;
+    std::shared_ptr<STile> left;
+    std::shared_ptr<STile> right;
 };

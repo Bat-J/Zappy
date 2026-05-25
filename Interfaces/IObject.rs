@@ -5,6 +5,9 @@
 ** IObject.rs
 */
 
+use std::rc::{Rc, Weak};
+use std::vec::Vec;
+
 pub enum EObjectType : unsigned char {
   AI,
   FOOD,
@@ -19,18 +22,18 @@ pub enum EObjectType : unsigned char {
 
 pub struct Object {
   pub Type : EObjectType,
-  pub position : [2]int,
+  pub position : Vec<int>,
 };
 
 pub struct CTile {
-  pub objects : Object**,
+  pub objects : Vec<Rc<Object>>,
 };
 
 pub struct STile {
     pub tile : CTile;
 
-    pub up : STile *;
-    pub down : STile *;
-    pub left : STile *;
-    pub right : STile *;
+    pub up : Rc<STile>;
+    pub down : Rc<STile>;
+    pub left : Rc<STile>;
+    pub right : Rc<STile>;
 };
