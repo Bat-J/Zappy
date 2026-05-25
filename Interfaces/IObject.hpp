@@ -35,7 +35,7 @@ class CTile {
 public:
   CTile();
   ~CTile() = default;
-  std::vector<IObject*> getObjectList();
+  std::vector<std::unique_ptr<IObject*>> getObjectList();
 
 private:
   std::vector<std::unique_ptr<IObject*>> objects;
