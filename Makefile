@@ -2,9 +2,7 @@ SERVER_BIN 	:= zappy_server
 GUI_BIN		:= zappy_gui
 AI_BIN		:= zappy_ai
 
-all: server
-
-server: $(SERVER_BIN)
+all: $(SERVER_BIN))
 
 $(SERVER_BIN):
 	@cargo build --release --manifest-path ./server/Cargo.toml
