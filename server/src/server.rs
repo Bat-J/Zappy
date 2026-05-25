@@ -1,26 +1,6 @@
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::fd::AsRawFd;
-use std::os::raw::{c_int, c_short, c_ulong};
-
-const LISTEN_ADDR: &str = "0.0.0.0:25565";
-const POLLIN: c_short = 0x0001;
-const POLLERR: c_short = 0x0008;
-const POLLHUP: c_short = 0x0010;
-const POLLNVAL: c_short = 0x0020;
-
-type Nfds = c_ulong;
-
-#[repr(C)]
-struct PollFd {
-    fd: c_int,
-    events: c_short,
-    revents: c_short,
-}
-
-unsafe extern "C" {
-    fn poll(fds: *mut PollFd, nfds: Nfds, timeout: c_int) -> c_int;
-}
 
 struct Client {
     stream: TcpStream,
@@ -49,9 +29,10 @@ pub struct ReadOutcome {
     pub disconnected: Vec<usize>,
 }
 
-pub fn start() -> io::Result<Server> {
-    let listener = TcpListener::bind(LISTEN_ADDR)?;
-    println!("Listening on {LISTEN_ADDR}");
+pub fn start(port: u16) -> io::Result<Server> {
+    let addr = format!("0.0.0.0:{port}");
+    let listener = TcpListener::bind(&addr)?;
+    println!("Listening on {addr}");
 
     Ok(Server {
         listener,
@@ -62,22 +43,22 @@ pub fn start() -> io::Result<Server> {
 impl Server {
     pub fn poll(&self) -> io::Result<Ready> {
         let mut fds = Vec::with_capacity(self.clients.len() + 1);
-        fds.push(PollFd {
+        fds.push(libc::pollfd {
             fd: self.listener.as_raw_fd(),
-            events: POLLIN | POLLERR | POLLHUP | POLLNVAL,
+            events: libc::POLLIN | libc::POLLERR | libc::POLLHUP | libc::POLLNVAL,
             revents: 0,
         });
 
         for client in &self.clients {
-            fds.push(PollFd {
+            fds.push(libc::pollfd {
                 fd: client.stream.as_raw_fd(),
-                events: POLLIN | POLLERR | POLLHUP | POLLNVAL,
+                events: libc::POLLIN | libc::POLLERR | libc::POLLHUP | libc::POLLNVAL,
                 revents: 0,
             });
         }
 
         loop {
-            let result = unsafe { poll(fds.as_mut_ptr(), fds.len() as Nfds, -1) };
+            let result = unsafe { libc::poll(fds.as_mut_ptr(), fds.len() as libc::nfds_t, -1) };
             if result >= 0 {
                 break;
             }
@@ -97,18 +78,18 @@ impl Server {
             let revents = fd.revents;
             let index = index - 1;
 
-            if revents & (POLLERR | POLLHUP | POLLNVAL) != 0 {
+            if revents & (libc::POLLERR | libc::POLLHUP | libc::POLLNVAL) != 0 {
                 disconnected.push(index);
                 continue;
             }
 
-            if revents & POLLIN != 0 {
+            if revents & libc::POLLIN != 0 {
                 readable.push(index);
             }
         }
 
         Ok(Ready {
-            accept: fds[0].revents & POLLIN != 0,
+            accept: fds[0].revents & libc::POLLIN != 0,
             readable,
             disconnected,
         })

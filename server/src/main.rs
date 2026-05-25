@@ -1,7 +1,13 @@
+mod args;
 mod server;
 
 fn main() -> std::io::Result<()> {
-    let mut server = server::start()?;
+    let config = args::parse().unwrap_or_else(|e| {
+        eprintln!("{e}");
+        std::process::exit(84);
+    });
+
+    let mut server = server::start(config.port)?;
 
     loop {
         let ready = server.poll()?;
