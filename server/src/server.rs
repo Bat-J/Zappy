@@ -113,7 +113,9 @@ impl Server {
         let mut buffer = [0u8; 1024];
 
         for &index in &ready.readable {
-            if index >= self.clients.len() || Self::read_client(&mut self.clients[index], index, &mut buffer, &mut messages) {
+            if index >= self.clients.len()
+                || Self::read_client(&mut self.clients[index], index, &mut buffer, &mut messages)
+            {
                 disconnected.push(index);
             }
         }
