@@ -5,9 +5,6 @@
 ** Throw exceptions
 */
 
-#include "Error.hpp"
+#include "../include/Error.hpp"
 
-Error::Error(std::string message)
-    : std::runtime_error(message)
-{
-}
+Error::Error(std::string message) : std::runtime_error(message) {}

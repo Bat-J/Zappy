@@ -11,7 +11,7 @@
 #include <stdexcept>
 
 class Error : public std::runtime_error {
-    public:
-        Error(std::string message);
-        ~Error() = default;
+  public:
+    Error(std::string message);
+    ~Error() = default;
 };

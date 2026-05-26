@@ -8,15 +8,13 @@
 #include <iostream>
 #include <string>
 #include <arpa/inet.h>
-#include "Socket.hpp"
+#include "../include/Socket.hpp"
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     if (argc == 2 && std::string(argv[1]) == "--help") {
         std::cout << "Usage: ./zappy_gui -p port -h machine\n";
         return 0;
-    }
-    else if (argc != 5 || std::string(argv[1]) != "-p" || std::string(argv[3]) != "-h") {
+    } else if (argc != 5 || std::string(argv[1]) != "-p" || std::string(argv[3]) != "-h") {
         std::cerr << "Usage: ./zappy_gui -p port -h machine\n";
         return 84;
     }

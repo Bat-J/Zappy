@@ -5,8 +5,8 @@
 ** Socket
 */
 
-#include "Socket.hpp"
-#include "Error.hpp"
+#include "../include/Socket.hpp"
+#include "../include/Error.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -15,7 +15,6 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <cstring>
-#include <iostream>
 
 Socket::Socket() : _socketFD(-1) {}
 
