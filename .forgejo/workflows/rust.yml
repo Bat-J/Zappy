@@ -1,4 +1,4 @@
-name:  apply formatting for c++ and check for compilation
+name: apply formatting for rust and check for compilation
 
 on:
   pull_request:
@@ -7,7 +7,6 @@ on:
     paths:
       - server/**
       - all/**
-
 
 jobs:
   compile:
@@ -26,12 +25,13 @@ jobs:
         run: rustup component add clippy
 
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          cd server
+          cargo clippy --all-targets --all-features -- -D warnings
 
   tests:
     runs-on: ubuntu-latest
-    container:
-      image: rust:trixie
+    container: rust:trixie
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -40,3 +40,32 @@ jobs:
 
       - name: Test
         run: make test
+
+  Apply formatting:
+    runs-on: ubuntu-latest
+    container: rust:trixie
+    steps:
+      - name: Set safe directory
+        run: git config --global --add safe.directory $FORGEJO_REPOSITORY
+
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      
+      - name: Apply fmt
+        run: cargo fmt --all-targets --all-features
+
+      - name: Commit and push formatting changes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No formatting changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch main
+          git add .
+          git commit -m "style: apply cargo fmt"
+          git push

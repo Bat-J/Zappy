@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - AI/**
+      - GUI/**
       - all/**
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
 
-  check-for-compilation:
+  compile:
     runs-on: docker
     container: inkurey22/epitest3:latest
     timeout-minutes: 5
@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 1
 
       - name: compile
-        run: make ai
+        run: make zappy_gui
 
   apply-clang-format:
     runs-on: docker
