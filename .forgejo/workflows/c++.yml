@@ -1,0 +1,64 @@
+name: apply formatting for c++ and check for compilation
+
+on:
+  pull-requests:
+    branches:
+      - main
+    paths:
+      - AI/**
+
+permissions:
+  contents: write
+
+jobs:
+
+  check-for-compilation:
+    runs-on: docker
+    container:
+      image: inkurey22/epitest3:latest
+    timeout-minutes: 5
+    steps:
+      - name: checkout
+        timeout-minutes: 2
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: compile
+        run: make ai
+
+  apply-clang-format:
+    runs-on: docker
+    container: inkurey22/epitest3:latest # To change when image is updated
+    timeout-minutes: 5
+
+    steps:
+      - name: Set safe directory
+        run: git config --global --add safe.directory $FORGEJO_REPOSITORY
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Apply clang-format
+        run: |
+          find . \( -name '*.cpp' -o -name '*.hpp' \) \
+            ! -path './build/*' \
+            -print0 | xargs -0 clang-format -i
+
+      - name: Commit and push formatting changes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No formatting changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch main
+          git add .
+          git commit -m "style: apply clang-format"
+          git push
+
+      
