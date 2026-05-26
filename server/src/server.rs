@@ -2,14 +2,27 @@ use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::fd::AsRawFd;
 
+use crate::args::Config;
+
+enum ClientState {
+    AwaitingTeamName,
+    Ai { team: String },
+    Gui,
+}
+
 struct Client {
     stream: TcpStream,
     addr: SocketAddr,
+    state: ClientState,
+    pending: String,
 }
 
 pub struct Server {
     listener: TcpListener,
     clients: Vec<Client>,
+    team_slots: Vec<(String, usize)>,
+    width: u32,
+    height: u32,
 }
 
 pub struct Ready {
@@ -18,25 +31,27 @@ pub struct Ready {
     pub disconnected: Vec<usize>,
 }
 
-pub struct Message {
-    pub client: usize,
-    pub addr: SocketAddr,
-    pub text: String,
-}
-
 pub struct ReadOutcome {
-    pub messages: Vec<Message>,
     pub disconnected: Vec<usize>,
 }
 
-pub fn start(port: u16) -> io::Result<Server> {
-    let addr = format!("0.0.0.0:{port}");
+pub fn start(config: Config) -> io::Result<Server> {
+    let addr = format!("0.0.0.0:{}", config.port);
     let listener = TcpListener::bind(&addr)?;
     println!("Listening on {addr}");
+
+    let team_slots = config
+        .teams
+        .into_iter()
+        .map(|name| (name, config.clients_per_team))
+        .collect();
 
     Ok(Server {
         listener,
         clients: Vec::new(),
+        team_slots,
+        width: config.width,
+        height: config.height,
     })
 }
 
@@ -100,45 +115,44 @@ impl Server {
             return Ok(());
         }
 
-        let (stream, addr) = self.listener.accept()?;
+        let (mut stream, addr) = self.listener.accept()?;
+        stream.write_all(b"WELCOME\n")?;
         println!("Client connected: {addr}");
-        self.clients.push(Client { stream, addr });
+
+        self.clients.push(Client {
+            stream,
+            addr,
+            state: ClientState::AwaitingTeamName,
+            pending: String::new(),
+        });
+
         Ok(())
     }
 
     pub fn read(&mut self, ready: &Ready) -> io::Result<ReadOutcome> {
-        let mut messages = Vec::new();
         let mut disconnected = ready.disconnected.clone();
         let mut buffer = [0u8; 1024];
 
         for &index in &ready.readable {
-            if index >= self.clients.len()
-                || Self::read_client(&mut self.clients[index], index, &mut buffer, &mut messages)
-            {
+            if index >= self.clients.len() {
+                disconnected.push(index);
+                continue;
+            }
+
+            let drop = Self::read_client(
+                &mut self.clients[index],
+                &mut buffer,
+                &mut self.team_slots,
+                self.width,
+                self.height,
+            );
+
+            if drop {
                 disconnected.push(index);
             }
         }
 
-        Ok(ReadOutcome {
-            messages,
-            disconnected,
-        })
-    }
-
-    pub fn answer(&mut self, messages: Vec<Message>) -> Vec<usize> {
-        let mut disconnected = Vec::new();
-
-        for message in messages {
-            if let Some(client) = self.clients.get_mut(message.client) {
-                let response = format!("{}: {}", message.addr, message.text);
-                if let Err(err) = client.stream.write_all(response.as_bytes()) {
-                    eprintln!("Write error to {}: {err}", client.addr);
-                    disconnected.push(message.client);
-                }
-            }
-        }
-
-        disconnected
+        Ok(ReadOutcome { disconnected })
     }
 
     pub fn cleanup(&mut self, disconnected: impl IntoIterator<Item = usize>) {
@@ -148,32 +162,104 @@ impl Server {
 
         for index in disconnected.into_iter().rev() {
             if index < self.clients.len() {
-                let addr = self.clients.swap_remove(index).addr;
-                println!("Client disconnected: {addr}");
+                let client = self.clients.swap_remove(index);
+                if let ClientState::Ai { ref team } = client.state {
+                    if let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team) {
+                        slot.1 += 1;
+                    }
+                }
+                println!("Client disconnected: {}", client.addr);
             }
         }
     }
 
     fn read_client(
         client: &mut Client,
-        index: usize,
         buffer: &mut [u8; 1024],
-        messages: &mut Vec<Message>,
+        team_slots: &mut Vec<(String, usize)>,
+        width: u32,
+        height: u32,
     ) -> bool {
-        match client.stream.read(buffer) {
-            Ok(0) => true,
-            Ok(n) => {
-                let text = String::from_utf8_lossy(&buffer[..n]).into_owned();
-                println!("Received from {}: {}", client.addr, text.trim_end());
-                messages.push(Message {
-                    client: index,
-                    addr: client.addr,
-                    text,
-                });
-                false
-            }
+        let n = match client.stream.read(buffer) {
+            Ok(0) => return true,
+            Ok(n) => n,
             Err(err) => {
                 eprintln!("Read error from {}: {err}", client.addr);
+                return true;
+            }
+        };
+
+        client
+            .pending
+            .push_str(&String::from_utf8_lossy(&buffer[..n]));
+
+        while let Some(pos) = client.pending.find('\n') {
+            let line = client.pending[..pos].trim_end_matches('\r').to_string();
+            client.pending.drain(..=pos);
+
+            if Self::handle_line(client, &line, team_slots, width, height) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn handle_line(
+        client: &mut Client,
+        line: &str,
+        team_slots: &mut Vec<(String, usize)>,
+        width: u32,
+        height: u32,
+    ) -> bool {
+        match client.state {
+            ClientState::AwaitingTeamName => {
+                Self::handle_team_name(client, line, team_slots, width, height)
+            }
+            ClientState::Ai { .. } => {
+                println!("AI command from {}: {line}", client.addr);
+                false
+            }
+            ClientState::Gui => {
+                println!("GUI command from {}: {line}", client.addr);
+                false
+            }
+        }
+    }
+
+    fn handle_team_name(
+        client: &mut Client,
+        name: &str,
+        team_slots: &mut Vec<(String, usize)>,
+        width: u32,
+        height: u32,
+    ) -> bool {
+        if name == "GRAPHIC" {
+            client.state = ClientState::Gui;
+            println!("{} identified as GUI", client.addr);
+            return false;
+        }
+
+        let slot = team_slots
+            .iter_mut()
+            .find(|(team, slots)| team == name && *slots > 0);
+
+        match slot {
+            Some(entry) => {
+                entry.1 -= 1;
+                let remaining = entry.1;
+                let response = format!("{remaining}\n{width} {height}\n");
+                client.state = ClientState::Ai {
+                    team: name.to_string(),
+                };
+                println!("{} joined team {name} ({remaining} slots left)", client.addr);
+                client.stream.write_all(response.as_bytes()).is_err()
+            }
+            None => {
+                eprintln!(
+                    "{} refused: unknown team or no slots for '{name}'",
+                    client.addr
+                );
                 true
             }
         }
