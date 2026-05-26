@@ -1,0 +1,42 @@
+name:  apply formatting for c++ and check for compilation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - server/**
+      - all/**
+
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    container: rust:trixie
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Build
+        run: make zappy_server
+
+      - name: Install Clippy
+        run: rustup component add clippy
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  tests:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:trixie
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Test
+        run: make test
