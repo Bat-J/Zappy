@@ -9,7 +9,7 @@ jobs:
 
   compile:
     runs-on: codeberg-tiny
-    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'AI/')
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'AI/') }}
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
@@ -34,7 +34,7 @@ jobs:
 
   apply-formatting:
     runs-on: codeberg-tiny
-    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'AI/')
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'AI/') }}
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
