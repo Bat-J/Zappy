@@ -9,7 +9,6 @@ permissions:
   contents: write
 
 jobs:
-
   compile:
     runs-on: codeberg-tiny
     if: ${{ startsWith(github.ref, 'refs/head/all/') || startsWith(github.ref, 'refs/head/GUI/') }}
