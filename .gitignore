@@ -1,3 +1,8 @@
 target/
 build/
 zappy_*
+
+#zappy_ai
+__pycache__
+ai/.venv
+ai/venv_install.log
