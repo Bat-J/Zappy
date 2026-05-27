@@ -31,7 +31,7 @@ jobs:
           cargo clippy --all-targets --all-features -- -D warnings
 
   tests:
-    runs-on: docker
+    runs-on: codeberg-tiny
     container:
       image: guillaumematton/cicd-zappy:20260527
     steps:
