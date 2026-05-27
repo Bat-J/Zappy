@@ -1,11 +1,13 @@
-FROM ubuntu:26.04
+FROM alpine:20260127
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+COPY usr /usr
 
-RUN apt update && apt install -y python3-pip clang cmake make
+RUN apk add curl tar
 
-RUN apt clean && rm -rf /var/lib/apt/lists/*
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-USER actions
+RUN apk add python3 py3-pip clang cmake make git
 
-WORKDIR /home/actions/pipeline
+RUN apk cache clean && rm -rf /var/cache/apk/*
+
+WORKDIR /home/actions
