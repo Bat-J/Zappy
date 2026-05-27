@@ -4,13 +4,12 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - server/**
-      - all/**
 
 jobs:
   compile:
     runs-on: codeberg-tiny
+    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'server/')
+    timeout-minutes: 5
     container:
       image: guillaumematton/cicd-zappy:20260527
     steps:
@@ -32,6 +31,8 @@ jobs:
 
   tests:
     runs-on: codeberg-tiny
+    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'server/')
+    timeout-minutes: 5
     container:
       image: guillaumematton/cicd-zappy:20260527
     steps:
@@ -45,6 +46,8 @@ jobs:
 
   Apply-formatting:
     runs-on: codeberg-tiny
+    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'server/')
+    timeout-minutes: 5
     container:
       image: guillaumematton/cicd-zappy:20260527
     steps:

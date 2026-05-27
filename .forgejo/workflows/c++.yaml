@@ -4,9 +4,6 @@ on:
   pull-requests:
     branches:
       - main
-    paths:
-      - GUI/**
-      - all/**
 
 permissions:
   contents: write
@@ -15,6 +12,7 @@ jobs:
 
   compile:
     runs-on: codeberg-tiny
+    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'GUI/')
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
@@ -30,6 +28,7 @@ jobs:
 
   apply-clang-format:
     runs-on: codeberg-tiny
+    if: startsWith(github.head_ref, 'all/') or startsWith(github.head_ref, 'GUI/')
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
