@@ -1,7 +1,7 @@
 name: apply formatting for c++ and check for compilation
 
 on:
-  pull-requests:
+  pull-request:
     branches:
       - main
 
