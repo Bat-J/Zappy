@@ -10,8 +10,9 @@ on:
 
 jobs:
   compile:
-    runs-on: ubuntu-latest
-    container: rust:trixie
+    runs-on: docker
+    container:
+      image: guillaumematton/cicd-zappy:20260527
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -30,8 +31,9 @@ jobs:
           cargo clippy --all-targets --all-features -- -D warnings
 
   tests:
-    runs-on: ubuntu-latest
-    container: rust:trixie
+    runs-on: docker
+    container:
+      image: guillaumematton/cicd-zappy:20260527
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -41,9 +43,10 @@ jobs:
       - name: Test
         run: make test
 
-  Apply formatting:
-    runs-on: ubuntu-latest
-    container: rust:trixie
+  Apply-formatting:
+    runs-on: docker
+    container:
+      image: guillaumematton/cicd-zappy:20260527
     steps:
       - name: Set safe directory
         run: git config --global --add safe.directory $FORGEJO_REPOSITORY
