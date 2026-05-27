@@ -1,63 +1,59 @@
-name: apply formatting for rust and check for compilation
+name: apply formatting for python and check for compilation
 
 on:
   pull_request:
     branches:
       - main
     paths:
-      - server/**
+      - AI/**
       - all/**
 
 jobs:
+
   compile:
-    runs-on: docker
+    runs-on: codeberg-tiny
     container:
       image: guillaumematton/cicd-zappy:20260527
+    timeout-minutes: 5
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Build
-        run: make zappy_server
-
-      - name: Install Clippy
-        run: rustup component add clippy
-
-      - name: Clippy
-        run: |
-          cd server
-          cargo clippy --all-targets --all-features -- -D warnings
-
-  tests:
-    runs-on: docker
-    container:
-      image: guillaumematton/cicd-zappy:20260527
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Test
-        run: make test
-
-  Apply-formatting:
-    runs-on: docker
-    container:
-      image: guillaumematton/cicd-zappy:20260527
-    steps:
-      - name: Set safe directory
-        run: git config --global --add safe.directory $FORGEJO_REPOSITORY
-
-      - name: Checkout code
+      - name: checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
       
-      - name: Apply fmt
-        run: cargo fmt --all-targets --all-features
+      - name: compile
+        run: make zappy_ai
+
+      - name: install ruff
+        run: |
+          python3 -m venv ./ai/.venv
+          source ./ai/.venv/bin/activate
+          pip install ruff
+      
+      - name: check for issues
+        run: ruff check ai
+
+
+  apply-formatting:
+    runs-on: codeberg-tiny
+    container:
+      image: guillaumematton/cicd-zappy:20260527
+    timeout-minutes: 5
+    steps:
+      - name: Set safe directory
+        run: git config --global --add safe.directory $FORGEJO_REPOSITORY
+
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      
+      - name: apply format
+        run: |
+          python3 -m venv ./ai/.venv
+          source ./ai/.venv/bin/activate
+          pip install ruff
+          ruff format ai
 
       - name: Commit and push formatting changes
         run: |
@@ -70,5 +66,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch main
           git add .
-          git commit -m "style: apply cargo fmt"
+          git commit -m "style: apply ruff format"
           git push

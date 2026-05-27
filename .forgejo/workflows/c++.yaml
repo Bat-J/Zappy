@@ -1,59 +1,53 @@
-name: apply formatting for python and check for compilation
+name: apply formatting for c++ and check for compilation
 
 on:
-  pull_request:
+  pull-requests:
     branches:
       - main
     paths:
-      - AI/**
+      - GUI/**
       - all/**
+
+permissions:
+  contents: write
 
 jobs:
 
   compile:
-    runs-on: docker
+    runs-on: codeberg-tiny
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
     steps:
       - name: checkout
+        timeout-minutes: 2
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      
+
       - name: compile
-        run: make zappy_ai
+        run: make zappy_gui
 
-      - name: install ruff
-        run: |
-          python3 -m venv ./ai/.venv
-          source ./ai/.venv/bin/activate
-          pip install ruff
-      
-      - name: check for issues
-        run: ruff check ai
-
-
-  apply-formatting:
-    runs-on: docker
+  apply-clang-format:
+    runs-on: codeberg-tiny
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
+
     steps:
       - name: Set safe directory
         run: git config --global --add safe.directory $FORGEJO_REPOSITORY
 
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      
-      - name: apply format
+
+      - name: Apply clang-format
         run: |
-          python3 -m venv ./ai/.venv
-          source ./ai/.venv/bin/activate
-          pip install ruff
-          ruff format ai
+          find . \( -name '*.cpp' -o -name '*.hpp' \) \
+            ! -path './build/*' \
+            -print0 | xargs -0 clang-format -i
 
       - name: Commit and push formatting changes
         run: |
@@ -66,5 +60,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch main
           git add .
-          git commit -m "style: apply ruff format"
+          git commit -m "style: apply clang-format"
           git push

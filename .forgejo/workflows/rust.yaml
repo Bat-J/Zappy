@@ -1,53 +1,63 @@
-name: apply formatting for c++ and check for compilation
+name: apply formatting for rust and check for compilation
 
 on:
-  pull-requests:
+  pull_request:
     branches:
       - main
     paths:
-      - GUI/**
+      - server/**
       - all/**
 
-permissions:
-  contents: write
-
 jobs:
-
   compile:
-    runs-on: docker
+    runs-on: codeberg-tiny
     container:
       image: guillaumematton/cicd-zappy:20260527
-    timeout-minutes: 5
     steps:
-      - name: checkout
-        timeout-minutes: 2
+      - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
-      - name: compile
-        run: make zappy_gui
+      - name: Build
+        run: make zappy_server
 
-  apply-clang-format:
+      - name: Install Clippy
+        run: rustup component add clippy
+
+      - name: Clippy
+        run: |
+          cd server
+          cargo clippy --all-targets --all-features -- -D warnings
+
+  tests:
     runs-on: docker
     container:
       image: guillaumematton/cicd-zappy:20260527
-    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
 
+      - name: Test
+        run: make test
+
+  Apply-formatting:
+    runs-on: codeberg-tiny
+    container:
+      image: guillaumematton/cicd-zappy:20260527
     steps:
       - name: Set safe directory
         run: git config --global --add safe.directory $FORGEJO_REPOSITORY
 
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-
-      - name: Apply clang-format
-        run: |
-          find . \( -name '*.cpp' -o -name '*.hpp' \) \
-            ! -path './build/*' \
-            -print0 | xargs -0 clang-format -i
+      
+      - name: Apply fmt
+        run: cargo fmt --all-targets --all-features
 
       - name: Commit and push formatting changes
         run: |
@@ -60,5 +70,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch main
           git add .
-          git commit -m "style: apply clang-format"
+          git commit -m "style: apply cargo fmt"
           git push
