@@ -14,14 +14,17 @@ fclean: clean
 
 re: fclean all
 
-
-
 server: $(SERVER_BIN)
 
 $(SERVER_BIN):
 	@echo "Building server..."
 	@cargo build --release --manifest-path ./server/Cargo.toml
 	@cp ./server/target/release/$(SERVER_BIN) ./
+
+$(GUI_BIN):
+	@echo "Building GUI..."
+	@cd gui && cmake -S . -B build && cmake --build build --config Release
+	@cp ./gui/build/$(GUI_BIN) ./
 
 clean_serv:
 	@echo "Cleaning server..."
