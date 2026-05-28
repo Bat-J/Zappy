@@ -11,7 +11,7 @@ permissions:
 jobs:
   compile:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/head/all/') || startsWith(github.ref, 'refs/head/GUI/') }}
+    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/GUI/') }}
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
@@ -27,7 +27,7 @@ jobs:
 
   apply-clang-format:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/head/all/') || startsWith(github.ref, 'refs/head/GUI/') }}
+    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/GUI/') }}
     container:
       image: guillaumematton/cicd-zappy:20260527
     timeout-minutes: 5
@@ -56,7 +56,6 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch main
           git add .
           git commit -m "style: apply clang-format"
           git push

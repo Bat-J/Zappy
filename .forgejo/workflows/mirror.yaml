@@ -7,7 +7,7 @@ on:
 
 jobs:
   mirror-repository:
-    if: ${{ github.repository }} != EpitechPGE2-2025/G-YEP-400-LIL-4-1-zappy-2
+    if: ${{ github.repository != 'EpitechPGE2-2025/G-YEP-400-LIL-4-1-zappy-2' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
