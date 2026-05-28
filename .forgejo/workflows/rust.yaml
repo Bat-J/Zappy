@@ -14,7 +14,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
     timeout-minutes: 5
     container:
-      image: guillaumematton/cicd-zappy:20260527
+      image: guillaumematton/cicd-zappy:20260528
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -37,7 +37,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
     timeout-minutes: 5
     container:
-      image: guillaumematton/cicd-zappy:20260527
+      image: guillaumematton/cicd-zappy:20260528
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -52,7 +52,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
     timeout-minutes: 5
     container:
-      image: guillaumematton/cicd-zappy:20260527
+      image: guillaumematton/cicd-zappy:20260528
     steps:
       - name: Set safe directory
         run: git config --global --add safe.directory $FORGEJO_REPOSITORY

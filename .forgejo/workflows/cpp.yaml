@@ -13,7 +13,7 @@ jobs:
     runs-on: codeberg-tiny
     if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/GUI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260527
+      image: guillaumematton/cicd-zappy:20260528
     timeout-minutes: 5
     steps:
       - name: checkout
@@ -29,7 +29,7 @@ jobs:
     runs-on: codeberg-tiny
     if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/GUI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260527
+      image: guillaumematton/cicd-zappy:20260528
     timeout-minutes: 5
 
     steps:
