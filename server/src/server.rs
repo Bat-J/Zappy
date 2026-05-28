@@ -1,8 +1,27 @@
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::fd::AsRawFd;
+use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
+
+type Nfds = c_ulong;
+
+const POLLIN: c_short = 0x0001;
+const POLLERR: c_short = 0x0008;
+const POLLHUP: c_short = 0x0010;
+const POLLNVAL: c_short = 0x0020;
+
+#[repr(C)]
+struct PollFd {
+    fd: c_int,
+    events: c_short,
+    revents: c_short,
+}
+
+unsafe extern "C" {
+    fn poll(fds: *mut PollFd, nfds: Nfds, timeout: c_int) -> c_int;
+}
 
 enum ClientState {
     AwaitingTeamName,
@@ -58,22 +77,22 @@ pub fn start(config: Config) -> io::Result<Server> {
 impl Server {
     pub fn poll(&self) -> io::Result<Ready> {
         let mut fds = Vec::with_capacity(self.clients.len() + 1);
-        fds.push(libc::pollfd {
+        fds.push(PollFd {
             fd: self.listener.as_raw_fd(),
-            events: libc::POLLIN | libc::POLLERR | libc::POLLHUP | libc::POLLNVAL,
+            events: POLLIN | POLLERR | POLLHUP | POLLNVAL,
             revents: 0,
         });
 
         for client in &self.clients {
-            fds.push(libc::pollfd {
+            fds.push(PollFd {
                 fd: client.stream.as_raw_fd(),
-                events: libc::POLLIN | libc::POLLERR | libc::POLLHUP | libc::POLLNVAL,
+                events: POLLIN | POLLERR | POLLHUP | POLLNVAL,
                 revents: 0,
             });
         }
 
         loop {
-            let result = unsafe { libc::poll(fds.as_mut_ptr(), fds.len() as libc::nfds_t, -1) };
+            let result = unsafe { poll(fds.as_mut_ptr(), fds.len() as Nfds, -1) };
             if result >= 0 {
                 break;
             }
@@ -93,18 +112,18 @@ impl Server {
             let revents = fd.revents;
             let index = index - 1;
 
-            if revents & (libc::POLLERR | libc::POLLHUP | libc::POLLNVAL) != 0 {
+            if revents & (POLLERR | POLLHUP | POLLNVAL) != 0 {
                 disconnected.push(index);
                 continue;
             }
 
-            if revents & libc::POLLIN != 0 {
+            if revents & POLLIN != 0 {
                 readable.push(index);
             }
         }
 
         Ok(Ready {
-            accept: fds[0].revents & libc::POLLIN != 0,
+            accept: fds[0].revents & POLLIN != 0,
             readable,
             disconnected,
         })
