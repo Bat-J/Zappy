@@ -26,13 +26,12 @@ jobs:
         run: make zappy_ai
 
       - name: install ruff
-        run: |
-          python3 -m venv ./ai/.venv
-          source ./ai/.venv/bin/activate
-          pip install ruff
+        run: pip install ruff
       
       - name: check for issues
-        run: ruff check ai
+        run: |
+          cd ai
+          ruff check ai
 
 
   apply-formatting:
@@ -50,12 +49,13 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.head_ref }}
+        
+      - name: install ruff
+        run: pip install ruff
       
       - name: apply format
         run: |
-          python3 -m venv ./ai/.venv
-          source ./ai/.venv/bin/activate
-          pip install ruff
+          cd ai
           ruff format ai
 
       - name: Commit and push formatting changes
