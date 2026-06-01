@@ -26,10 +26,5 @@ int main(int argc, char** argv) {
         return 84;
     }
     Core core;
-    core.Run();
-    socket.writeToSocket("Hello, server!");
-    std::string message = socket.readFromSocket();
-    std::cout << "Message from server: " << message << std::endl;
-    socket.closeSocket();
-    return 0;
+    return core.Run(socket);
 }
