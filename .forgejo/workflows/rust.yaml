@@ -11,7 +11,7 @@ permissions:
 jobs:
   compile:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
     timeout-minutes: 5
     container:
       image: guillaumematton/cicd-zappy:20260528
@@ -34,7 +34,7 @@ jobs:
 
   tests:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
     timeout-minutes: 5
     container:
       image: guillaumematton/cicd-zappy:20260528
@@ -49,7 +49,7 @@ jobs:
 
   Apply-formatting:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
     timeout-minutes: 5
     container:
       image: guillaumematton/cicd-zappy:20260528
