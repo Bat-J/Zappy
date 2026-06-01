@@ -34,7 +34,9 @@ where
     pub fn push(&mut self, value: T) -> usize {
         let key_fn = &self.key;
         let key = key_fn(&value);
-        let index = self.items.partition_point(|existing| key_fn(existing) <= key);
+        let index = self
+            .items
+            .partition_point(|existing| key_fn(existing) <= key);
         self.items.insert(index, value);
         index
     }
@@ -92,7 +94,10 @@ mod tests {
             timestamp: 15,
         });
 
-        let commands = list.iter().map(|message| message.command.as_str()).collect::<Vec<_>>();
+        let commands = list
+            .iter()
+            .map(|message| message.command.as_str())
+            .collect::<Vec<_>>();
 
         assert_eq!(commands, vec!["first", "middle", "later"]);
     }
@@ -114,7 +119,10 @@ mod tests {
             timestamp: 5,
         });
 
-        let commands = list.iter().map(|message| message.command.as_str()).collect::<Vec<_>>();
+        let commands = list
+            .iter()
+            .map(|message| message.command.as_str())
+            .collect::<Vec<_>>();
 
         assert_eq!(commands, vec!["a", "b", "c"]);
     }
