@@ -26,7 +26,7 @@ jobs:
         run: make zappy_ai
 
       - name: install ruff
-        run: pip install ruff
+        run: pip install --break-system-packages ruff
       
       - name: check for issues
         run: |
@@ -51,7 +51,7 @@ jobs:
           ref: ${{ github.head_ref }}
         
       - name: install ruff
-        run: pip install ruff
+        run: pip install --break-system-packages ruff
       
       - name: apply format
         run: |
