@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          ref: github.head_ref
+          ref: ${{ github.head_ref }}
 
       - name: Build
         run: make zappy_server
@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          ref: github.head_ref
+          ref: ${{ github.head_ref }}
 
       - name: Test
         run: make test
@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          ref: github.head_ref
+          ref: ${{ github.head_ref }}
       
       - name: Apply fmt
         run: |
