@@ -1,14 +1,22 @@
 import networking
 from enum import Enum
 
+
 class object_type(Enum):
+    player = "player"
     food = "food"
+    egg = "egg"
     linemate = "linemate"
     deraumere = "deraumere"
     sibur = "sibur"
     mendiane = "mendiane"
     phiras = "phiras"
     thystame = "thystame"
+
+
+def str_to_object_type(value: str) -> object_type:
+    return object_type(value)
+
 
 class action_type(Enum):
     forward = "Forward"
@@ -24,10 +32,12 @@ class action_type(Enum):
     set_object_down = "Set"
     start_incantation = "Incantation"
 
+
 class action:
     def __init__(self, action_type: action_type, parameters: list):
         self.action_type = action_type
         self.parameters = parameters
+
 
 class AI_server_interface:
     def __init__(self, host: str, port: int, team_name: str):
@@ -37,7 +47,7 @@ class AI_server_interface:
         self.world_y = None
         self.alive = None
         self.last_known_number_of_unused_slots = None
-        self.last_known_inventory = None #todo
+        self.last_known_inventory = None  # todo
         self.level = 1
         self.pending_response_actions = []
         self.completed_actions = []
@@ -46,18 +56,18 @@ class AI_server_interface:
         """Connects to the server and performs the initial handshake."""
         if not self.connection.connect():
             return False
-        
-        #server welcome message
+
+        # server welcome message
         if not self.connection.blocking_receive():
             return False
         while self.connection.get_message() != "WELCOME\n":
             if not self.connection.blocking_receive():
                 return False
-        
-        #send team name
+
+        # send team name
         self.connection.send_message(self.team_name + "\n")
 
-        #receive slot number
+        # receive slot number
         if not self.connection.blocking_receive():
             return False
         received_message = self.connection.get_message()
@@ -65,9 +75,9 @@ class AI_server_interface:
             return False
         self.last_known_number_of_unused_slots = int(received_message.strip())
         if self.last_known_number_of_unused_slots < 0:
-            return False #no slots available     
-           
-        #receive world dimensions
+            return False  # no slots available
+
+        # receive world dimensions
         if not self.connection.blocking_receive():
             return False
         received_message = self.connection.get_message()
@@ -75,7 +85,7 @@ class AI_server_interface:
             return False
         try:
             self.world_x, self.world_y = map(int, received_message.strip().split())
-        except Exception as e:
+        except Exception:
             return False
 
         self.alive = True
@@ -87,7 +97,64 @@ class AI_server_interface:
 
     def is_alive(self) -> bool:
         """Checks if the Trantorian is still alive"""
-        return self.alive == True
+        if self.alive is None:
+            return False
+        else:
+            return self.alive
+
+    def __parse_look_response(self, response: str):
+        response = response.strip()[1:-1].strip()
+        tiles = response.split(",")
+        parsed_response = []
+        for tile in tiles:
+            tile = tile.strip()
+            if tile == "":
+                parsed_response.append(
+                    {
+                        "player": 0,
+                        "food": 0,
+                        "egg": 0,
+                        "linemate": 0,
+                        "deraumere": 0,
+                        "sibur": 0,
+                        "mendiane": 0,
+                        "phiras": 0,
+                        "thystame": 0,
+                    }
+                )
+                continue
+            objects = tile.split()
+            object_counts = {}
+            for obj in objects:
+                if obj in object_counts:
+                    object_counts[obj] += 1
+                else:
+                    object_counts[obj] = 1
+            parsed_response.append(object_counts)
+        return parsed_response
+
+    def __parse_inventory_response(self, response: str):
+        response = response.strip()[1:-1].strip()
+        items = response.split(",")
+        inventory = {
+            "food": 0,
+            "linemate": 0,
+            "deraumere": 0,
+            "sibur": 0,
+            "mendiane": 0,
+            "phiras": 0,
+            "thystame": 0,
+        }
+        for item in items:
+            item = item.strip()
+            if item == "":
+                continue
+            try:
+                obj, count = item.split()
+                inventory[obj] = int(count)
+            except Exception:
+                continue
+        return inventory
 
     def handle_server_messages(self):
         """Handles incoming messages from the server and updates the internal state accordingly."""
@@ -105,28 +172,69 @@ class AI_server_interface:
             if message == "ok":
                 if self.pending_response_actions:
                     completed_action = self.pending_response_actions.pop(0)
-                    self.completed_actions.append({"action_type": completed_action, "success": True})
+                    self.completed_actions.append(
+                        {"action_type": completed_action, "success": True}
+                    )
                 continue
             if message == "ko":
                 if self.pending_response_actions:
                     completed_action = self.pending_response_actions.pop(0)
-                    self.completed_actions.append({"action_type": completed_action, "success": False})
+                    self.completed_actions.append(
+                        {"action_type": completed_action, "success": False}
+                    )
                 continue
             if message.startswith("["):
-                #todo: look/inventory response parsing
-                completed_action = self.pending_response_actions.pop(0) 
-                self.completed_actions.append({"action_type": completed_action, "success": True, "response": message})
+                if (
+                    message.startswith("[ player")
+                    or message.startswith("[ food")
+                    or message.startswith("[ egg")
+                    or message.startswith("[ linemate")
+                    or message.startswith("[ deraumere")
+                    or message.startswith("[ sibur")
+                    or message.startswith("[ mendiane")
+                    or message.startswith("[ phiras")
+                    or message.startswith("[ thystame")
+                ):
+                    completed_action = self.pending_response_actions.pop(0)
+                    self.completed_actions.append(
+                        {
+                            "action_type": completed_action,
+                            "success": True,
+                            "response": self.__parse_look_response(message),
+                        }
+                    )
+                else:
+                    completed_action = self.pending_response_actions.pop(0)
+                    self.completed_actions.append(
+                        {
+                            "action_type": completed_action,
+                            "success": True,
+                            "response": self.__parse_inventory_response(message),
+                        }
+                    )
                 continue
             if int(message) >= 0:
                 completed_action = self.pending_response_actions.pop(0)
-                self.completed_actions.append({"action_type": completed_action, "success": True, "response": int(message)})
+                self.completed_actions.append(
+                    {
+                        "action_type": completed_action,
+                        "success": True,
+                        "response": int(message),
+                    }
+                )
                 self.last_known_number_of_unused_slots = int(message)
                 continue
             if message == "Elevation underway":
                 continue
             if message.startswith("Current level:"):
                 self.level = int(message.split(":")[1].strip())
-                self.completed_actions.append({"action_type": action_type.start_incantation, "success": True, "response": self.level})
+                self.completed_actions.append(
+                    {
+                        "action_type": action_type.start_incantation,
+                        "success": True,
+                        "response": self.level,
+                    }
+                )
                 continue
 
     def send_forward_action(self):
@@ -181,7 +289,9 @@ class AI_server_interface:
 
     def send_set_object_down_action(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object."""
-        self.connection.send_message(f"{action_type.set_object_down.value} {object_type.value}\n")
+        self.connection.send_message(
+            f"{action_type.set_object_down.value} {object_type.value}\n"
+        )
         self.pending_response_actions.append(action_type.set_object_down)
 
     def send_start_incantation_action(self):

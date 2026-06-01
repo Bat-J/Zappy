@@ -1,8 +1,10 @@
 import sys
+from print_help import print_help
+import interface
+import agents.simple_lawn_mower
 
 for arg in sys.argv:
     if arg == "--help":
-        from print_help import print_help
         print_help()
         sys.exit(0)
 
@@ -25,9 +27,6 @@ if team_name is None:
     print("Error: Team name is required.")
     sys.exit(84)
 
-
-import interface
-
 # conecting to the server
 
 print(f"Connecting to {machine_name} on port {port_number} as team '{team_name}'...")
@@ -37,6 +36,19 @@ ai_interface = interface.AI_server_interface(machine_name, port_number, team_nam
 if not ai_interface.connect():
     print("Failed to connect to the server.")
 else:
-    print("Successfully connected to the server!")
-    print("number of unused slots: " + str(ai_interface.last_known_number_of_unused_slots))
-    print("world dimensions: " + str(ai_interface.world_x) + " x " + str(ai_interface.world_y))
+    print("connected to the server")
+    print(
+        "number of unused slots: " + str(ai_interface.last_known_number_of_unused_slots)
+    )
+    print(
+        "world dimensions: "
+        + str(ai_interface.world_x)
+        + " x "
+        + str(ai_interface.world_y)
+    )
+
+# creating and running the agent
+
+agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+
+agent.run()
