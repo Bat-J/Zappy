@@ -271,7 +271,10 @@ impl Server {
                 client.state = ClientState::Ai {
                     team: name.to_string(),
                 };
-                println!("{} joined team {name} ({remaining} slots left)", client.addr);
+                println!(
+                    "{} joined team {name} ({remaining} slots left)",
+                    client.addr
+                );
                 client.stream.write_all(response.as_bytes()).is_err()
             }
             None => {
