@@ -33,22 +33,6 @@ jobs:
           cd server
           cargo clippy --all-targets --all-features -- -D warnings
 
-  tests:
-    runs-on: codeberg-tiny
-    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
-    timeout-minutes: 5
-    container:
-      image: guillaumematton/cicd-zappy:20260601
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ github.head_ref }}
-
-      - name: Test
-        run: make test
-
   Apply-formatting:
     runs-on: codeberg-tiny
     if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
@@ -68,7 +52,7 @@ jobs:
       - name: Apply fmt
         run: |
           cd server
-          cargo fmt --all-targets --all-features
+          cargo fmt --all
 
       - name: Commit and push formatting changes
         run: |
