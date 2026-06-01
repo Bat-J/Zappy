@@ -11,9 +11,9 @@ permissions:
 jobs:
   compile:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.head_ref, 'GUI/') || startsWith(github.head_ref, 'GUI/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'GUI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601
     timeout-minutes: 5
     steps:
       - name: checkout
@@ -27,9 +27,9 @@ jobs:
 
   apply-clang-format:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.head_ref, 'GUI/') || startsWith(github.head_ref, 'GUI/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'GUI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601
     timeout-minutes: 5
 
     steps:
