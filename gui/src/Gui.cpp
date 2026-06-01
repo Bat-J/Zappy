@@ -9,6 +9,7 @@
 #include <string>
 #include <arpa/inet.h>
 #include "../include/Socket.hpp"
+#include "../include/Core.hpp"
 
 int main(int argc, char** argv) {
     if (argc == 2 && std::string(argv[1]) == "--help") {
@@ -24,6 +25,8 @@ int main(int argc, char** argv) {
         std::cerr << "Failed to connect to server\n";
         return 84;
     }
+    Core core;
+    core.Run();
     socket.writeToSocket("Hello, server!");
     std::string message = socket.readFromSocket();
     std::cout << "Message from server: " << message << std::endl;
