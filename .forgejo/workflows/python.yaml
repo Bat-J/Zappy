@@ -29,9 +29,7 @@ jobs:
         run: pip install --break-system-packages ruff
       
       - name: check for issues
-        run: |
-          cd ai
-          ruff check ai
+        run: ruff check ai
 
 
   apply-formatting:
@@ -54,9 +52,7 @@ jobs:
         run: pip install --break-system-packages ruff
       
       - name: apply format
-        run: |
-          cd ai
-          ruff format ai
+        run: ruff format ai
 
       - name: Commit and push formatting changes
         run: |
