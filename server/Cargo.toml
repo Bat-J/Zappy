@@ -3,8 +3,5 @@ name = "zappy_server"
 version = "0.1.0"
 edition = "2024"
 
-[target.x86_64-unknown-linux-musl]
-linker = "musl-gcc"
-
 [dependencies]
 ordered-list = { path = "ordered-list" }

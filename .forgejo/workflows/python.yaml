@@ -13,7 +13,7 @@ jobs:
     runs-on: codeberg-tiny
     if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'AI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260601
+      image: guillaumematton/cicd-zappy:20260601.2
     timeout-minutes: 5
     steps:
       - name: checkout
@@ -36,7 +36,7 @@ jobs:
     runs-on: codeberg-tiny
     if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'AI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260601
+      image: guillaumematton/cicd-zappy:20260601.2
     timeout-minutes: 5
     steps:
       - name: Set safe directory
