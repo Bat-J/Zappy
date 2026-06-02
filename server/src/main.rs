@@ -13,11 +13,6 @@ fn main() -> std::io::Result<()> {
         let ready = server.poll()?;
         server.accept(&ready)?;
         let read = server.read(&ready)?;
-        server.cleanup(
-            ready
-                .disconnected
-                .into_iter()
-                .chain(read.disconnected),
-        );
+        server.cleanup(ready.disconnected.into_iter().chain(read.disconnected));
     }
 }

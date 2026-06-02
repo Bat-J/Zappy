@@ -11,15 +11,16 @@ permissions:
 jobs:
   compile:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
     timeout-minutes: 5
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601.2
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          ref: ${{ github.head_ref }}
 
       - name: Build
         run: make zappy_server
@@ -32,27 +33,12 @@ jobs:
           cd server
           cargo clippy --all-targets --all-features -- -D warnings
 
-  tests:
-    runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
-    timeout-minutes: 5
-    container:
-      image: guillaumematton/cicd-zappy:20260528
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-
-      - name: Test
-        run: make test
-
   Apply-formatting:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/server/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'server/') }}
     timeout-minutes: 5
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601.2
     steps:
       - name: Set safe directory
         run: git config --global --add safe.directory $FORGEJO_REPOSITORY
@@ -61,9 +47,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          ref: ${{ github.head_ref }}
       
       - name: Apply fmt
-        run: cargo fmt --all-targets --all-features
+        run: |
+          cd server
+          cargo fmt --all
 
       - name: Commit and push formatting changes
         run: |

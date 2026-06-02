@@ -2,17 +2,10 @@ SERVER_BIN 	:= zappy_server
 GUI_BIN		:= zappy_gui
 AI_BIN		:= zappy_ai
 
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 
-all: server ai
+all: server ai gui
 
-clean: clean_serv clean_ai
-
-fclean: clean
-	@echo "Removing binaries..."
-	@rm -f $(SERVER_BIN) $(GUI_BIN) $(AI_BIN)
-
-re: fclean all
 
 server: $(SERVER_BIN)
 
@@ -21,16 +14,16 @@ $(SERVER_BIN):
 	@cargo build --release --manifest-path ./server/Cargo.toml
 	@cp ./server/target/release/$(SERVER_BIN) ./
 
-$(GUI_BIN):
-	@echo "Building GUI..."
-	@cd gui && cmake -S . -B build && cmake --build build --config Release
-	@cp ./gui/build/$(GUI_BIN) ./
-
 clean_serv:
 	@echo "Cleaning server..."
 	@cargo clean --manifest-path ./server/Cargo.toml
 
+gui: $(GUI_BIN)
 
+$(GUI_BIN):
+	@echo "Building GUI..."
+	@cd gui && cmake -S . -B build && cmake --build build --config Release
+	@cp ./gui/build/$(GUI_BIN) ./
 
 ai: $(AI_BIN)
 
@@ -47,3 +40,11 @@ $(AI_BIN):
 clean_ai:
 	@echo "Cleaning AI..."
 	@rm -f $(AI_BIN)
+
+clean: clean_serv clean_ai
+
+fclean: clean
+	@echo "Removing binaries..."
+	@rm -f $(SERVER_BIN) $(GUI_BIN) $(AI_BIN)
+
+re: fclean all

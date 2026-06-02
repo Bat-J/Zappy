@@ -11,24 +11,22 @@ permissions:
 jobs:
   compile:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/AI/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'AI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601.2
     timeout-minutes: 5
     steps:
       - name: checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          ref: ${{ github.head_ref }}
       
       - name: compile
         run: make zappy_ai
 
       - name: install ruff
-        run: |
-          python3 -m venv ./ai/.venv
-          source ./ai/.venv/bin/activate
-          pip install ruff
+        run: pip install --break-system-packages ruff
       
       - name: check for issues
         run: ruff check ai
@@ -36,9 +34,9 @@ jobs:
 
   apply-formatting:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/AI/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'AI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601.2
     timeout-minutes: 5
     steps:
       - name: Set safe directory
@@ -48,13 +46,13 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          ref: ${{ github.head_ref }}
+        
+      - name: install ruff
+        run: pip install --break-system-packages ruff
       
       - name: apply format
-        run: |
-          python3 -m venv ./ai/.venv
-          source ./ai/.venv/bin/activate
-          pip install ruff
-          ruff format ai
+        run: ruff format ai
 
       - name: Commit and push formatting changes
         run: |
