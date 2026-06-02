@@ -9,12 +9,12 @@ mccShell {
     clang-tools
     cmake
     gnumake
-    # Rust toolchain
     rustup
     rustc
     cargo
     rustfmt
     rust-analyzer
+    python3
   ];
 
   shellHook = ''
