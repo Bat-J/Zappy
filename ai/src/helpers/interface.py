@@ -13,8 +13,10 @@ class object_type(Enum):
     phiras = "phiras"
     thystame = "thystame"
 
+
 def str_to_object_type(value: str) -> object_type:
     return object_type(value)
+
 
 class action_type(Enum):
     forward = "Forward"
@@ -29,6 +31,7 @@ class action_type(Enum):
     take = "Take"
     set_object_down = "Set"
     start_incantation = "Incantation"
+
 
 class direction(Enum):
     north = 1
@@ -85,7 +88,9 @@ class AI_server_interface:
         if received_message is None or received_message.strip() == "ko":
             return False
         try:
-            self.world_x_size, self.world_y_size = map(int, received_message.strip().split())
+            self.world_x_size, self.world_y_size = map(
+                int, received_message.strip().split()
+            )
         except Exception:
             return False
 
@@ -102,7 +107,7 @@ class AI_server_interface:
             return False
         else:
             return self.alive
-        
+
     def __parse_look_response(self, response: str):
         response = response.strip()[1:-1].strip()
         tiles = response.split(",")
@@ -267,9 +272,12 @@ class AI_server_interface:
 
     def block_until_all_responses_received(self):
         """Blocks until all pending response actions have received a response from the server."""
-        while self.pending_response_actions and self.connection.is_connected() and self.is_alive():
+        while (
+            self.pending_response_actions
+            and self.connection.is_connected()
+            and self.is_alive()
+        ):
             self.handle_server_messages_blocking()
-
 
     def send_forward_action(self):
         """Sends a forward action to the server."""
@@ -333,73 +341,74 @@ class AI_server_interface:
         self.connection.send_message(f"{action_type.start_incantation.value}\n")
         self.pending_response_actions.append(action_type.start_incantation)
 
-
     def send_forward_action_and_block_until_response(self):
         """Sends a forward action to the server and blocks until a response is received."""
         self.send_forward_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_turn_right_action_and_block_until_response(self):
         """Sends a turn right action to the server and blocks until a response is received."""
         self.send_turn_right_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_turn_left_action_and_block_until_response(self):
         """Sends a turn left action to the server and blocks until a response is received."""
         self.send_turn_left_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_look_action_and_block_until_response(self):
         """Sends a look action to the server and blocks until a response is received."""
         self.send_look_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_inventory_action_and_block_until_response(self):
         """Sends an inventory action to the server and blocks until a response is received."""
         self.send_inventory_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_broadcast_action_and_block_until_response(self, message: str):
         """Sends a broadcast action to the server with the specified message and blocks until a response is received."""
         self.send_broadcast_action(message)
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_connect_nbr_action_and_block_until_response(self):
         """Sends a connect_nbr action to the server and blocks until a response is received."""
         self.send_connect_nbr_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_fork_action_and_block_until_response(self):
         """Sends a fork action to the server and blocks until a response is received."""
         self.send_fork_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_eject_action_and_block_until_response(self):
         """Sends an eject action to the server and blocks until a response is received."""
         self.send_eject_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_take_action_and_block_until_response(self, object_type: object_type):
         """Sends a take action to the server for the specified object and blocks until a response is received."""
         self.send_take_action(object_type)
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
-    def send_set_object_down_action_and_block_until_response(self, object_type: object_type):
+
+    def send_set_object_down_action_and_block_until_response(
+        self, object_type: object_type
+    ):
         """Sends a set_object_down action to the server for the specified object and blocks until a response is received."""
         self.send_set_object_down_action(object_type)
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
-    
+
     def send_start_incantation_action_and_block_until_response(self):
         """Sends a start_incantation action to the server and blocks until a response is received."""
         self.send_start_incantation_action()
