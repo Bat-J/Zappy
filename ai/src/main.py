@@ -3,6 +3,7 @@ import sys
 for arg in sys.argv:
     if arg == "--help":
         from print_help import print_help
+
         print_help()
         sys.exit(0)
 

@@ -11,9 +11,9 @@ permissions:
 jobs:
   compile:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/GUI/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'GUI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601.2
     timeout-minutes: 5
     steps:
       - name: checkout
@@ -21,15 +21,16 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          ref: ${{ github.head_ref }}
 
       - name: compile
         run: make zappy_gui
 
   apply-clang-format:
     runs-on: codeberg-tiny
-    if: ${{ startsWith(github.ref, 'refs/heads/all/') || startsWith(github.ref, 'refs/heads/GUI/') }}
+    if: ${{ startsWith(github.head_ref, 'all/') || startsWith(github.head_ref, 'GUI/') }}
     container:
-      image: guillaumematton/cicd-zappy:20260528
+      image: guillaumematton/cicd-zappy:20260601.2
     timeout-minutes: 5
 
     steps:
@@ -40,6 +41,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          ref: ${{ github.head_ref }}
 
       - name: Apply clang-format
         run: |

@@ -1,12 +1,13 @@
 import socket
 
+
 class Connection:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
         self.socket = None
         self.buffer = ""
-    
+
     def connect(self) -> bool:
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,7 +15,7 @@ class Connection:
             return True
         except Exception as e:
             return False
-    
+
     def send_message(self, message: str) -> bool:
         if self.socket is None:
             return False
@@ -23,8 +24,8 @@ class Connection:
             return True
         except Exception as e:
             return False
-        
-    def receive_message(self) -> str|None:
+
+    def receive_message(self) -> str | None:
         if self.socket is None:
             return None
         try:
@@ -37,4 +38,3 @@ class Connection:
             return line + "\n"
         except Exception as e:
             return None
-        
