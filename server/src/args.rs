@@ -6,7 +6,7 @@ pub struct Config {
     pub height: u32,
     pub teams: Vec<String>,
     pub clients_per_team: usize,
-    pub _freq: u64,
+    pub frequency: u32,
 }
 
 const USAGE: &str =
@@ -52,7 +52,7 @@ pub fn parse() -> Result<Config, String> {
         height,
         teams,
         clients_per_team,
-        _freq: freq,
+        frequency: freq as u32,
     })
 }
 

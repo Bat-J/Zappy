@@ -4,6 +4,8 @@ use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
+use crate::command::Command;
+use crate::time_manager::TimeManager;
 
 type Nfds = c_ulong;
 
@@ -42,6 +44,7 @@ pub struct Server {
     team_slots: Vec<(String, usize)>,
     width: u32,
     height: u32,
+    time_manager: TimeManager,
 }
 
 pub struct Ready {
@@ -65,16 +68,29 @@ pub fn start(config: Config) -> io::Result<Server> {
         .map(|name| (name, config.clients_per_team))
         .collect();
 
+    let time_manager = TimeManager::new(config.frequency);
+
     Ok(Server {
         listener,
         clients: Vec::new(),
         team_slots,
         width: config.width,
         height: config.height,
+        time_manager,
     })
 }
 
 impl Server {
+    pub fn execute_ready_commands(&mut self) {
+        let ready = self.time_manager.tick();
+        for scheduled in ready {
+            println!(
+                "EXECUTE: client {} - {}",
+                scheduled.client_id, scheduled.command
+            );
+        }
+    }
+
     pub fn poll(&self) -> io::Result<Ready> {
         let mut fds = Vec::with_capacity(self.clients.len() + 1);
         fds.push(PollFd {
@@ -164,6 +180,8 @@ impl Server {
                 &mut self.team_slots,
                 self.width,
                 self.height,
+                &mut self.time_manager,
+                index,
             );
 
             if drop {
@@ -182,10 +200,10 @@ impl Server {
         for index in disconnected.into_iter().rev() {
             if index < self.clients.len() {
                 let client = self.clients.swap_remove(index);
-                if let ClientState::Ai { ref team } = client.state {
-                    if let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team) {
-                        slot.1 += 1;
-                    }
+                if let ClientState::Ai { ref team } = client.state
+                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team)
+                {
+                    slot.1 += 1;
                 }
                 println!("Client disconnected: {}", client.addr);
             }
@@ -195,9 +213,11 @@ impl Server {
     fn read_client(
         client: &mut Client,
         buffer: &mut [u8; 1024],
-        team_slots: &mut Vec<(String, usize)>,
+        team_slots: &mut [(String, usize)],
         width: u32,
         height: u32,
+        time_manager: &mut TimeManager,
+        client_id: usize,
     ) -> bool {
         let n = match client.stream.read(buffer) {
             Ok(0) => return true,
@@ -216,7 +236,15 @@ impl Server {
             let line = client.pending[..pos].trim_end_matches('\r').to_string();
             client.pending.drain(..=pos);
 
-            if Self::handle_line(client, &line, team_slots, width, height) {
+            if Self::handle_line(
+                client,
+                &line,
+                team_slots,
+                width,
+                height,
+                time_manager,
+                client_id,
+            ) {
                 return true;
             }
         }
@@ -227,17 +255,18 @@ impl Server {
     fn handle_line(
         client: &mut Client,
         line: &str,
-        team_slots: &mut Vec<(String, usize)>,
+        team_slots: &mut [(String, usize)],
         width: u32,
         height: u32,
+        time_manager: &mut TimeManager,
+        client_id: usize,
     ) -> bool {
         match client.state {
             ClientState::AwaitingTeamName => {
                 Self::handle_team_name(client, line, team_slots, width, height)
             }
             ClientState::Ai { .. } => {
-                println!("AI command from {}: {line}", client.addr);
-                false
+                Self::handle_ai_command(client, line, time_manager, client_id)
             }
             ClientState::Gui => {
                 println!("GUI command from {}: {line}", client.addr);
@@ -246,10 +275,34 @@ impl Server {
         }
     }
 
+    fn handle_ai_command(
+        client: &mut Client,
+        line: &str,
+        time_manager: &mut TimeManager,
+        client_id: usize,
+    ) -> bool {
+        match Command::parse(line) {
+            Ok(cmd) => {
+                let execute_at = time_manager.schedule(cmd.clone(), client_id);
+                println!(
+                    "AI command from {}: {} (execute at {:?})",
+                    client.addr, cmd, execute_at
+                );
+                let response = "ok\n";
+                client.stream.write_all(response.as_bytes()).is_err()
+            }
+            Err(err) => {
+                eprintln!("Parse error from {}: {}", client.addr, err);
+                let response = "ko\n";
+                client.stream.write_all(response.as_bytes()).is_err()
+            }
+        }
+    }
+
     fn handle_team_name(
         client: &mut Client,
         name: &str,
-        team_slots: &mut Vec<(String, usize)>,
+        team_slots: &mut [(String, usize)],
         width: u32,
         height: u32,
     ) -> bool {
