@@ -51,7 +51,6 @@ int Core::Run(Socket& socket) {
         handleEvents();
         _window.EndDrawing();
     }
-    // unload GPU resources while context is valid
     cursor.Unload();
     _window.Close();
     socket.writeToSocket("Hello, server!");
