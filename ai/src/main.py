@@ -1,6 +1,6 @@
 import sys
-from print_help import print_help
-import interface
+from helpers.print_help import print_help
+import helpers.interface as interface
 import agents.simple_lawn_mower
 
 for arg in sys.argv:
@@ -35,6 +35,7 @@ ai_interface = interface.AI_server_interface(machine_name, port_number, team_nam
 
 if not ai_interface.connect():
     print("Failed to connect to the server.")
+    sys.exit(84)
 else:
     print("connected to the server")
     print(
@@ -42,9 +43,9 @@ else:
     )
     print(
         "world dimensions: "
-        + str(ai_interface.world_x)
+        + str(ai_interface.world_x_size)
         + " x "
-        + str(ai_interface.world_y)
+        + str(ai_interface.world_y_size)
     )
 
 # creating and running the agent
