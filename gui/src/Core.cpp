@@ -12,7 +12,10 @@ void Core::createWindow() {
     _window.Init(1920, 1080, "Zappy GUI");
     _window.SetTargetFPS(60);
     _window.SetFullscreen(_isFullscreen);
+    logo   = LoadImage("assets/logo.png");
+    cursor = LoadTexture("assets/cursor.png");
     _window.SetIcon(logo);
+    logo.Unload();
 }
 
 void Core::handleEvents() {
@@ -32,6 +35,8 @@ void Core::displayAll() {
     }
     if (_isCursorDefault == false) {
         _window.HideCursor();
+        raylib::Vector2 pos = raylib::Mouse::GetPosition();
+        cursor.Draw(static_cast<int>(pos.x), static_cast<int>(pos.y), WHITE);
     } else {
         _window.ShowCursor();
     }
@@ -46,6 +51,8 @@ int Core::Run(Socket& socket) {
         handleEvents();
         _window.EndDrawing();
     }
+    // unload GPU resources while context is valid
+    cursor.Unload();
     _window.Close();
     socket.writeToSocket("Hello, server!");
     std::string message = socket.readFromSocket();

@@ -16,9 +16,10 @@ class Core {
     void displayAll();
 
   private:
-    bool           _isFullscreen    = true;
-    bool           _isFpsDisplayed  = true;
-    bool           _isCursorDefault = true;
-    Image          logo             = ::LoadImage("assets/logo.png");
-    raylib::Window _window;
+    bool            _isFullscreen    = true;
+    bool            _isFpsDisplayed  = true;
+    bool            _isCursorDefault = true;
+    raylib::Image   logo;
+    raylib::Texture cursor;
+    raylib::Window  _window;
 };
