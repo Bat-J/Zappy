@@ -1,9 +1,10 @@
 import sys
+from helpers.print_help import print_help
+import helpers.interface as interface
+import agents.simple_lawn_mower
 
 for arg in sys.argv:
     if arg == "--help":
-        from print_help import print_help
-
         print_help()
         sys.exit(0)
 
@@ -26,28 +27,29 @@ if team_name is None:
     print("Error: Team name is required.")
     sys.exit(84)
 
-# connecting
-## WIP POC code past this point
-
-import networking
+# conecting to the server
 
 print(f"Connecting to {machine_name} on port {port_number} as team '{team_name}'...")
 
-# conecting to the server
-connection = networking.Connection(machine_name, port_number)
-if not connection.connect():
-    print("Error: Could not connect to the server.")
+ai_interface = interface.AI_server_interface(machine_name, port_number, team_name)
+
+if not ai_interface.connect():
+    print("Failed to connect to the server.")
     sys.exit(84)
+else:
+    print("connected to the server")
+    print(
+        "number of unused slots: " + str(ai_interface.last_known_number_of_unused_slots)
+    )
+    print(
+        "world dimensions: "
+        + str(ai_interface.world_x_size)
+        + " x "
+        + str(ai_interface.world_y_size)
+    )
 
-while connection.receive_message() != "WELCOME\n":
-    pass
+# creating and running the agent
 
-# send team name
-connection.send_message(team_name + "\n")
+agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
 
-team_number = int(connection.receive_message().strip())
-print(f"Connected as team {team_number}.")
-
-map_size_message = connection.receive_message()
-map_x, map_y = map(int, map_size_message.strip().split())
-print(f"Map size: {map_x}x{map_y}")
+agent.run()
