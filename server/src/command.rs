@@ -8,6 +8,7 @@ pub enum Command {
     Look,
     Inventory,
     Broadcast(String),
+    ConnectNbr,
     Fork,
     Eject,
     Take(String),
@@ -39,6 +40,7 @@ impl Command {
                 let message = parts[1..].join(" ");
                 Ok(Command::Broadcast(message))
             }
+            "Connect_nbr" => Ok(Command::ConnectNbr),
             "Fork" => Ok(Command::Fork),
             "Eject" => Ok(Command::Eject),
             "Take" => {
@@ -74,6 +76,7 @@ impl Command {
             Command::Take(_) => 7,
             Command::Set(_) => 7,
             Command::Incantation => 300,
+            Command::ConnectNbr => 0,
         }
     }
 }
@@ -87,6 +90,7 @@ impl fmt::Display for Command {
             Command::Look => write!(f, "Look"),
             Command::Inventory => write!(f, "Inventory"),
             Command::Broadcast(msg) => write!(f, "Broadcast {}", msg),
+            Command::ConnectNbr => write!(f, "Connect_nbr"),
             Command::Fork => write!(f, "Fork"),
             Command::Eject => write!(f, "Eject"),
             Command::Take(obj) => write!(f, "Take {}", obj),

@@ -28,8 +28,9 @@ impl TimeManager {
     /// Returns when the command will execute
     pub fn schedule(&mut self, command: Command, client_id: usize) -> Instant {
         let duration_units = command.execution_time() as u64;
-        // Convert duration to milliseconds: scale by (100 / frequency)
-        let ms = (duration_units * 100) / self.frequency as u64;
+        // Convert duration to milliseconds: ms = (action * 1000) / frequency
+        // Example: action=7, frequency=100 -> ms = 7*1000/100 = 70 ms
+        let ms = (duration_units * 1000) / self.frequency as u64;
         let execute_at = Instant::now() + Duration::from_millis(ms);
 
         self.queue.push(ScheduledCommand {
@@ -55,6 +56,14 @@ impl TimeManager {
 
         ready
     }
+
+    pub fn next_timeout_ms(&self) -> Option<i32> {
+        let next = self.queue.get(0)?;
+        let now = Instant::now();
+        let delay = next.execute_at.saturating_duration_since(now);
+        let ms = delay.as_millis().min(i32::MAX as u128);
+        Some(ms as i32)
+    }
 }
 
 #[cfg(test)]
@@ -72,14 +81,14 @@ mod tests {
         let ready = manager.tick();
         assert!(ready.is_empty());
 
-        // Wait for Inventory to be ready (1ms)
-        thread::sleep(Duration::from_millis(1));
+        // Wait for Inventory to be ready (~10ms)
+        thread::sleep(Duration::from_millis(20));
         let ready = manager.tick();
         assert_eq!(ready.len(), 1);
         assert_eq!(ready[0].client_id, 0);
 
-        // Wait for Forward to be ready (7ms total)
-        thread::sleep(Duration::from_millis(6));
+        // Wait for Forward to be ready (~70ms total)
+        thread::sleep(Duration::from_millis(100));
         let ready = manager.tick();
         assert_eq!(ready.len(), 1);
         assert_eq!(ready[0].client_id, 1);
@@ -92,7 +101,7 @@ mod tests {
         manager.schedule(Command::Inventory, 1);
         manager.schedule(Command::Inventory, 2);
 
-        thread::sleep(Duration::from_millis(1));
+        thread::sleep(Duration::from_millis(20));
         let ready = manager.tick();
         assert_eq!(ready.len(), 3);
     }
@@ -116,12 +125,12 @@ mod tests {
         manager.schedule(Command::Inventory, 1);
         manager.schedule(Command::Incantation, 2);
 
-        thread::sleep(Duration::from_millis(1));
+        thread::sleep(Duration::from_millis(20));
         let ready = manager.tick();
         assert_eq!(ready.len(), 1);
         assert_eq!(ready[0].client_id, 1); // Inventory executes first
 
-        thread::sleep(Duration::from_millis(6));
+        thread::sleep(Duration::from_millis(100));
         let ready = manager.tick();
         assert_eq!(ready.len(), 1);
         assert_eq!(ready[0].client_id, 0); // Forward executes second
