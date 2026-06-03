@@ -6,10 +6,10 @@
 */
 
 #include "../include/Core.hpp"
-#include <iostream>
+#include "../include/Server.hpp"
 
 void Core::createWindow() {
-    _window.Init(1920, 1080, "Zappy GUI");
+    _window.Init(1920, 1080, "Zappy GUI", 0, LOG_NONE);
     _window.SetTargetFPS(60);
     _window.SetFullscreen(_isFullscreen);
     logo   = LoadImage("assets/logo.png");
@@ -44,6 +44,8 @@ void Core::displayAll() {
 
 int Core::Run(Socket& socket) {
     createWindow();
+    Server server(socket);
+    server.getInfo();
     while (!_window.ShouldClose()) {
         _window.BeginDrawing();
         _window.ClearBackground(BLACK);
@@ -53,9 +55,5 @@ int Core::Run(Socket& socket) {
     }
     cursor.Unload();
     _window.Close();
-    socket.writeToSocket("Hello, server!");
-    std::string message = socket.readFromSocket();
-    std::cout << "Message from server: " << message << std::endl;
-    socket.closeSocket();
     return 0;
 }

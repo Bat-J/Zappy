@@ -9,6 +9,7 @@ add_executable(zappy_gui
     src/Gui.cpp
     src/Error.cpp
     src/Core.cpp
+    src/Server.cpp
 )
 
 target_include_directories(zappy_gui PRIVATE include)
