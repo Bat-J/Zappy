@@ -14,7 +14,16 @@ class Server {
   public:
     Server(Socket& socket) : _socket(socket) {};
     ~Server();
-    void getInfo();
+    void                getInfo();
+    std::pair<int, int> getMapSize() const {
+        return _mapSize;
+    }
+    int getTimeReference() const {
+        return _timeReference;
+    }
+    const std::vector<Tile>& getTiles() const {
+        return _tiles;
+    }
 
   private:
     Socket&             _socket;
