@@ -201,17 +201,7 @@ class AI_server_interface:
                 )
             pass
         elif message.startswith("["):
-            if (
-                message.startswith("[ player")
-                or message.startswith("[ food")
-                or message.startswith("[ egg")
-                or message.startswith("[ linemate")
-                or message.startswith("[ deraumere")
-                or message.startswith("[ sibur")
-                or message.startswith("[ mendiane")
-                or message.startswith("[ phiras")
-                or message.startswith("[ thystame")
-            ):
+            if message.count(",") >= 3:
                 completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {

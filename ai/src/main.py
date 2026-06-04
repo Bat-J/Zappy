@@ -11,14 +11,21 @@ for arg in sys.argv:
 port_number = None
 team_name = None
 machine_name = "localhost"
+agent_name = "default"
 
 for i in range(len(sys.argv)):
     if sys.argv[i] == "-p" and i + 1 < len(sys.argv):
         port_number = int(sys.argv[i + 1])
+        i += 1
     elif sys.argv[i] == "-n" and i + 1 < len(sys.argv):
         team_name = sys.argv[i + 1]
+        i += 1
     elif sys.argv[i] == "-h" and i + 1 < len(sys.argv):
         machine_name = sys.argv[i + 1]
+        i += 1
+    elif sys.argv[i] == "-a" and i + 1 < len(sys.argv):
+        agent_name = sys.argv[i + 1]
+        i += 1
 
 if port_number is None:
     print("Error: Port number is required.")
@@ -38,18 +45,23 @@ if not ai_interface.connect():
     sys.exit(84)
 else:
     print("connected to the server")
+    print(f"number of unused slots: {ai_interface.last_known_number_of_unused_slots}")
     print(
-        "number of unused slots: " + str(ai_interface.last_known_number_of_unused_slots)
-    )
-    print(
-        "world dimensions: "
-        + str(ai_interface.world_x_size)
-        + " x "
-        + str(ai_interface.world_y_size)
+        f"world dimensions: {ai_interface.world_x_size} x {ai_interface.world_y_size}"
     )
 
-# creating and running the agent
+# creating the agent
 
-agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+if agent_name == "default":
+    agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+elif agent_name == "simple_lawn_mower":
+    agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+else:
+    print(f"Error: Unknown agent '{agent_name}'.")
+    sys.exit(84)
+
+# running the agent
 
 agent.run()
+
+print("Agent has stopped running.")
