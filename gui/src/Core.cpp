@@ -160,7 +160,7 @@ int Core::Run(Socket& socket) {
     createWindow();
     Server server(socket);
     server.getInfo();
-    server.updateRessources();
+    server.updateResources();
     auto lastUpdate = std::chrono::steady_clock::now();
 
     while (!_window.ShouldClose()) {
@@ -170,7 +170,8 @@ int Core::Run(Socket& socket) {
 
         if (elapsedSec >= delaySec) {
             server.getInfo();
-            server.updateRessources();
+            server.updateTiles();
+            server.updateResources();
             lastUpdate = now;
         }
         _window.BeginDrawing();

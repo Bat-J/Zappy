@@ -137,8 +137,7 @@ void Server::updateTiles() {
     }
 }
 
-void Server::updateRessources() {
-    updateTiles();
+void Server::updateResources() {
     resetFood(0);
     resetDeraumere(0);
     resetLinemate(0);

@@ -17,7 +17,7 @@ class Server {
     ~Server();
     void                      getInfo();
     void                      updateTiles();
-    void                      updateRessources();
+    void                      updateResources();
     std::pair<size_t, size_t> getMapSize() const;
     int                       getTimeReference() const;
     const std::vector<Tile>&  getTiles() const;
