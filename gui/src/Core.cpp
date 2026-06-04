@@ -9,23 +9,26 @@
 #include <Keyboard.hpp>
 #include <algorithm>
 #include <raylib.h>
+#include <string>
 
 void Core::setupColors() {
     _ressourceColors = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK, BROWN, GRAY, DARKGRAY, LIGHTGRAY, MAROON, LIME, SKYBLUE, VIOLET, BEIGE, DARKBROWN, GOLD};
-    std::vector<raylib::Color> secondColors = {DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN, DARKGRAY, GRAY, LIGHTGRAY, BLACK};
+    std::vector<raylib::Color> secondColors = {DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN, DARKGRAY, BLACK, WHITE};
     _ressourceColors.insert(_ressourceColors.end(), secondColors.begin(), secondColors.end());
     _TileColor       = GRAY;
     _TileBorderColor = DARKGRAY;
+    _TextColor       = WHITE;
 }
 
 void Core::createWindow() {
     _window.Init(1920, 1080, "Zappy GUI", 0, LOG_NONE);
     _window.SetTargetFPS(60);
     _window.SetFullscreen(_isFullscreen);
-    logo   = LoadImage("assets/logo.png");
-    cursor = LoadTexture("assets/cursor.png");
-    _window.SetIcon(logo);
-    logo.Unload();
+    _logo   = LoadImage("assets/images/logo.png");
+    _cursor = LoadTexture("assets/images/cursor.png");
+    _window.SetIcon(_logo);
+    _font = raylib::Font("assets/font/akashi.ttf");
+    _logo.Unload();
 }
 
 void Core::handleEvents() {
@@ -67,6 +70,10 @@ void Core::handleEvents() {
         _backgroundColorIndex = (_backgroundColorIndex - 1) % _ressourceColors.size();
         _BackgroundColor      = _ressourceColors[_backgroundColorIndex];
     }
+    if (raylib::Keyboard::IsKeyPressed(KEY_B)) {
+        _TextColorIndex = (_TextColorIndex + 1) % _ressourceColors.size();
+        _TextColor      = _ressourceColors[_TextColorIndex];
+    }
 }
 
 void Core::displayBasicGui() {
@@ -76,24 +83,43 @@ void Core::displayBasicGui() {
     if (_isCursorDefault == false) {
         _window.HideCursor();
         raylib::Vector2 pos = raylib::Mouse::GetPosition();
-        cursor.Draw(static_cast<int>(pos.x), static_cast<int>(pos.y), WHITE);
+        _cursor.Draw(static_cast<int>(pos.x), static_cast<int>(pos.y), WHITE);
     } else {
         _window.ShowCursor();
     }
 }
 
+void Core::displayStats(const Server& server) {
+    const int   x        = _window.GetWidth() / 2;
+    const int   y        = _window.GetHeight() / 1.80;
+    const int   fontSize = 22;
+    const float spacing  = 2.0f;
+
+    _font.DrawText("Players: " + std::to_string(server.getNbPlayers()), x, y, fontSize, spacing, _TextColor);
+    _font.DrawText("Deaths: " + std::to_string(server.getNbDeath()), x, y + 30, fontSize, spacing, _TextColor);
+    _font.DrawText("Time ref.: " + std::to_string(server.getTimeReference()), x, y + 60, fontSize, spacing, _TextColor);
+    _font.DrawText("Map size: " + std::to_string(server.getMapSize().first) + "x" + std::to_string(server.getMapSize().second), x, y + 90, fontSize, spacing, _TextColor);
+    _font.DrawText("Food: " + std::to_string(server.getTotalFood()), x, y + 120, fontSize, spacing, _TextColor);
+    _font.DrawText("Linemate: " + std::to_string(server.getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _TextColor);
+    _font.DrawText("Deraumere: " + std::to_string(server.getTotalDeraumere()), x + 360, y + 120, fontSize, spacing, _TextColor);
+    _font.DrawText("Sibur: " + std::to_string(server.getTotalSibur()), x, y + 150, fontSize, spacing, _TextColor);
+    _font.DrawText("Mendiane: " + std::to_string(server.getTotalMendiane()), x + 180, y + 150, fontSize, spacing, _TextColor);
+    _font.DrawText("Phiras: " + std::to_string(server.getTotalPhiras()), x + 360, y + 150, fontSize, spacing, _TextColor);
+    _font.DrawText("Thystame: " + std::to_string(server.getTotalThystame()), x, y + 180, fontSize, spacing, _TextColor);
+}
+
 void Core::displayServerElements(const Server& server) {
     const auto mapSize         = server.getMapSize();
-    const int  mapWidth        = std::max(1, mapSize.first);
-    const int  mapHeight       = std::max(1, mapSize.second);
+    const int  mapWidth        = std::max(1, (int)mapSize.first);
+    const int  mapHeight       = std::max(1, (int)mapSize.second);
     const int  hudHeight       = 100;
     const int  padding         = 10;
     const int  tileSize        = std::min((_window.GetWidth() - 2 * padding) / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
     const int  tileSizeClamped = std::max(1, tileSize);
     const int  mapPixelWidth   = mapWidth * tileSizeClamped;
     const int  mapPixelHeight  = mapHeight * tileSizeClamped;
-    const int  offsetX         = std::max(0, (_window.GetWidth() - mapPixelWidth) / 2);
-    const int  offsetY         = hudHeight + std::max(0, (_window.GetHeight() - hudHeight - mapPixelHeight) / 2);
+    const int  offsetX         = padding;
+    const int  offsetY         = hudHeight + padding;
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
@@ -105,6 +131,8 @@ void Core::displayServerElements(const Server& server) {
             rect.DrawLines(_TileBorderColor);
         }
     }
+    _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _TextColor);
+    displayStats(server);
 }
 
 int Core::Run(Socket& socket) {
@@ -120,7 +148,8 @@ int Core::Run(Socket& socket) {
         handleEvents();
         _window.EndDrawing();
     }
-    cursor.Unload();
+    _cursor.Unload();
+    _font.Unload();
     _window.Close();
     return 0;
 }
