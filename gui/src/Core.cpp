@@ -8,8 +8,10 @@
 #include "../include/Core.hpp"
 #include <Keyboard.hpp>
 #include <algorithm>
+#include <chrono>
 #include <raylib.h>
 #include <string>
+#include <ctime>
 
 void Core::setupColors() {
     _ressourceColors = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK, BROWN, GRAY, DARKGRAY, LIGHTGRAY, MAROON, LIME, SKYBLUE, VIOLET, BEIGE, DARKBROWN, GOLD};
@@ -90,7 +92,7 @@ void Core::displayBasicGui() {
 }
 
 void Core::displayStats(const Server& server) {
-    const int   x        = _window.GetWidth() / 2;
+    const int   x        = _window.GetWidth() / 1.80;
     const int   y        = _window.GetHeight() / 1.80;
     const int   fontSize = 22;
     const float spacing  = 2.0f;
@@ -109,26 +111,44 @@ void Core::displayStats(const Server& server) {
 }
 
 void Core::displayServerElements(const Server& server) {
-    const auto mapSize         = server.getMapSize();
-    const int  mapWidth        = std::max(1, (int)mapSize.first);
-    const int  mapHeight       = std::max(1, (int)mapSize.second);
-    const int  hudHeight       = 100;
-    const int  padding         = 10;
-    const int  tileSize        = std::min((_window.GetWidth() - 2 * padding) / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
-    const int  tileSizeClamped = std::max(1, tileSize);
-    const int  mapPixelWidth   = mapWidth * tileSizeClamped;
-    const int  mapPixelHeight  = mapHeight * tileSizeClamped;
-    const int  offsetX         = padding;
-    const int  offsetY         = hudHeight + padding;
+    const auto  mapSize         = server.getMapSize();
+    const int   mapWidth        = std::max(1, (int)mapSize.first);
+    const int   mapHeight       = std::max(1, (int)mapSize.second);
+    const int   hudHeight       = 100;
+    const int   padding         = 10;
+    const int   tileSize        = std::min((_window.GetWidth() - 2 * padding) / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
+    const int   tileSizeClamped = std::max(1, tileSize);
+    const int   mapPixelWidth   = mapWidth * tileSizeClamped;
+    const int   mapPixelHeight  = mapHeight * tileSizeClamped;
+    const int   offsetX         = padding;
+    const int   offsetY         = hudHeight + padding;
 
+    const auto& tiles = server.getTiles();
+    const Tile  fallbackTile{};
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
-            const int         rectX = offsetX + x * tileSizeClamped;
-            const int         rectY = offsetY + y * tileSizeClamped;
-
+            const int        rectX     = offsetX + x * tileSizeClamped;
+            const int        rectY     = offsetY + y * tileSizeClamped;
+            const int        tileIndex = y * mapWidth + x;
+            const int        textSize  = std::max(8, std::min(14, tileSizeClamped / 4));
+            const Tile&      tile      = (tileIndex < static_cast<int>(tiles.size())) ? tiles[tileIndex] : fallbackTile;
+            std::vector<int> resources = tile.Ressources;
+            resources.resize(7, 0);
             raylib::Rectangle rect(rectX, rectY, tileSizeClamped - 1, tileSizeClamped - 1);
             rect.Draw(_TileColor);
             rect.DrawLines(_TileBorderColor);
+            const std::vector<std::pair<int, int>> positions = {
+                {2, 2},
+                {tileSizeClamped / 2, 2},
+                {tileSizeClamped - 12, 2},
+                {2, tileSizeClamped / 2},
+                {tileSizeClamped / 2, tileSizeClamped / 2},
+                {tileSizeClamped - 12, tileSizeClamped / 2},
+                {tileSizeClamped / 2, tileSizeClamped - 12},
+            };
+            for (size_t i = 0; i < positions.size(); ++i) {
+                _font.DrawText(std::to_string(resources[i]), rectX + positions[i].first, rectY + positions[i].second, textSize, 1.0f, _TextColor);
+            }
         }
     }
     _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _TextColor);
@@ -140,7 +160,19 @@ int Core::Run(Socket& socket) {
     createWindow();
     Server server(socket);
     server.getInfo();
+    server.updateRessources();
+    auto lastUpdate = std::chrono::steady_clock::now();
+
     while (!_window.ShouldClose()) {
+        const auto now        = std::chrono::steady_clock::now();
+        const auto elapsedSec = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate).count();
+        const auto delaySec   = 3600;
+
+        if (elapsedSec >= delaySec) {
+            server.getInfo();
+            server.updateRessources();
+            lastUpdate = now;
+        }
         _window.BeginDrawing();
         _window.ClearBackground(_BackgroundColor);
         displayServerElements(server);

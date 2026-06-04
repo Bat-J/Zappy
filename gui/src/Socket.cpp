@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <cstring>
+#include <cerrno>
 
 Socket::Socket() : _socketFD(-1) {}
 
@@ -88,16 +89,25 @@ void Socket::writeToSocket(const std::string& message) {
 }
 
 std::string Socket::readFromSocket() {
-    std::string buffer;
-    buffer.resize(1024);
-    int bytesRead = read(_socketFD, buffer.data(), 1024 - 1);
+    std::string message;
+    char        chunk[1024];
+    pollfd      pollFD{_socketFD, POLLIN, 0};
 
-    if (bytesRead == -1) {
-        throw Error("Failed to read from socket");
+    while (true) {
+        if (poll(&pollFD, 1, 1000) <= 0)
+            break;
+        const ssize_t bytesRead = recv(_socketFD, chunk, sizeof(chunk) - 1, MSG_DONTWAIT);
+        if (bytesRead < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+                continue;
+            throw Error("Failed to read from socket");
+        }
+        if (bytesRead == 0)
+            break;
+        chunk[bytesRead] = '\0';
+        message.append(chunk, static_cast<std::size_t>(bytesRead));
     }
-    buffer[bytesRead] = '\0';
-    buffer.resize(bytesRead + 1);
-    return std::string(buffer);
+    return message;
 }
 
 bool Socket::acceptConnection() {

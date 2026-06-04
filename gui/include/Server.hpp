@@ -16,42 +16,34 @@ class Server {
     Server(Socket& socket) : _socket(socket) {};
     ~Server();
     void                      getInfo();
-    std::pair<size_t, size_t> getMapSize() const {
-        return _mapSize;
-    }
-    int getTimeReference() const {
-        return _timeReference;
-    }
-    const std::vector<Tile>& getTiles() const {
-        return _tiles;
-    }
-    size_t getNbPlayers() const {
-        return _nbPlayers;
-    }
-    size_t getNbDeath() const {
-        return _nbDeath;
-    }
-    size_t getTotalFood() const {
-        return _totalFood;
-    }
-    size_t getTotalLinemate() const {
-        return _totalLinemate;
-    }
-    size_t getTotalDeraumere() const {
-        return _totalDeraumere;
-    }
-    size_t getTotalSibur() const {
-        return _totalSibur;
-    }
-    size_t getTotalMendiane() const {
-        return _totalMendiane;
-    }
-    size_t getTotalPhiras() const {
-        return _totalPhiras;
-    }
-    size_t getTotalThystame() const {
-        return _totalThystame;
-    }
+    void                      updateTiles();
+    void                      updateRessources();
+    std::pair<size_t, size_t> getMapSize() const;
+    int                       getTimeReference() const;
+    const std::vector<Tile>&  getTiles() const;
+    size_t                    getNbPlayers() const;
+    size_t                    getNbDeath() const;
+    size_t                    getTotalFood() const;
+    size_t                    getTotalLinemate() const;
+    size_t                    getTotalDeraumere() const;
+    size_t                    getTotalSibur() const;
+    size_t                    getTotalMendiane() const;
+    size_t                    getTotalPhiras() const;
+    size_t                    getTotalThystame() const;
+    void                      incrementFood(int i);
+    void                      incrementLinemate(int i);
+    void                      incrementDeraumere(int i);
+    void                      incrementSibur(int i);
+    void                      incrementMendiane(int i);
+    void                      incrementPhiras(int i);
+    void                      incrementThystame(int i);
+    void                      resetFood(int i);
+    void                      resetLinemate(int i);
+    void                      resetDeraumere(int i);
+    void                      resetSibur(int i);
+    void                      resetMendiane(int i);
+    void                      resetPhiras(int i);
+    void                      resetThystame(int i);
 
   private:
     Socket&                   _socket;
