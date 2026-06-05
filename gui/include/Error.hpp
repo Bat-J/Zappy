@@ -9,9 +9,10 @@
 
 #include <string>
 #include <stdexcept>
-
-class Error : public std::runtime_error {
-  public:
-    Error(std::string message);
-    ~Error() = default;
-};
+namespace zappy {
+    class Error : public std::runtime_error {
+      public:
+        Error(std::string message);
+        ~Error() = default;
+    };
+}

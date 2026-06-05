@@ -9,8 +9,10 @@
 
 #include <vector>
 
-class Tile {
-  public:
-    std::vector<int>    Ressources;
-    std::pair<int, int> Position;
-};
+namespace zappy {
+    class Tile {
+      public:
+        std::vector<int>    Ressources;
+        std::pair<int, int> Position;
+    };
+}

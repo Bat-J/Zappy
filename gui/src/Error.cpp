@@ -7,4 +7,6 @@
 
 #include "../include/Error.hpp"
 
-Error::Error(std::string message) : std::runtime_error(message) {}
+namespace zappy {
+    Error::Error(std::string message) : std::runtime_error(message) {}
+}

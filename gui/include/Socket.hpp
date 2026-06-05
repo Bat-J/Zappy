@@ -10,30 +10,33 @@
 #include <string>
 #include <cstdint>
 
-class Socket {
-  public:
-    Socket();
-    ~Socket();
-    void        createSocket(uint16_t port);
-    void        createSocket();
-    void        createSocket(Socket& socket);
-    void        closeSocket();
-    void        writeToSocket(const std::string& message);
-    std::string readFromSocket();
-    bool        acceptConnection();
-    void        listenForConnections(int maxConnections);
-    bool        connectTo(const uint32_t ipAddress, uint16_t port);
-    std::string getLocalIP() const;
-    bool        CheckIfOpen() const;
-    int         getSocket() const {
-        return _socketFD;
-    }
-    int getPort() const {
-        return _port;
-    }
+namespace zappy {
 
-  protected:
-  private:
-    int      _socketFD;
-    uint16_t _port;
-};
+    class Socket {
+      public:
+        Socket();
+        ~Socket();
+        void        createSocket(uint16_t port);
+        void        createSocket();
+        void        createSocket(Socket& socket);
+        void        closeSocket();
+        void        writeToSocket(const std::string& message);
+        std::string readFromSocket();
+        bool        acceptConnection();
+        void        listenForConnections(int maxConnections);
+        bool        connectTo(const uint32_t ipAddress, uint16_t port);
+        std::string getLocalIP() const;
+        bool        CheckIfOpen() const;
+        int         getSocket() const {
+            return _socketFD;
+        }
+        int getPort() const {
+            return _port;
+        }
+
+      protected:
+      private:
+        int      _socketFD;
+        uint16_t _port;
+    };
+}
