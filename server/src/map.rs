@@ -119,19 +119,18 @@ pub fn bct_reply(x: u32, y: u32, map: &Vec<Vec<Tile>>, config: &Config) -> Optio
     Some(string)
 }
 
-pub fn tna_reply(team: &str) -> String {
-    let mut string = String::with_capacity(5 + team.len());
-    string.push_str("tna ");
-    string.push_str(team);
-    string.push('\n');
+pub fn tna_reply(config: &Config) -> String {
+    let mut string = String::new();
+    for team in config.teams.iter() {
+        string.push_str("tna ");
+        string.push_str(team);
+        string.push('\n');
+    }
     string
 }
 
-pub fn create_map_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
+pub fn mct_reply(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
     let mut map_string = String::new();
-
-    map_string.push_str(&msz_reply(config));
-    map_string.push_str(&sgt_reply(config));
     for y in 0..config.height {
         for x in 0..config.width {
             match bct_reply(x, y, map, config) {
@@ -140,8 +139,18 @@ pub fn create_map_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String
             }
         }
     }
-    for team in config.teams.iter() {
-        map_string.push_str(team);
+    Some(map_string)
+}
+
+pub fn create_map_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
+    let mut map_string = String::new();
+
+    map_string.push_str(&msz_reply(config));
+    map_string.push_str(&sgt_reply(config));
+    match mct_reply(config, map) {
+        Some(string) => map_string.push_str(&string),
+        None => return None,
     }
+    map_string.push_str(&tna_reply(config));
     Some(map_string)
 }
