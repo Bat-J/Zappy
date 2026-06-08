@@ -1,5 +1,6 @@
 import helpers.networking as networking
 from enum import Enum
+from helpers.can_cast import can_cast
 
 
 class object_type(Enum):
@@ -33,11 +34,41 @@ class action_type(Enum):
     start_incantation = "Incantation"
 
 
-class direction(Enum):
+class cardina_direction(Enum):
     north = 1
     east = 2
     south = 3
     west = 4
+
+    def turn_right(self):
+        return cardina_direction((self.value % 4) + 1)
+
+    def turn_left(self):
+        return cardina_direction((self.value - 2) % 4 + 1)
+
+
+class direction(Enum):
+    none = 0
+    north = 1
+    northwest = 2
+    west = 3
+    southwest = 4
+    south = 5
+    southeast = 6
+    east = 7
+    northeast = 8
+
+    def add_cardinal_direction(self, cardinal_direction: cardina_direction):
+        return direction((self.value + cardinal_direction.value * 2 - 1) % 8 + 1)
+
+    def sub_cardinal_direction(self, cardinal_direction: cardina_direction):
+        return direction((self.value - cardinal_direction.value * 2 - 1) % 8 + 1)
+
+
+def parse_direction(direction_value: int) -> direction:
+    if direction_value == 0:
+        return direction.none
+    return direction((direction_value - 1) % 8 + 1)
 
 
 class AI_server_interface:
@@ -52,7 +83,8 @@ class AI_server_interface:
         self.level = 1
         self.pending_response_actions = []
         self.completed_actions = []
-        self.relative_direction = direction.north
+        self.message_history = []
+        self.relative_direction = cardina_direction.north
         self.relative_x_position = 0
         self.relative_y_position = 0
 
@@ -166,6 +198,7 @@ class AI_server_interface:
         if message is None:
             pass
         message = message.strip()
+
         if message == "dead":
             self.alive = False
             pass
@@ -176,21 +209,21 @@ class AI_server_interface:
                     {"action_type": completed_action, "success": True}
                 )
                 if completed_action == action_type.turn_right:
-                    self.relative_direction = direction(
+                    self.relative_direction = cardina_direction(
                         (self.relative_direction.value % 4) + 1
                     )
                 elif completed_action == action_type.turn_left:
-                    self.relative_direction = direction(
+                    self.relative_direction = cardina_direction(
                         (self.relative_direction.value - 2) % 4 + 1
                     )
                 elif completed_action == action_type.forward:
-                    if self.relative_direction == direction.north:
+                    if self.relative_direction == cardina_direction.north:
                         self.relative_x_position += 1
-                    elif self.relative_direction == direction.east:
+                    elif self.relative_direction == cardina_direction.east:
                         self.relative_y_position += 1
-                    elif self.relative_direction == direction.south:
+                    elif self.relative_direction == cardina_direction.south:
                         self.relative_x_position -= 1
-                    elif self.relative_direction == direction.west:
+                    elif self.relative_direction == cardina_direction.west:
                         self.relative_y_position -= 1
             pass
         elif message == "ko":
@@ -220,7 +253,7 @@ class AI_server_interface:
                     }
                 )
             pass
-        elif int(message) >= 0:
+        elif can_cast(str, int) and int(message) >= 0:
             completed_action = self.pending_response_actions.pop(0)
             self.completed_actions.append(
                 {
@@ -240,6 +273,14 @@ class AI_server_interface:
                     "action_type": action_type.start_incantation,
                     "success": True,
                     "response": self.level,
+                }
+            )
+            pass
+        elif message.startswith("message "):
+            self.message_history.append(
+                {
+                    "text": message[11:],
+                    "direction": parse_direction(int(message[8:9])),
                 }
             )
             pass
