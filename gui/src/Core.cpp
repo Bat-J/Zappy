@@ -156,7 +156,7 @@ namespace zappy {
                 const int        tileIndex = y * mapWidth + x;
                 const int        textSize  = std::max(8, std::min(14, tileSizeClamped / 4));
                 const Tile&      tile      = (tileIndex < static_cast<int>(tiles.size())) ? tiles[tileIndex] : fallbackTile;
-                std::vector<int> resources = tile.Ressources;
+                std::vector<int> resources = tile.getRessources();
                 resources.resize(7, 0);
                 raylib::Rectangle rect(rectX, rectY, tileSizeClamped - 1, tileSizeClamped - 1);
                 rect.Draw(_TileColor);

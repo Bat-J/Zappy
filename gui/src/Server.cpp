@@ -248,10 +248,11 @@ namespace zappy {
             if (_tokens[i] == "bct" && i + 9 < _tokens.size()) {
                 const size_t tileIndex = _tiles.size();
                 _tiles.emplace_back();
-                _tiles[tileIndex].Position.first  = std::stoi(_tokens[i + 1]);
-                _tiles[tileIndex].Position.second = std::stoi(_tokens[i + 2]);
+                int x = std::stoi(_tokens[i + 1]);
+                int y = std::stoi(_tokens[i + 2]);
+                _tiles[tileIndex].setPosition(x, y);
                 for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    _tiles[tileIndex].Ressources.push_back(std::stoi(_tokens[i + resourceIndex]));
+                    _tiles[tileIndex].getRessources().push_back(std::stoi(_tokens[i + resourceIndex]));
                 }
                 i += 9;
             }
@@ -268,7 +269,7 @@ namespace zappy {
         resetThystame(0);
 
         for (size_t i = 0; i < getTiles().size(); ++i) {
-            const auto& resources = getTiles()[i].Ressources;
+            const auto& resources = getTiles()[i].getRessources();
             for (size_t j = 0; j < resources.size() && j < 7; ++j) {
                 switch (j) {
                     case 0: incrementFood(resources[j]); break;
@@ -281,6 +282,7 @@ namespace zappy {
                     default: break;
                 }
             }
+            _tiles[i].setRessources(resources);
         }
     }
 
@@ -307,10 +309,11 @@ namespace zappy {
             } else if (_tokens[i] == "bct" && i + 9 < _tokens.size()) {
                 const size_t tileIndex = _tiles.size();
                 _tiles.emplace_back();
-                _tiles[tileIndex].Position.first  = std::stoi(_tokens[i + 1]);
-                _tiles[tileIndex].Position.second = std::stoi(_tokens[i + 2]);
+                int x = std::stoi(_tokens[i + 1]);
+                int y = std::stoi(_tokens[i + 2]);
+                _tiles[tileIndex].setPosition(x, y);
                 for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    _tiles[tileIndex].Ressources.push_back(std::stoi(_tokens[i + resourceIndex]));
+                    _tiles[tileIndex].getRessources().push_back(std::stoi(_tokens[i + resourceIndex]));
                 }
                 i += 9;
             }
