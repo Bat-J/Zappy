@@ -101,21 +101,22 @@ namespace zappy {
         const int   fontSize = 22;
         const float spacing  = 2.0f;
 
-        _font.DrawText("Players: " + std::to_string(server.getNbPlayers()), x, y, fontSize, spacing, _TextColor);
-        _font.DrawText("Deaths: " + std::to_string(server.getNbDeath()), x, y + 30, fontSize, spacing, _TextColor);
-        _font.DrawText("Time ref.: " + std::to_string(server.getTimeReference()), x, y + 60, fontSize, spacing, _TextColor);
-        _font.DrawText("Map size: " + std::to_string(server.getMapSize().first) + "x" + std::to_string(server.getMapSize().second), x, y + 90, fontSize, spacing, _TextColor);
-        _font.DrawText("Food: " + std::to_string(server.getTotalFood()), x, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Linemate: " + std::to_string(server.getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Deraumere: " + std::to_string(server.getTotalDeraumere()), x + 360, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Sibur: " + std::to_string(server.getTotalSibur()), x, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Mendiane: " + std::to_string(server.getTotalMendiane()), x + 180, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Phiras: " + std::to_string(server.getTotalPhiras()), x + 360, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Thystame: " + std::to_string(server.getTotalThystame()), x, y + 180, fontSize, spacing, _TextColor);
+        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y, fontSize, spacing, _TextColor);
+        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x, y + 30, fontSize, spacing, _TextColor);
+        _font.DrawText("Time ref.: " + std::to_string(server.world().getTimeReference()), x, y + 60, fontSize, spacing, _TextColor);
+        _font.DrawText("Map size: " + std::to_string(server.world().getMapSize().first) + "x" + std::to_string(server.world().getMapSize().second), x, y + 90, fontSize, spacing,
+                       _TextColor);
+        _font.DrawText("Food: " + std::to_string(server.resources().getTotalFood()), x, y + 120, fontSize, spacing, _TextColor);
+        _font.DrawText("Linemate: " + std::to_string(server.resources().getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _TextColor);
+        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 360, y + 120, fontSize, spacing, _TextColor);
+        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x, y + 150, fontSize, spacing, _TextColor);
+        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 180, y + 150, fontSize, spacing, _TextColor);
+        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x + 360, y + 150, fontSize, spacing, _TextColor);
+        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x, y + 180, fontSize, spacing, _TextColor);
     }
 
     void Core::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
-        const auto& players = server.getPlayer();
+        const auto& players = server.players().getPlayer();
 
         for (const auto& player : players) {
             if (!player.getIsAlive())
@@ -135,7 +136,7 @@ namespace zappy {
     }
 
     void Core::displayServerElements(const Server& server) {
-        const auto  mapSize         = server.getMapSize();
+        const auto  mapSize         = server.world().getMapSize();
         const int   mapWidth        = std::max(1, (int)mapSize.first);
         const int   mapHeight       = std::max(1, (int)mapSize.second);
         const int   hudHeight       = 100;
@@ -147,7 +148,7 @@ namespace zappy {
         const int   offsetX         = padding;
         const int   offsetY         = hudHeight + padding;
 
-        const auto& tiles = server.getTiles();
+        const auto& tiles = server.world().getTiles();
         const Tile  fallbackTile{};
         for (int y = 0; y < mapHeight; ++y) {
             for (int x = 0; x < mapWidth; ++x) {
@@ -192,7 +193,7 @@ namespace zappy {
         while (!_window.ShouldClose()) {
             const auto now        = std::chrono::steady_clock::now();
             const auto elapsedSec = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate).count();
-            const auto delaySec   = server.getTimeReference();
+            const auto delaySec   = server.world().getTimeReference();
 
             if (elapsedSec >= delaySec && !updateFuture.valid()) {
                 updateFuture = std::async(std::launch::async, [&server]() {
