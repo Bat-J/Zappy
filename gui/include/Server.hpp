@@ -26,7 +26,9 @@ namespace zappy {
         void                      handleServerUpdate();
         void                      getAllAlive();
         void                      checkAlive(int pNumber);
+        void                      updatePlayerpos();
         std::pair<size_t, size_t> getMapSize() const;
+        std::vector<Player>       getPlayer() const;
         int                       getTimeReference() const;
         const std::vector<Tile>&  getTiles() const;
         size_t                    getNbPlayers() const;
@@ -54,19 +56,22 @@ namespace zappy {
         void                      resetThystame(int i);
 
       private:
-        Socket&                   _socket;
-        std::pair<size_t, size_t> _mapSize;
-        int                       _timeReference;
-        std::vector<Tile>         _tiles;
-        std::vector<Player>       _Players;
-        size_t                    _nbPlayers      = 0;
-        size_t                    _nbDeath        = 0;
-        size_t                    _totalFood      = 0;
-        size_t                    _totalLinemate  = 0;
-        size_t                    _totalDeraumere = 0;
-        size_t                    _totalSibur     = 0;
-        size_t                    _totalMendiane  = 0;
-        size_t                    _totalPhiras    = 0;
-        size_t                    _totalThystame  = 0;
+        static std::vector<std::string> splitWords(const std::string& input);
+        static bool                     parsePlayerPositionLine(const std::vector<std::string>& words, Player& player);
+
+        Socket&                         _socket;
+        std::pair<size_t, size_t>       _mapSize;
+        int                             _timeReference;
+        std::vector<Tile>               _tiles;
+        std::vector<Player>             _Players;
+        size_t                          _nbPlayers      = 0;
+        size_t                          _nbDeath        = 0;
+        size_t                          _totalFood      = 0;
+        size_t                          _totalLinemate  = 0;
+        size_t                          _totalDeraumere = 0;
+        size_t                          _totalSibur     = 0;
+        size_t                          _totalMendiane  = 0;
+        size_t                          _totalPhiras    = 0;
+        size_t                          _totalThystame  = 0;
     };
 }

@@ -22,6 +22,7 @@ namespace zappy {
         void handleEvents();
         void displayBasicGui();
         void displayServerElements(const Server& server);
+        void displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped);
         void setupColors();
         void displayStats(const Server& server);
 

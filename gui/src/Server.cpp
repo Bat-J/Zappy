@@ -13,12 +13,38 @@
 #include <vector>
 
 namespace zappy {
+
+    std::vector<std::string> Server::splitWords(const std::string& input) {
+        std::vector<std::string> words;
+        std::stringstream        stream(input);
+        std::string              word;
+
+        while (stream >> word) {
+            words.push_back(word);
+        }
+        return words;
+    }
+
+    bool Server::parsePlayerPositionLine(const std::vector<std::string>& words, Player& player) {
+        if (words.size() < 5 || (words[0] != "ppo" && words[0] != "pnw")) {
+            return false;
+        }
+
+        player._pos.first.first  = std::atoi(words[2].c_str());
+        player._pos.first.second = std::atoi(words[3].c_str());
+        player._pos.second       = static_cast<Orientation>(std::atoi(words[4].c_str()));
+        return true;
+    }
+
     Server::~Server() {}
 
     std::pair<size_t, size_t> Server::getMapSize() const {
         return _mapSize;
     }
 
+    std::vector<Player> Server::getPlayer() const {
+        return _Players;
+    }
     int Server::getTimeReference() const {
         return _timeReference;
     }
@@ -131,25 +157,41 @@ namespace zappy {
 
     void Server::checkAlive(int pNumber) {
         _socket.writeToSocket("plv #" + std::to_string(pNumber) + "\n");
-        std::string              resp = _socket.readFromSocket();
-        std::vector<std::string> words;
-        std::stringstream        lineStream(resp);
-        std::string              word;
+        std::string                    resp  = _socket.readFromSocket();
+        const std::vector<std::string> words = splitWords(resp);
 
-        while (lineStream >> word) {
-            words.push_back(word);
-        }
-        for (int i = 0; i < words.size(); i++) {
-            if (i + 1 < words.size()) {
-                if (words[i].compare("plv") == 0 && words[i + 1].compare("#" + std::to_string(pNumber)) > 0) {
-                    _Players[pNumber].isAlive = true;
-                    _Players[pNumber]._lvl    = std::stoi(words[i + 2]);
-                    break;
-                }
-                _Players[pNumber].isAlive = false;
+        _Players[pNumber].isAlive = false;
+        for (std::size_t i = 0; i + 2 < words.size(); ++i) {
+            if (words[i] == "plv" && words[i + 1] == "#" + std::to_string(pNumber)) {
+                _Players[pNumber].isAlive = true;
+                _Players[pNumber]._lvl    = std::stoi(words[i + 2]);
+                break;
             }
         }
         getAllAlive();
+    }
+
+    void Server::updatePlayerpos() {
+        for (std::size_t i = 0; i < _Players.size(); ++i) {
+            if (!_Players[i].isAlive) {
+                continue;
+            }
+
+            _socket.writeToSocket("ppo #" + std::to_string(i) + "\n");
+            const std::string resp = _socket.readFromSocket();
+            std::stringstream stream(resp);
+            std::string       token;
+
+            while (std::getline(stream, token)) {
+                if (token.empty()) {
+                    continue;
+                }
+                const auto words = splitWords(token);
+                if (words.size() >= 5 && words[1] == "#" + std::to_string(i) && parsePlayerPositionLine(words, _Players[i])) {
+                    _Players[i].isAlive = true;
+                }
+            }
+        }
     }
 
     void Server::handleServerUpdate() {
@@ -163,18 +205,14 @@ namespace zappy {
             if (!line.empty()) {
                 lines.push_back(line);
 
-                std::vector<std::string> words;
-                std::stringstream        lineStream(line);
-                std::string              word;
-
-                while (lineStream >> word) {
-                    words.push_back(word);
-                }
-                wordsByLine.push_back(words);
+                wordsByLine.push_back(splitWords(line));
             }
         }
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
-            if (!wordsByLine[i].empty() && wordsByLine[i][0] == "ppo" && wordsByLine[i].size() > 4) {
+            if (wordsByLine[i].empty()) {
+                continue;
+            }
+            if ((wordsByLine[i][0] == "ppo" || wordsByLine[i][0] == "pnw") && wordsByLine[i].size() > 4) {
                 const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 int       oldSize = _Players.size();
                 if (static_cast<std::size_t>(number) >= _Players.size()) {
@@ -182,12 +220,16 @@ namespace zappy {
                     for (; oldSize < _Players.size(); oldSize++)
                         checkAlive(oldSize);
                 }
-                _Players[number]._pos.first.first  = std::atoi(wordsByLine[i][2].c_str());
-                _Players[number]._pos.first.second = std::atoi(wordsByLine[i][3].c_str());
-                _Players[number]._pos.second       = static_cast<Orientation>(std::atoi(wordsByLine[i][4].c_str()));
+                parsePlayerPositionLine(wordsByLine[i], _Players[number]);
+                _Players[number].isAlive = true;
+            }
+            if (wordsByLine[i][0] == "pdi") {
+                const int number         = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                _Players[number].isAlive = false;
             }
         }
         getAllAlive();
+        updatePlayerpos();
     }
 
     void Server::updateTiles() {

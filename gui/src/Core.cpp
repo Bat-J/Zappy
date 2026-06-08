@@ -6,6 +6,7 @@
 */
 
 #include "../include/Core.hpp"
+#include "../include/Circle.hpp"
 #include <Keyboard.hpp>
 #include <algorithm>
 #include <chrono>
@@ -113,6 +114,26 @@ namespace zappy {
         _font.DrawText("Thystame: " + std::to_string(server.getTotalThystame()), x, y + 180, fontSize, spacing, _TextColor);
     }
 
+    void Core::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
+        const auto& players = server.getPlayer();
+
+        for (const auto& player : players) {
+            if (!player.isAlive)
+                continue;
+            const int x = player._pos.first.first;
+            const int y = player._pos.first.second;
+            if (x < 0 || y < 0)
+                continue;
+
+            const int      playerX = offsetX + x * tileSizeClamped + tileSizeClamped / 2;
+            const int      playerY = offsetY + y * tileSizeClamped + tileSizeClamped / 2;
+
+            raylib::Circle circle;
+            circle.CircleDraw(playerX, playerY, std::max(4, tileSizeClamped / 6), RED);
+            _font.DrawText("P" + std::to_string(player._lvl), playerX - 6, playerY - 8, 12, 1.0f, BLACK);
+        }
+    }
+
     void Core::displayServerElements(const Server& server) {
         const auto  mapSize         = server.getMapSize();
         const int   mapWidth        = std::max(1, (int)mapSize.first);
@@ -154,6 +175,7 @@ namespace zappy {
                 }
             }
         }
+        displayPlayers(server, offsetX, offsetY, tileSizeClamped);
         _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _TextColor);
         displayStats(server);
     }
@@ -170,7 +192,7 @@ namespace zappy {
         while (!_window.ShouldClose()) {
             const auto now        = std::chrono::steady_clock::now();
             const auto elapsedSec = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate).count();
-            const auto delaySec   = 4000;
+            const auto delaySec   = server.getTimeReference();
 
             if (elapsedSec >= delaySec && !updateFuture.valid()) {
                 updateFuture = std::async(std::launch::async, [&server]() {
