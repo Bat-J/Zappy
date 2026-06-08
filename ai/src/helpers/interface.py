@@ -29,6 +29,7 @@ class action_type(Enum):
     connect_nbr = "Connect_nbr"
     fork = "Fork"
     eject = "Eject"
+    was_ejected = "Was_ejected"
     take = "Take"
     set_object_down = "Set"
     start_incantation = "Incantation"
@@ -280,7 +281,40 @@ class AI_server_interface:
             self.message_history.append(
                 {
                     "text": message[11:],
-                    "direction": parse_direction(int(message[8:9])),
+                    "direction": parse_direction(
+                        int(message[8:9])
+                    ).add_cardinal_direction(self.relative_direction),
+                }
+            )
+            pass
+        elif message.startswith("eject: "):
+            direction = parse_direction(int(message[7:])).add_cardinal_direction(
+                self.relative_direction
+            )
+            if direction == direction.north:
+                self.relative_x_position -= 1
+            elif direction == direction.northwest:
+                self.relative_x_position -= 1
+                self.relative_y_position -= 1
+            elif direction == direction.west:
+                self.relative_y_position -= 1
+            elif direction == direction.southwest:
+                self.relative_x_position += 1
+                self.relative_y_position -= 1
+            elif direction == direction.south:
+                self.relative_x_position += 1
+            elif direction == direction.southeast:
+                self.relative_x_position += 1
+                self.relative_y_position += 1
+            elif direction == direction.east:
+                self.relative_y_position += 1
+            elif direction == direction.northeast:
+                self.relative_x_position -= 1
+                self.relative_y_position += 1
+            self.completed_actions.append(
+                {
+                    "action_type": action_type.was_ejected,
+                    "direction": direction,
                 }
             )
             pass
