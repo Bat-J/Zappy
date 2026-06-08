@@ -118,10 +118,10 @@ namespace zappy {
         const auto& players = server.getPlayer();
 
         for (const auto& player : players) {
-            if (!player.isAlive)
+            if (!player.getIsAlive())
                 continue;
-            const int x = player._pos.first.first;
-            const int y = player._pos.first.second;
+            const int x = player.getPos().first.first;
+            const int y = player.getPos().first.second;
             if (x < 0 || y < 0)
                 continue;
 
@@ -130,7 +130,7 @@ namespace zappy {
 
             raylib::Circle circle;
             circle.CircleDraw(playerX, playerY, std::max(4, tileSizeClamped / 6), RED);
-            _font.DrawText("P" + std::to_string(player._lvl), playerX - 6, playerY - 8, 12, 1.0f, BLACK);
+            _font.DrawText("P" + std::to_string(player.getLevel()), playerX - 6, playerY - 8, 12, 1.0f, BLACK);
         }
     }
 

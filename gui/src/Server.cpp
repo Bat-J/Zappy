@@ -29,10 +29,12 @@ namespace zappy {
         if (words.size() < 5 || (words[0] != "ppo" && words[0] != "pnw")) {
             return false;
         }
+        std::pair<std::pair<int, int>, Orientation> pos;
 
-        player._pos.first.first  = std::atoi(words[2].c_str());
-        player._pos.first.second = std::atoi(words[3].c_str());
-        player._pos.second       = static_cast<Orientation>(std::atoi(words[4].c_str()));
+        pos.first.first  = std::atoi(words[2].c_str());
+        pos.first.second = std::atoi(words[3].c_str());
+        pos.second       = static_cast<Orientation>(std::atoi(words[4].c_str()));
+        player.setPos(pos);
         return true;
     }
 
@@ -145,7 +147,7 @@ namespace zappy {
         int nbAlive  = 0;
         int nbDeaths = 0;
         for (int i = 0; i < _Players.size(); i++) {
-            if (_Players[i].isAlive)
+            if (_Players[i].getIsAlive())
                 nbAlive++;
             else {
                 nbDeaths++;
@@ -160,11 +162,11 @@ namespace zappy {
         std::string                    resp  = _socket.readFromSocket();
         const std::vector<std::string> words = splitWords(resp);
 
-        _Players[pNumber].isAlive = false;
+        _Players[pNumber].setIsAlive(false);
         for (std::size_t i = 0; i + 2 < words.size(); ++i) {
             if (words[i] == "plv" && words[i + 1] == "#" + std::to_string(pNumber)) {
-                _Players[pNumber].isAlive = true;
-                _Players[pNumber]._lvl    = std::stoi(words[i + 2]);
+                _Players[pNumber].setIsAlive(true);
+                _Players[pNumber].setLevel(std::stoi(words[i + 2]));
                 break;
             }
         }
@@ -173,7 +175,7 @@ namespace zappy {
 
     void Server::updatePlayerpos() {
         for (std::size_t i = 0; i < _Players.size(); ++i) {
-            if (!_Players[i].isAlive) {
+            if (!_Players[i].getIsAlive()) {
                 continue;
             }
 
@@ -188,7 +190,7 @@ namespace zappy {
                 }
                 const auto words = splitWords(token);
                 if (words.size() >= 5 && words[1] == "#" + std::to_string(i) && parsePlayerPositionLine(words, _Players[i])) {
-                    _Players[i].isAlive = true;
+                    _Players[i].setIsAlive(true);
                 }
             }
         }
@@ -221,11 +223,11 @@ namespace zappy {
                         checkAlive(oldSize);
                 }
                 parsePlayerPositionLine(wordsByLine[i], _Players[number]);
-                _Players[number].isAlive = true;
+                _Players[number].setIsAlive(true);
             }
             if (wordsByLine[i][0] == "pdi") {
-                const int number         = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                _Players[number].isAlive = false;
+                const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                _Players[number].setIsAlive(false);
             }
         }
         getAllAlive();
