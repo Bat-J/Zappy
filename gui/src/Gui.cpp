@@ -19,12 +19,12 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: ./zappy_gui -p port -h machine\n";
         return 84;
     }
-    Socket socket;
+    zappy::Socket socket;
     socket.createSocket();
     if (!socket.connectTo(inet_addr(argv[4]), std::stoi(argv[2]))) {
         std::cerr << "Failed to connect to server\n";
         return 84;
     }
-    Core core;
+    zappy::Core core;
     return core.Run(socket);
 }
