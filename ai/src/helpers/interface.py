@@ -34,17 +34,17 @@ class action_type(Enum):
     start_incantation = "Incantation"
 
 
-class cardina_direction(Enum):
+class cardinal_direction(Enum):
     north = 1
     east = 2
     south = 3
     west = 4
 
     def turn_right(self):
-        return cardina_direction((self.value % 4) + 1)
+        return cardinal_direction((self.value % 4) + 1)
 
     def turn_left(self):
-        return cardina_direction((self.value - 2) % 4 + 1)
+        return cardinal_direction((self.value - 2) % 4 + 1)
 
 
 class direction(Enum):
@@ -58,10 +58,10 @@ class direction(Enum):
     east = 7
     northeast = 8
 
-    def add_cardinal_direction(self, cardinal_direction: cardina_direction):
+    def add_cardinal_direction(self, cardinal_direction: cardinal_direction):
         return direction((self.value + cardinal_direction.value * 2 - 1) % 8 + 1)
 
-    def sub_cardinal_direction(self, cardinal_direction: cardina_direction):
+    def sub_cardinal_direction(self, cardinal_direction: cardinal_direction):
         return direction((self.value - cardinal_direction.value * 2 - 1) % 8 + 1)
 
 
@@ -84,7 +84,7 @@ class AI_server_interface:
         self.pending_response_actions = []
         self.completed_actions = []
         self.message_history = []
-        self.relative_direction = cardina_direction.north
+        self.relative_direction = cardinal_direction.north
         self.relative_x_position = 0
         self.relative_y_position = 0
 
@@ -209,21 +209,21 @@ class AI_server_interface:
                     {"action_type": completed_action, "success": True}
                 )
                 if completed_action == action_type.turn_right:
-                    self.relative_direction = cardina_direction(
+                    self.relative_direction = cardinal_direction(
                         (self.relative_direction.value % 4) + 1
                     )
                 elif completed_action == action_type.turn_left:
-                    self.relative_direction = cardina_direction(
+                    self.relative_direction = cardinal_direction(
                         (self.relative_direction.value - 2) % 4 + 1
                     )
                 elif completed_action == action_type.forward:
-                    if self.relative_direction == cardina_direction.north:
+                    if self.relative_direction == cardinal_direction.north:
                         self.relative_x_position += 1
-                    elif self.relative_direction == cardina_direction.east:
+                    elif self.relative_direction == cardinal_direction.east:
                         self.relative_y_position += 1
-                    elif self.relative_direction == cardina_direction.south:
+                    elif self.relative_direction == cardinal_direction.south:
                         self.relative_x_position -= 1
-                    elif self.relative_direction == cardina_direction.west:
+                    elif self.relative_direction == cardinal_direction.west:
                         self.relative_y_position -= 1
             pass
         elif message == "ko":
