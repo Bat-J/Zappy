@@ -1,8 +1,8 @@
 mod args;
 mod command;
+mod map;
 mod server;
 mod time_manager;
-mod map;
 
 fn main() -> std::io::Result<()> {
     let config = args::parse().unwrap_or_else(|e| {
