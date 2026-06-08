@@ -30,7 +30,6 @@ namespace zappy {
             return false;
         }
         std::pair<std::pair<int, int>, Orientation> pos;
-
         pos.first.first  = std::atoi(words[2].c_str());
         pos.first.second = std::atoi(words[3].c_str());
         pos.second       = static_cast<Orientation>(std::atoi(words[4].c_str()));
@@ -253,9 +252,11 @@ namespace zappy {
                 int x = std::stoi(_tokens[i + 1]);
                 int y = std::stoi(_tokens[i + 2]);
                 _tiles[tileIndex].setPosition(x, y);
+                std::vector<int> resources;
                 for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    _tiles[tileIndex].getRessources().push_back(std::stoi(_tokens[i + resourceIndex]));
+                    resources.push_back(std::stoi(_tokens[i + resourceIndex]));
                 }
+                _tiles[tileIndex].setRessources(resources);
                 i += 9;
             }
         }
@@ -314,9 +315,11 @@ namespace zappy {
                 int x = std::stoi(_tokens[i + 1]);
                 int y = std::stoi(_tokens[i + 2]);
                 _tiles[tileIndex].setPosition(x, y);
+                std::vector<int> resources;
                 for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    _tiles[tileIndex].getRessources().push_back(std::stoi(_tokens[i + resourceIndex]));
+                    resources.push_back(std::stoi(_tokens[i + resourceIndex]));
                 }
+                _tiles[tileIndex].setRessources(resources);
                 i += 9;
             }
         }
