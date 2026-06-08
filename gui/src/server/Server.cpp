@@ -5,8 +5,8 @@
 ** Server
 */
 
-#include "../include/Server.hpp"
-#include "../include/ServerParser.hpp"
+#include "Server.hpp"
+#include "ServerParser.hpp"
 #include <cstdlib>
 #include <sstream>
 #include <string>

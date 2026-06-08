@@ -5,9 +5,9 @@
 ** ServerParser
 */
 
-#include "../include/ServerParser.hpp"
-
+#include "ServerParser.hpp"
 #include <sstream>
+
 namespace zappy {
     std::vector<std::string> ServerParser::splitWords(const std::string& input) {
         std::vector<std::string> words;

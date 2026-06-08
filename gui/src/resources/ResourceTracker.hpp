@@ -9,7 +9,7 @@
 
 #include <sys/types.h>
 #include <vector>
-#include "../include/Tile.hpp"
+#include "../world/Tile.hpp"
 namespace zappy {
     class ResourceTracker {
       public:

@@ -5,8 +5,8 @@
 ** Core
 */
 
-#include "../include/Core.hpp"
-#include "../include/Circle.hpp"
+#include "Core.hpp"
+#include "Circle.hpp"
 #include <Keyboard.hpp>
 #include <algorithm>
 #include <chrono>

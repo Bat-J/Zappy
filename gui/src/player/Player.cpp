@@ -5,7 +5,7 @@
 ** Player
 */
 
-#include "../include/Player.hpp"
+#include "Player.hpp"
 
 namespace zappy {
 

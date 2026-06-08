@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "Socket.hpp"
-#include "PlayerManager.hpp"
-#include "ResourceTracker.hpp"
-#include "WorldState.hpp"
+#include "../network/Socket.hpp"
+#include "../player/PlayerManager.hpp"
+#include "../resources/ResourceTracker.hpp"
+#include "../world/WorldState.hpp"
 
 namespace zappy {
     class Server {

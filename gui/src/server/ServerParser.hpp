@@ -9,7 +9,7 @@
 
 #include <string>
 #include <vector>
-#include "Player.hpp"
+#include "../player/Player.hpp"
 
 namespace zappy {
     class ServerParser {

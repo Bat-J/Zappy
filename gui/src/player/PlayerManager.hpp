@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include <string>
 #include <vector>
 #include "Player.hpp"
-#include "Socket.hpp"
+#include "../network/Socket.hpp"
 
 namespace zappy {
     class PlayerManager {

@@ -5,8 +5,8 @@
 ** PlayerManager
 */
 
-#include "../include/PlayerManager.hpp"
-#include "../include/ServerParser.hpp"
+#include "PlayerManager.hpp"
+#include "../server/ServerParser.hpp"
 #include <sstream>
 
 namespace zappy {

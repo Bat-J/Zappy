@@ -5,7 +5,7 @@
 ** ResourceTracker
 */
 
-#include "../include/ResourceTracker.hpp"
+#include "ResourceTracker.hpp"
 
 namespace zappy {
     void ResourceTracker::incrementFood(int i) {

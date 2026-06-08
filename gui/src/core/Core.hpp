@@ -10,8 +10,8 @@
 #include <Font.hpp>
 #include <cstddef>
 #include <raylib-cpp.hpp>
-#include "../include/Socket.hpp"
-#include "../include/Server.hpp"
+#include "../network/Socket.hpp"
+#include "../server/Server.hpp"
 
 namespace zappy {
 

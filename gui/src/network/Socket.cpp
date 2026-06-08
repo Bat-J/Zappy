@@ -5,8 +5,8 @@
 ** Socket
 */
 
-#include "../include/Socket.hpp"
-#include "../include/Error.hpp"
+#include "Socket.hpp"
+#include "../errorhandler/Error.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>

@@ -5,7 +5,7 @@
 ** Tile
 */
 
-#include "../include/Tile.hpp"
+#include "Tile.hpp"
 
 namespace zappy {
 

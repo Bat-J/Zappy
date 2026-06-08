@@ -8,8 +8,8 @@
 #include <iostream>
 #include <string>
 #include <arpa/inet.h>
-#include "../include/Socket.hpp"
-#include "../include/Core.hpp"
+#include "network/Socket.hpp"
+#include "core/Core.hpp"
 
 int main(int argc, char** argv) {
     if (argc == 2 && std::string(argv[1]) == "--help") {

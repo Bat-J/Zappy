@@ -5,7 +5,7 @@
 ** Worldstate
 */
 
-#include "../include/WorldState.hpp"
+#include "WorldState.hpp"
 
 namespace zappy {
     std::pair<size_t, size_t> WorldState::getMapSize() const {
