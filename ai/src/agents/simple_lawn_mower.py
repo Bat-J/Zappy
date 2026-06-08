@@ -56,7 +56,7 @@ class SimpleLawnMowerAgent:
                     )
                     // 2
                     and self.ai_interface.relative_direction
-                    == interface.direction.south
+                    == interface.cardinal_direction.south
                 ):  # pyright: ignore[reportArgumentType]
                     invert_direction = not invert_direction
                 elif (
@@ -73,7 +73,7 @@ class SimpleLawnMowerAgent:
                     // 2
                     + 1
                     and self.ai_interface.relative_direction
-                    == interface.direction.north
+                    == interface.cardinal_direction.north
                 ):  # pyright: ignore[reportArgumentType]
                     invert_direction = not invert_direction
                 if (
@@ -83,7 +83,7 @@ class SimpleLawnMowerAgent:
                     )
                     // 2
                     and self.ai_interface.relative_direction
-                    == interface.direction.north
+                    == interface.cardinal_direction.north
                 ):  # pyright: ignore[reportArgumentType]
                     if invert_direction:
                         self.ai_interface.send_turn_left_action()
@@ -101,7 +101,7 @@ class SimpleLawnMowerAgent:
                     // 2
                     + 1
                     and self.ai_interface.relative_direction
-                    == interface.direction.south
+                    == interface.cardinal_direction.south
                 ):  # pyright: ignore[reportArgumentType]
                     if invert_direction:
                         self.ai_interface.send_turn_right_action()
