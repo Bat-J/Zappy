@@ -1,10 +1,19 @@
 use crate::args::Config;
+use rand::RngExt;
 
 #[derive(Default, Clone)]
 pub struct Tile {
     food: u32,
     resources: Resources,
     ais: Vec<usize>,
+}
+
+#[derive(Default)]
+pub struct Egg {
+    x: u32,
+    y: u32,
+    id: u32,
+    player_id: i32,
 }
 
 #[derive(Default, Clone)]
@@ -142,7 +151,7 @@ pub fn mct_reply(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
     Some(map_string)
 }
 
-pub fn create_map_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
+pub fn create_gui_connection_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
     let mut map_string = String::new();
 
     map_string.push_str(&msz_reply(config));
@@ -153,4 +162,95 @@ pub fn create_map_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String
     }
     map_string.push_str(&tna_reply(config));
     Some(map_string)
+}
+
+pub fn enw_string(egg: Egg) -> String {
+    let mut string = String::new();
+    string.push_str("enw #");
+    string.push_str(&egg.id.to_string());
+    string.push_str(" #");
+    string.push_str(&egg.player_id.to_string());
+    string.push(' ');
+    string.push_str(&egg.x.to_string());
+    string.push(' ');
+    string.push_str(&egg.y.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn start_spawn_eggs(config: Config) -> Vec<Egg> {
+    let mut eggs = Vec::new();
+    for id in 0..config.clients_per_team * config.teams.len() {
+        let egg = Egg {
+            x: rand::rng().random_range(0..config.width),
+            y: rand::rng().random_range(0..config.height),
+            id: id as u32,
+            player_id: -1,
+        };
+        eggs.push(egg);
+    }
+    eggs
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn enw_basic() {
+        assert_eq!(
+            enw_string(Egg {
+                x: 5,
+                y: 6,
+                id: 0,
+                player_id: -1,
+            }),
+            "enw #0 #-1 5 6\n"
+        );
+    }
+
+    #[test]
+    fn tna_basic() {
+        assert_eq!(
+            tna_reply(&Config {
+                clients_per_team: 0,
+                port: 0,
+                width: 0,
+                height: 0,
+                teams: vec!["team1".to_string(), "team2".to_string()],
+                frequency: 0
+            }),
+            "tna team1\ntna team2\n"
+        );
+    }
+
+    #[test]
+    fn sgt_basic() {
+        assert_eq!(
+            sgt_reply(&Config {
+                port: 0,
+                width: 0,
+                height: 0,
+                teams: vec![],
+                clients_per_team: 0,
+                frequency: 10
+            }),
+            "sgt 10\n"
+        );
+    }
+
+    #[test]
+    fn msz_basic() {
+        assert_eq!(
+            msz_reply(&Config {
+                port: 0,
+                width: 10,
+                height: 5,
+                teams: vec![],
+                clients_per_team: 0,
+                frequency: 0
+            }),
+            "msz 10 5\n"
+        );
+    }
 }
