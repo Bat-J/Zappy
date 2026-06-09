@@ -5,15 +5,7 @@ use rand::RngExt;
 pub struct Tile {
     food: u32,
     resources: Resources,
-    ais: Vec<usize>,
-}
-
-#[derive(Default)]
-pub struct Egg {
-    x: u32,
-    y: u32,
-    id: u32,
-    player_id: i32,
+    _ais: Vec<usize>,
 }
 
 #[derive(Default, Clone)]
@@ -26,23 +18,31 @@ pub struct Resources {
     thystame: u32,
 }
 
-pub fn create_map(config: Config) -> Vec<Vec<Tile>> {
+#[derive(Default)]
+pub struct Egg {
+    x: u32,
+    y: u32,
+    id: u32,
+    player_id: i32,
+}
+
+pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
     let map = vec![vec![Tile::default(); config.width as usize]; config.height as usize];
     map
 }
 
-pub fn remove_ai_from_tile(x: u32, y: u32, map: &mut Vec<Vec<Tile>>, config: &Config, id: usize) {
-    if x >= config.width || y >= config.height || !map[y as usize][x as usize].ais.contains(&id) {
+pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: usize) {
+    if x >= config.width || y >= config.height || !map[y as usize][x as usize]._ais.contains(&id) {
         return;
     }
-    map[y as usize][x as usize].ais.retain(|&x| x != id);
+    map[y as usize][x as usize]._ais.retain(|&x| x != id);
 }
 
-pub fn add_ai_to_tile(x: u32, y: u32, map: &mut Vec<Vec<Tile>>, config: &Config, id: usize) {
-    if x >= config.width || y >= config.height || map[x as usize][y as usize].ais.contains(&id) {
+pub fn _add_ai_to_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: usize) {
+    if x >= config.width || y >= config.height || map[x as usize][y as usize]._ais.contains(&id) {
         return;
     }
-    map[y as usize][x as usize].ais.push(id);
+    map[y as usize][x as usize]._ais.push(id);
 }
 
 pub fn msz_reply(config: &Config) -> String {
@@ -64,7 +64,7 @@ pub fn sgt_reply(config: &Config) -> String {
     string
 }
 
-pub fn bct_reply(x: u32, y: u32, map: &Vec<Vec<Tile>>, config: &Config) -> Option<String> {
+pub fn bct_reply(x: u32, y: u32, map: &[Vec<Tile>], config: &Config) -> Option<String> {
     if x >= config.width || y >= config.height {
         return None;
     }
@@ -138,7 +138,7 @@ pub fn tna_reply(config: &Config) -> String {
     string
 }
 
-pub fn mct_reply(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
+pub fn mct_reply(config: &Config, map: &[Vec<Tile>]) -> Option<String> {
     let mut map_string = String::new();
     for y in 0..config.height {
         for x in 0..config.width {
@@ -151,7 +151,11 @@ pub fn mct_reply(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
     Some(map_string)
 }
 
-pub fn create_gui_connection_string(config: &Config, map: &Vec<Vec<Tile>>) -> Option<String> {
+pub fn create_gui_connection_string(
+    config: &Config,
+    map: &[Vec<Tile>],
+    eggs: &Vec<Egg>,
+) -> Option<String> {
     let mut map_string = String::new();
 
     map_string.push_str(&msz_reply(config));
@@ -161,10 +165,13 @@ pub fn create_gui_connection_string(config: &Config, map: &Vec<Vec<Tile>>) -> Op
         None => return None,
     }
     map_string.push_str(&tna_reply(config));
+    for egg in eggs {
+        map_string.push_str(&enw_string(egg));
+    }
     Some(map_string)
 }
 
-pub fn enw_string(egg: Egg) -> String {
+pub fn enw_string(egg: &Egg) -> String {
     let mut string = String::new();
     string.push_str("enw #");
     string.push_str(&egg.id.to_string());
@@ -178,7 +185,7 @@ pub fn enw_string(egg: Egg) -> String {
     string
 }
 
-pub fn start_spawn_eggs(config: Config) -> Vec<Egg> {
+pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
     let mut eggs = Vec::new();
     for id in 0..config.clients_per_team * config.teams.len() {
         let egg = Egg {
@@ -199,7 +206,7 @@ mod test {
     #[test]
     fn enw_basic() {
         assert_eq!(
-            enw_string(Egg {
+            enw_string(&Egg {
                 x: 5,
                 y: 6,
                 id: 0,
