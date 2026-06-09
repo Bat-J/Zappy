@@ -33,10 +33,16 @@ class WinnerAgent:
             if self.state == WinnerAgent.State.none:
                 self.ai_interface.send_inventory_action_and_block_until_response()
                 self.ai_interface.send_look_action_and_block_until_response()
-                if (self.ai_interface.last_known_inventory and self.ai_interface.last_known_inventory["food"] < 10):  # or not enough ressources for the next level
+                if (
+                    self.ai_interface.last_known_inventory
+                    and self.ai_interface.last_known_inventory["food"] < 10
+                ):  # or not enough ressources for the next level
                     self.state = WinnerAgent.State.collecting_ressources
                     self.collecting_state = WinnerAgent.Collecting_State.moving
-                elif (self.ai_interface.last_known_number_of_unused_slots and self.ai_interface.last_known_number_of_unused_slots > 0):
+                elif (
+                    self.ai_interface.last_known_number_of_unused_slots
+                    and self.ai_interface.last_known_number_of_unused_slots > 0
+                ):
                     self.state = WinnerAgent.State.egg_laying
                 else:
                     self.state = WinnerAgent.State.elevating
@@ -51,7 +57,9 @@ class WinnerAgent:
                 elif self.collecting_state == WinnerAgent.Collecting_State.looking:
                     self.awaiting_pickup_list = []
                     self.ai_interface.send_look_action_and_block_until_response()
-                    for obj, count in self.ai_interface.completed_actions[-1]["response"][0].items():
+                    for obj, count in self.ai_interface.completed_actions[-1][
+                        "response"
+                    ][0].items():
                         if obj != "player" and obj != "egg" and count > 0:
                             for _ in range(count):
                                 self.awaiting_pickup_list.append(obj)
@@ -74,4 +82,3 @@ class WinnerAgent:
             elif self.state == WinnerAgent.State.elevating:
                 self.state = WinnerAgent.State.none
                 pass  # todo elevate
-                
