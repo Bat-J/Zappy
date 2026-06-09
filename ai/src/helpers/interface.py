@@ -235,7 +235,7 @@ class AI_server_interface:
                 )
             pass
         elif message.startswith("["):
-            if message.count(",") >= 3:
+            if message.startswith("[ player"):
                 completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {
@@ -246,13 +246,15 @@ class AI_server_interface:
                 )
             else:
                 completed_action = self.pending_response_actions.pop(0)
+                inventory = self.__parse_inventory_response(message)
                 self.completed_actions.append(
                     {
                         "action_type": completed_action,
                         "success": True,
-                        "response": self.__parse_inventory_response(message),
+                        "response": inventory,
                     }
                 )
+                self.last_known_inventory = inventory
             pass
         elif can_cast(str, int) and int(message) >= 0:
             completed_action = self.pending_response_actions.pop(0)
@@ -263,7 +265,8 @@ class AI_server_interface:
                     "response": int(message),
                 }
             )
-            self.last_known_number_of_unused_slots = int(message)
+            if completed_action == action_type.connect_nbr:
+                self.last_known_number_of_unused_slots = int(message)
             pass
         elif message == "Elevation underway":
             pass
@@ -318,6 +321,35 @@ class AI_server_interface:
                 }
             )
             pass
+
+    def orient_to_direction(self, direction: cardinal_direction):
+        if self.relative_direction == direction:
+            return
+        elif (self.relative_direction.value - direction.value) % 4 == 1:
+            self.send_turn_left_action_and_block_until_response()
+        elif (self.relative_direction.value - direction.value) % 4 == 3:
+            self.send_turn_right_action_and_block_until_response()
+        else:
+            self.send_turn_left_action_and_block_until_response()
+            self.send_turn_left_action_and_block_until_response()
+
+    def goto(self, x_target: int, y_target: int):
+        if self.relative_x_position < x_target:
+            self.orient_to_direction(cardinal_direction.north)
+            for _ in range(x_target - self.relative_x_position):
+                self.send_forward_action_and_block_until_response()
+        elif self.relative_x_position > x_target:
+            self.orient_to_direction(cardinal_direction.south)
+            for _ in range(self.relative_x_position - x_target):
+                self.send_forward_action_and_block_until_response()
+        if self.relative_y_position < y_target:
+            self.orient_to_direction(cardinal_direction.east)
+            for _ in range(y_target - self.relative_y_position):
+                self.send_forward_action_and_block_until_response()
+        elif self.relative_y_position > y_target:
+            self.orient_to_direction(cardinal_direction.west)
+            for _ in range(self.relative_y_position - y_target):
+                self.send_forward_action_and_block_until_response()
 
     def handle_server_messages_blocking(self):
         """Handles incoming messages from the server and updates the internal state accordingly."""
