@@ -27,17 +27,13 @@ namespace zappy {
             if (!line.empty())
                 wordsByLine.push_back(parser.splitWords(line));
         }
-
         std::vector<Player>& players = _players.getPlayer();
-
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
             if (wordsByLine[i].empty())
                 continue;
-
             if ((wordsByLine[i][0] == "ppo" || wordsByLine[i][0] == "pnw") && wordsByLine[i].size() > 4) {
                 const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 int       oldSize = static_cast<int>(players.size());
-
                 if (static_cast<std::size_t>(number) >= players.size()) {
                     players.resize(static_cast<std::size_t>(number) + 1);
                     for (; oldSize < static_cast<int>(players.size()); oldSize++)
@@ -46,14 +42,12 @@ namespace zappy {
                 parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
                 players[number].setIsAlive(true);
             }
-
             if (wordsByLine[i][0] == "pdi") {
                 const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 if (static_cast<std::size_t>(number) < players.size())
                     players[number].setIsAlive(false);
             }
         }
-
         _players.getAllAlive();
         _players.updatePlayerpos(_socket);
     }
