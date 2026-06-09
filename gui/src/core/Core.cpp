@@ -88,23 +88,26 @@ namespace zappy {
     }
 
     void Core::displayStats(const Server& server) {
-        const int   x        = _window.GetWidth() / 1.80;
-        const int   y        = _window.GetHeight() / 1.80;
-        const int   fontSize = 22;
+        const int   x        = _window.GetWidth() / 2;
+        const int   y        = 110;
+        const int   fontSize = 15;
         const float spacing  = 2.0f;
 
-        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y, fontSize, spacing, _TextColor);
-        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x, y + 30, fontSize, spacing, _TextColor);
-        _font.DrawText("Time ref.: " + std::to_string(server.world().getTimeReference()), x, y + 60, fontSize, spacing, _TextColor);
-        _font.DrawText("Map size: " + std::to_string(server.world().getMapSize().first) + "x" + std::to_string(server.world().getMapSize().second), x, y + 90, fontSize, spacing,
-                       _TextColor);
+        _font.DrawText("INFORMATIONS :", x, y, fontSize + 10, spacing, _TextColor);
+        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y + 40, fontSize, spacing, _TextColor);
+        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x + 150, y + 40, fontSize, spacing, _TextColor);
+        _font.DrawText("Frequency: " + std::to_string(server.world().getTimeReference()), x + 300, y + 40, fontSize, spacing, _TextColor);
+        _font.DrawText("Map size: " + std::to_string(server.world().getMapSize().first) + "x" + std::to_string(server.world().getMapSize().second), x + 450, y + 40, fontSize,
+                       spacing, _TextColor);
+        _font.DrawText("TOTAL RESOURCES :", x, y + 80, fontSize + 10, spacing, _TextColor);
         _font.DrawText("Food: " + std::to_string(server.resources().getTotalFood()), x, y + 120, fontSize, spacing, _TextColor);
         _font.DrawText("Linemate: " + std::to_string(server.resources().getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 360, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 180, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x + 360, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x, y + 180, fontSize, spacing, _TextColor);
+        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 370, y + 120, fontSize, spacing, _TextColor);
+        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x + 570, y + 120, fontSize, spacing, _TextColor);
+        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 730, y + 120, fontSize, spacing, _TextColor);
+        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x, y + 150, fontSize, spacing, _TextColor);
+        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x + 160, y + 150, fontSize, spacing, _TextColor);
+        //displayPlayersStats();
     }
 
     void Core::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
@@ -136,7 +139,8 @@ namespace zappy {
         const int   mapHeight       = std::max(1, (int)mapSize.second);
         const int   hudHeight       = 100;
         const int   padding         = 10;
-        const int   tileSize        = std::min((_window.GetWidth() - 2 * padding) / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
+        const int   availableWidth  = (_window.GetWidth() / 2) - 2 * padding;
+        const int   tileSize        = std::min(availableWidth / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
         const int   tileSizeClamped = std::max(1, tileSize);
         const int   mapPixelWidth   = mapWidth * tileSizeClamped;
         const int   mapPixelHeight  = mapHeight * tileSizeClamped;
