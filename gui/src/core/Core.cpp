@@ -16,14 +16,18 @@
 #include <ctime>
 
 namespace zappy {
-
     void Core::setupColors() {
-        _ressourceColors = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK, BROWN, GRAY, DARKGRAY, LIGHTGRAY, MAROON, LIME, SKYBLUE, VIOLET, BEIGE, DARKBROWN, GOLD};
-        std::vector<raylib::Color> secondColors = {DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN, DARKGRAY, BLACK, WHITE};
+        _ressourceColors                        = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK, BROWN, GRAY, LIGHTGRAY, MAROON, LIME, SKYBLUE, VIOLET, BEIGE, DARKBROWN, GOLD};
+        std::vector<raylib::Color> secondColors = {DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN, BLACK, WHITE};
         _ressourceColors.insert(_ressourceColors.end(), secondColors.begin(), secondColors.end());
-        _TileColor       = GRAY;
-        _TileBorderColor = DARKGRAY;
-        _TextColor       = WHITE;
+        _TileColor            = GRAY;
+        _tileColorIndex       = 8;
+        _TileBorderColor      = BLACK;
+        _tileBorderColorIndex = 21;
+        _TextColor            = WHITE;
+        _TextColorIndex       = 22;
+        _BackgroundColor      = BLACK;
+        _backgroundColorIndex = 21;
     }
 
     void Core::createWindow() {
@@ -46,39 +50,27 @@ namespace zappy {
         }
         if (raylib::Keyboard::IsKeyPressed(KEY_F2))
             _isCursorDefault = !_isCursorDefault;
-        if (raylib::Keyboard::IsKeyPressed(KEY_UP)) {
+        if (raylib::Keyboard::IsKeyPressed(KEY_ONE)) {
             _tileColorIndex = (_tileColorIndex + 1) % _ressourceColors.size();
-            _TileColor      = _ressourceColors[_tileColorIndex];
+            while (_TextColorIndex == _tileColorIndex || _backgroundColorIndex == _tileColorIndex || _tileColorIndex == 0)
+                _tileColorIndex = (_tileColorIndex + 1) % _ressourceColors.size();
+            _TileColor = _ressourceColors[_tileColorIndex];
         }
-        if (raylib::Keyboard::IsKeyPressed(KEY_DOWN)) {
-            if (_tileColorIndex == 0)
-                _tileColorIndex = _ressourceColors.size();
-            _tileColorIndex = (_tileColorIndex - 1) % _ressourceColors.size();
-            _TileColor      = _ressourceColors[_tileColorIndex];
-        }
-        if (raylib::Keyboard::IsKeyPressed(KEY_RIGHT)) {
+        if (raylib::Keyboard::IsKeyPressed(KEY_TWO)) {
             _tileBorderColorIndex = (_tileBorderColorIndex + 1) % _ressourceColors.size();
             _TileBorderColor      = _ressourceColors[_tileBorderColorIndex];
         }
-        if (raylib::Keyboard::IsKeyPressed(KEY_LEFT)) {
-            if (_tileBorderColorIndex == 0)
-                _tileBorderColorIndex = _ressourceColors.size();
-            _tileBorderColorIndex = (_tileBorderColorIndex - 1) % _ressourceColors.size();
-            _TileBorderColor      = _ressourceColors[_tileBorderColorIndex];
-        }
-        if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD)) {
+        if (raylib::Keyboard::IsKeyPressed(KEY_THREE)) {
             _backgroundColorIndex = (_backgroundColorIndex + 1) % _ressourceColors.size();
-            _BackgroundColor      = _ressourceColors[_backgroundColorIndex];
+            while (_backgroundColorIndex == _tileColorIndex || _backgroundColorIndex == _TextColorIndex)
+                _backgroundColorIndex = (_backgroundColorIndex + 1) % _ressourceColors.size();
+            _BackgroundColor = _ressourceColors[_backgroundColorIndex];
         }
-        if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) {
-            if (_backgroundColorIndex == 0)
-                _backgroundColorIndex = _ressourceColors.size();
-            _backgroundColorIndex = (_backgroundColorIndex - 1) % _ressourceColors.size();
-            _BackgroundColor      = _ressourceColors[_backgroundColorIndex];
-        }
-        if (raylib::Keyboard::IsKeyPressed(KEY_B)) {
+        if (raylib::Keyboard::IsKeyPressed(KEY_FOUR)) {
             _TextColorIndex = (_TextColorIndex + 1) % _ressourceColors.size();
-            _TextColor      = _ressourceColors[_TextColorIndex];
+            while (_TextColorIndex == _backgroundColorIndex || _TextColorIndex == _tileColorIndex)
+                _TextColorIndex = (_TextColorIndex + 1) % _ressourceColors.size();
+            _TextColor = _ressourceColors[_TextColorIndex];
         }
     }
 
@@ -117,10 +109,12 @@ namespace zappy {
 
     void Core::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
         auto& players = server.players().getPlayer();
-
+        int   id      = 1;
         for (const auto& player : players) {
-            if (!player.getIsAlive())
+            if (!player.getIsAlive()) {
+                id++;
                 continue;
+            }
             const int x = player.getPos().first.first;
             const int y = player.getPos().first.second;
             if (x < 0 || y < 0)
@@ -131,7 +125,8 @@ namespace zappy {
 
             raylib::Circle circle;
             circle.CircleDraw(playerX, playerY, std::max(4, tileSizeClamped / 6), RED);
-            _font.DrawText("P" + std::to_string(player.getLevel()), playerX - 6, playerY - 8, 12, 1.0f, BLACK);
+            _font.DrawText("P" + std::to_string(id), playerX - 6, playerY - 8, 12, 1.0f, BLACK);
+            id++;
         }
     }
 
@@ -189,19 +184,18 @@ namespace zappy {
         server.updateResources();
         auto              lastUpdate = std::chrono::steady_clock::now();
         std::future<void> updateFuture;
-
         while (!_window.ShouldClose()) {
             const auto now        = std::chrono::steady_clock::now();
-            const auto elapsedSec = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate).count();
-            const auto delaySec   = server.world().getTimeReference();
-
-            if (elapsedSec >= delaySec && !updateFuture.valid()) {
-                updateFuture = std::async(std::launch::async, [&server]() {
+            const auto elapsedMs  = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate).count();
+            const auto t          = server.world().getTimeReference();
+            const auto intervalMs = (t > 0) ? static_cast<long long>(1000.0 / t) : 1000LL;
+            if (elapsedMs >= intervalMs && !updateFuture.valid()) {
+                updateFuture    = std::async(std::launch::async, [&server]() {
                     server.updateTiles();
                     server.updateResources();
                     server.handleServerUpdate();
                 });
-                lastUpdate   = now;
+                auto lastUpdate = std::chrono::steady_clock::now() - std::chrono::milliseconds(10000);
             }
             if (updateFuture.valid() && updateFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
                 updateFuture.get();
