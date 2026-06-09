@@ -25,4 +25,5 @@ namespace zappy {
         _ressources.clear();
         _ressources = vec;
     }
+
 }

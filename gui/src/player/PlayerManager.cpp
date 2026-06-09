@@ -11,9 +11,14 @@
 
 namespace zappy {
 
-    std::vector<Player> PlayerManager::getPlayer() const {
+    std::vector<Player>& PlayerManager::getPlayer() {
         return _Players;
     }
+
+    const std::vector<Player>& PlayerManager::getPlayer() const {
+        return _Players;
+    }
+
     size_t PlayerManager::getNbPlayers() const {
         return _nbPlayers;
     }

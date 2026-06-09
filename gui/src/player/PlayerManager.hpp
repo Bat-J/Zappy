@@ -14,12 +14,13 @@
 namespace zappy {
     class PlayerManager {
       public:
-        std::vector<Player> getPlayer() const;
-        size_t              getNbPlayers() const;
-        size_t              getNbDeath() const;
-        void                getAllAlive();
-        void                checkAlive(int pNumber, Socket& socket);
-        void                updatePlayerpos(Socket& socket);
+        std::vector<Player>&       getPlayer();
+        const std::vector<Player>& getPlayer() const;
+        size_t                     getNbPlayers() const;
+        size_t                     getNbDeath() const;
+        void                       getAllAlive();
+        void                       checkAlive(int pNumber, Socket& socket);
+        void                       updatePlayerpos(Socket& socket);
 
       private:
         std::vector<Player> _Players;

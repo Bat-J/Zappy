@@ -18,39 +18,42 @@ namespace zappy {
 
     void Server::handleServerUpdate() {
         const std::string                     message = _socket.readFromSocket();
-        std::vector<std::string>              lines;
         std::vector<std::vector<std::string>> wordsByLine;
         std::stringstream                     stream(message);
         std::string                           line;
         ServerParser                          parser;
 
         while (std::getline(stream, line)) {
-            if (!line.empty()) {
-                lines.push_back(line);
-
+            if (!line.empty())
                 wordsByLine.push_back(parser.splitWords(line));
-            }
         }
+
+        std::vector<Player>& players = _players.getPlayer();
+
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
-            if (wordsByLine[i].empty()) {
+            if (wordsByLine[i].empty())
                 continue;
-            }
+
             if ((wordsByLine[i][0] == "ppo" || wordsByLine[i][0] == "pnw") && wordsByLine[i].size() > 4) {
                 const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                int       oldSize = _players.getPlayer().size();
-                if (static_cast<std::size_t>(number) >= _players.getPlayer().size()) {
-                    _players.getPlayer().resize(static_cast<std::size_t>(number) + 1);
-                    for (; oldSize < _players.getPlayer().size(); oldSize++)
+                int       oldSize = static_cast<int>(players.size());
+
+                if (static_cast<std::size_t>(number) >= players.size()) {
+                    players.resize(static_cast<std::size_t>(number) + 1);
+                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
                         _players.checkAlive(oldSize, _socket);
                 }
-                parser.parsePlayerPositionLine(wordsByLine[i], _players.getPlayer()[number]);
-                _players.getPlayer()[number].setIsAlive(true);
+                parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
+                players[number].setIsAlive(true);
             }
+
             if (wordsByLine[i][0] == "pdi") {
                 const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                _players.getPlayer()[number].setIsAlive(false);
+                if (static_cast<std::size_t>(number) < players.size())
+                    players[number].setIsAlive(false);
             }
         }
+
         _players.getAllAlive();
         _players.updatePlayerpos(_socket);
     }
@@ -60,29 +63,27 @@ namespace zappy {
         std::string              new_tiles = _socket.readFromSocket();
         std::stringstream        stream(new_tiles);
         std::string              token;
-        std::vector<std::string> _tokens;
+        std::vector<std::string> tokens;
+        std::vector<Tile>        tiles;
+        while (stream >> token)
+            tokens.push_back(token);
+        for (std::size_t i = 0; i < tokens.size(); ++i) {
+            if (tokens[i] == "bct" && i + 9 < tokens.size()) {
+                Tile tile;
+                int  x = std::stoi(tokens[i + 1]);
+                int  y = std::stoi(tokens[i + 2]);
+                tile.setPosition(x, y);
 
-        _tokens.clear();
-        std::vector<Tile> _tiles = world().getTiles();
-        _tiles.clear();
-        while (stream >> token) {
-            _tokens.push_back(token);
-        }
-        for (std::size_t i = 0; i < _tokens.size(); ++i) {
-            if (_tokens[i] == "bct" && i + 9 < _tokens.size()) {
-                const size_t tileIndex = _tiles.size();
-                _tiles.emplace_back();
-                int x = std::stoi(_tokens[i + 1]);
-                int y = std::stoi(_tokens[i + 2]);
-                _tiles[tileIndex].setPosition(x, y);
                 std::vector<int> resources;
-                for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    resources.push_back(std::stoi(_tokens[i + resourceIndex]));
-                }
-                _tiles[tileIndex].setRessources(resources);
+                for (size_t r = 3; r <= 9; ++r)
+                    resources.push_back(std::stoi(tokens[i + r]));
+                tile.setRessources(resources);
+
+                tiles.push_back(tile);
                 i += 9;
             }
         }
+        _world.setTiles(tiles);
     }
 
     void Server::updateResources() {

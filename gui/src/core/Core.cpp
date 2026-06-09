@@ -116,7 +116,7 @@ namespace zappy {
     }
 
     void Core::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
-        const auto& players = server.players().getPlayer();
+        auto& players = server.players().getPlayer();
 
         for (const auto& player : players) {
             if (!player.getIsAlive())

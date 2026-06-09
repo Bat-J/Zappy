@@ -25,4 +25,7 @@ namespace zappy {
     void WorldState::setTimeReference(int i) {
         _timeReference = i;
     }
+    void WorldState::setTiles(std::vector<Tile> tiles) {
+        _tiles = std::move(tiles);
+    }
 }
