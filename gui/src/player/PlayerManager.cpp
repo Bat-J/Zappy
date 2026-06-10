@@ -42,7 +42,8 @@ namespace zappy {
     }
 
     void PlayerManager::checkAlive(int pNumber, Socket& socket) {
-        socket.writeToSocket("plv #" + std::to_string(pNumber) + "\n");
+        std::string comm = "plv #" + std::to_string(pNumber) + "\n";
+        socket.writeToSocket(comm);
         std::string                    resp = socket.readFromSocket();
         ServerParser                   parser;
         const std::vector<std::string> words = parser.splitWords(resp);
@@ -63,8 +64,8 @@ namespace zappy {
             if (!_Players[i].getIsAlive()) {
                 continue;
             }
-
-            socket.writeToSocket("ppo #" + std::to_string(i) + "\n");
+            std::string comm = "ppo #" + std::to_string(i) + "\n";
+            socket.writeToSocket(comm);
             const std::string resp = socket.readFromSocket();
             std::stringstream stream(resp);
             std::string       token;

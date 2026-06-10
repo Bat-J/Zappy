@@ -53,7 +53,8 @@ namespace zappy {
     }
 
     void Server::updateTiles() {
-        _socket.writeToSocket("mct\n");
+        std::string mess = "mct\n";
+        _socket.writeToSocket(mess);
         std::string              new_tiles = _socket.readFromSocket();
         std::stringstream        stream(new_tiles);
         std::string              token;
@@ -85,7 +86,8 @@ namespace zappy {
     }
 
     void Server::getInfo() {
-        _socket.writeToSocket("GRAPHIC\n");
+        std::string mess = "GRAPHIC\n";
+        _socket.writeToSocket(mess);
         std::string              infos = _socket.readFromSocket();
         std::stringstream        stream(infos);
         std::string              token;
