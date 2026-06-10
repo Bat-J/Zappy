@@ -20,10 +20,12 @@ pub struct Resources {
 
 #[derive(Default)]
 pub struct Egg {
-    x: u32,
-    y: u32,
-    id: u32,
-    player_id: i32,
+    pub x: u32,
+    pub y: u32,
+    pub id: u32,
+    pub player_id: u32,
+    pub is_starting: bool,
+    pub team: String,
 }
 
 pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
@@ -192,7 +194,9 @@ pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
             x: rand::rng().random_range(0..config.width),
             y: rand::rng().random_range(0..config.height),
             id: id as u32,
-            player_id: -1,
+            player_id: 0,
+            is_starting: true,
+            team: String::new(),
         };
         eggs.push(egg);
     }
@@ -210,9 +214,11 @@ mod test {
                 x: 5,
                 y: 6,
                 id: 0,
-                player_id: -1,
+                player_id: 0,
+                is_starting: false,
+                team: String::new(),
             }),
-            "enw #0 #-1 5 6\n"
+            "enw #0 #0 5 6\n"
         );
     }
 

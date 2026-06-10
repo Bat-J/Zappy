@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 pub struct ScheduledCommand {
     pub command: Command,
     pub execute_at: Instant,
-    pub client_id: usize,
+    pub client_id: u32,
 }
 
 pub struct TimeManager {
@@ -26,7 +26,7 @@ impl TimeManager {
 
     /// Schedule a command for execution
     /// Returns when the command will execute
-    pub fn schedule(&mut self, command: Command, client_id: usize) -> Instant {
+    pub fn schedule(&mut self, command: Command, client_id: u32) -> Instant {
         let duration_units = command.execution_time() as u64;
         // Convert duration to milliseconds: ms = (action * 1000) / frequency
         // Example: action=7, frequency=100 -> ms = 7*1000/100 = 70 ms

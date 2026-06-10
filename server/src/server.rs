@@ -27,14 +27,23 @@ unsafe extern "C" {
     fn poll(fds: *mut PollFd, nfds: Nfds, timeout: c_int) -> c_int;
 }
 
+struct Player {
+    x: usize,
+    y: usize,
+    orientation: u8,
+    level: u8,
+    inventory: [u32; 7],
+}
+
 enum ClientState {
     AwaitingTeamName,
-    Ai { team: String },
+    AwaitingEgg { team: String },
+    Ai { team: String, player: Player },
     Gui,
 }
 
 struct Client {
-    id: usize,
+    id: u32,
     stream: TcpStream,
     addr: SocketAddr,
     state: ClientState,
@@ -52,7 +61,7 @@ pub struct Server {
     clients: Vec<Client>,
     team_slots: Vec<(String, usize)>,
     time_manager: TimeManager,
-    next_client_id: usize,
+    next_client_id: u32,
 }
 
 pub struct Ready {
@@ -100,7 +109,6 @@ impl Server {
                 scheduled.client_id, scheduled.command
             );
 
-            // Find the client by id
             if let Some(client) = self
                 .clients
                 .iter_mut()
@@ -112,8 +120,7 @@ impl Server {
                         "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n".to_string()
                     }
                     Command::ConnectNbr => {
-                        // find team name for this client
-                        if let ClientState::Ai { ref team } = client.state {
+                        if let ClientState::Ai { ref team, .. } = client.state {
                             if let Some(slot) = self.team_slots.iter().find(|(name, _)| name == team) {
                                 format!("{}\n", slot.1)
                             } else {
@@ -124,7 +131,6 @@ impl Server {
                         }
                     }
                     Command::Broadcast(ref msg) => {
-                        // Send ok to sender and broadcast message to all AI clients
                         let _ = client.stream.write_all(b"ok\n");
                         let broadcast = format!("{}\n", msg);
                         for other in self.clients.iter_mut() {
@@ -132,7 +138,7 @@ impl Server {
                                 let _ = other.stream.write_all(broadcast.as_bytes());
                             }
                         }
-                        continue; // already wrote responses
+                        continue;
                     }
                     _ => "ok\n".to_string(),
                 };
@@ -220,7 +226,7 @@ impl Server {
         Ok(())
     }
 
-    pub fn read(&mut self, ready: &Ready, game: &Game) -> io::Result<ReadOutcome> {
+    pub fn read(&mut self, ready: &Ready, game: &mut Game) -> io::Result<ReadOutcome> {
         let mut disconnected = ready.disconnected.clone();
         let mut buffer = [0u8; 1024];
 
@@ -248,6 +254,49 @@ impl Server {
         Ok(ReadOutcome { disconnected })
     }
 
+    /// Call this whenever a new egg is added to `game.eggs`, to hatch any
+    /// clients that were queued waiting for one.
+    pub fn try_hatch_pending(&mut self, game: &mut Game) {
+        for client in self.clients.iter_mut() {
+            let team = match &client.state {
+                ClientState::AwaitingEgg { team } => team.clone(),
+                _ => continue,
+            };
+
+            let egg_idx = match game.eggs.iter().position(|e| e.team == team) {
+                Some(idx) => idx,
+                None => continue,
+            };
+
+            let egg = game.eggs.swap_remove(egg_idx);
+            let remaining = self
+                .team_slots
+                .iter()
+                .find(|(n, _)| n == &team)
+                .map(|(_, s)| *s)
+                .unwrap_or(0);
+
+            client.id = egg.player_id;
+            client.state = ClientState::Ai {
+                team: team.clone(),
+                player: Player {
+                    x: egg.x as usize,
+                    y: egg.y as usize,
+                    orientation: 1,
+                    level: 1,
+                    inventory: [0; 7],
+                },
+            };
+
+            let response = format!("{remaining}\n{} {}\n", game.config.width, game.config.height);
+            println!(
+                "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
+                client.addr, egg.x, egg.y
+            );
+            let _ = client.stream.write_all(response.as_bytes());
+        }
+    }
+
     pub fn cleanup(&mut self, disconnected: impl IntoIterator<Item = usize>) {
         let mut disconnected = disconnected.into_iter().collect::<Vec<_>>();
         disconnected.sort_unstable();
@@ -256,11 +305,16 @@ impl Server {
         for index in disconnected.into_iter().rev() {
             if index < self.clients.len() {
                 let client = self.clients.swap_remove(index);
-                if let ClientState::Ai { ref team } = client.state
-                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team)
-                {
-                    slot.1 += 1;
-                }
+                // Restore the slot for both active AI players and queued clients
+                let team = match &client.state {
+                    ClientState::Ai { team, .. } => Some(team.as_str()),
+                    ClientState::AwaitingEgg { team } => Some(team.as_str()),
+                    _ => None,
+                };
+                if let Some(team) = team
+                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team) {
+                        slot.1 += 1;
+                    }
                 println!("Client disconnected: {}", client.addr);
             }
         }
@@ -270,9 +324,9 @@ impl Server {
         client: &mut Client,
         buffer: &mut [u8; 1024],
         team_slots: &mut [(String, usize)],
-        game: &Game,
+        game: &mut Game,
         time_manager: &mut TimeManager,
-        client_id: usize,
+        client_id: u32,
     ) -> bool {
         let n = match client.stream.read(buffer) {
             Ok(0) => return true,
@@ -303,12 +357,14 @@ impl Server {
         client: &mut Client,
         line: &str,
         team_slots: &mut [(String, usize)],
-        game: &Game,
+        game: &mut Game,
         time_manager: &mut TimeManager,
-        client_id: usize,
+        client_id: u32,
     ) -> bool {
         match client.state {
-            ClientState::AwaitingTeamName => Self::handle_team_name(client, line, team_slots, game),
+            ClientState::AwaitingTeamName => {
+                Self::handle_team_name(client, line, team_slots, game)
+            }
             ClientState::Ai { .. } => {
                 Self::handle_ai_command(client, line, time_manager, client_id)
             }
@@ -316,6 +372,8 @@ impl Server {
                 println!("GUI command from {}: {line}", client.addr);
                 false
             }
+            // Client is waiting for an egg to be laid — ignore all input until hatched
+            ClientState::AwaitingEgg { .. } => false,
         }
     }
 
@@ -323,7 +381,7 @@ impl Server {
         client: &mut Client,
         line: &str,
         time_manager: &mut TimeManager,
-        client_id: usize,
+        client_id: u32,
     ) -> bool {
         match Command::parse(line) {
             Ok(cmd) => {
@@ -332,12 +390,11 @@ impl Server {
                     "AI command from {}: {} (execute at {:?})",
                     client.addr, cmd, execute_at
                 );
-                false // don't drop connection; don't send immediate response
+                false
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", client.addr, err);
-                let response = "ko\n";
-                client.stream.write_all(response.as_bytes()).is_err()
+                client.stream.write_all(b"ko\n").is_err()
             }
         }
     }
@@ -346,7 +403,7 @@ impl Server {
         client: &mut Client,
         name: &str,
         team_slots: &mut [(String, usize)],
-        game: &Game,
+        game: &mut Game,
     ) -> bool {
         if name == "GRAPHIC" {
             client.state = ClientState::Gui;
@@ -355,9 +412,7 @@ impl Server {
                 Some(message) => {
                     return client.stream.write_all(message.as_bytes()).is_err();
                 }
-                None => {
-                    return false;
-                }
+                None => return false,
             }
         }
 
@@ -369,16 +424,41 @@ impl Server {
             Some(entry) => {
                 entry.1 -= 1;
                 let remaining = entry.1;
+
+                if let Some(egg_idx) = game.eggs.iter().position(|egg| egg.team == name) {
+                    // An egg is available: hatch it immediately
+                    let egg = game.eggs.swap_remove(egg_idx);
+
+                    client.id = egg.player_id;
+                    client.state = ClientState::Ai {
+                        team: name.to_string(),
+                        player: Player {
+                            x: egg.x as usize,
+                            y: egg.y as usize,
+                            orientation: 1,
+                            level: 1,
+                            inventory: [0; 7],
+                        },
+                    };
+
+                    println!(
+                        "{} hatched egg at ({}, {}) for team {name} ({remaining} slots left)",
+                        client.addr, egg.x, egg.y
+                    );
+                } else {
+                    // No egg yet: park the client until one is laid
+                    client.state = ClientState::AwaitingEgg {
+                        team: name.to_string(),
+                    };
+                    println!(
+                        "{} waiting for an egg for team {name} ({remaining} slots left)",
+                        client.addr
+                    );
+                }
+
                 let response = format!(
                     "{remaining}\n{} {}\n",
                     game.config.width, game.config.height
-                );
-                client.state = ClientState::Ai {
-                    team: name.to_string(),
-                };
-                println!(
-                    "{} joined team {name} ({remaining} slots left)",
-                    client.addr
                 );
                 client.stream.write_all(response.as_bytes()).is_err()
             }
