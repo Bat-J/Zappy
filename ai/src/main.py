@@ -2,6 +2,7 @@ import sys
 from helpers.print_help import print_help
 import helpers.interface as interface
 import agents.simple_lawn_mower
+import agents.mover
 
 for arg in sys.argv:
     if arg == "--help":
@@ -56,6 +57,8 @@ if agent_name == "default":
     agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
 elif agent_name == "simple_lawn_mower":
     agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+elif agent_name == "mover":
+    agent = agents.mover.MoverAgent(ai_interface)
 else:
     print(f"Error: Unknown agent '{agent_name}'.")
     sys.exit(84)
