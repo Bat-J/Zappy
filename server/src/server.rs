@@ -288,7 +288,10 @@ impl Server {
                 },
             };
 
-            let response = format!("{remaining}\n{} {}\n", game.config.width, game.config.height);
+            let response = format!(
+                "{remaining}\n{} {}\n",
+                game.config.width, game.config.height
+            );
             println!(
                 "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
                 client.addr, egg.x, egg.y
@@ -312,9 +315,10 @@ impl Server {
                     _ => None,
                 };
                 if let Some(team) = team
-                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team) {
-                        slot.1 += 1;
-                    }
+                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team)
+                {
+                    slot.1 += 1;
+                }
                 println!("Client disconnected: {}", client.addr);
             }
         }
@@ -362,9 +366,7 @@ impl Server {
         client_id: u32,
     ) -> bool {
         match client.state {
-            ClientState::AwaitingTeamName => {
-                Self::handle_team_name(client, line, team_slots, game)
-            }
+            ClientState::AwaitingTeamName => Self::handle_team_name(client, line, team_slots, game),
             ClientState::Ai { .. } => {
                 Self::handle_ai_command(client, line, time_manager, client_id)
             }
