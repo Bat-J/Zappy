@@ -7,27 +7,15 @@
 
 #include "Core.hpp"
 #include "Circle.hpp"
-#include <Keyboard.hpp>
 #include <algorithm>
 #include <chrono>
 #include <future>
-#include <raylib.h>
 #include <string>
 #include <ctime>
 
 namespace zappy {
     void Core::setupColors() {
-        _ressourceColors                        = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK, BROWN, GRAY, LIGHTGRAY, MAROON, LIME, SKYBLUE, VIOLET, BEIGE, DARKBROWN, GOLD};
-        std::vector<raylib::Color> secondColors = {DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN, BLACK, WHITE};
-        _ressourceColors.insert(_ressourceColors.end(), secondColors.begin(), secondColors.end());
-        _TileColor            = GRAY;
-        _tileColorIndex       = 8;
-        _TileBorderColor      = BLACK;
-        _tileBorderColorIndex = 21;
-        _TextColor            = WHITE;
-        _TextColorIndex       = 22;
-        _BackgroundColor      = BLACK;
-        _backgroundColorIndex = 21;
+        _colors.setupColors();
     }
 
     void Core::createWindow() {
@@ -50,28 +38,7 @@ namespace zappy {
         }
         if (raylib::Keyboard::IsKeyPressed(KEY_F2))
             _isCursorDefault = !_isCursorDefault;
-        if (raylib::Keyboard::IsKeyPressed(KEY_ONE)) {
-            _tileColorIndex = (_tileColorIndex + 1) % _ressourceColors.size();
-            while (_TextColorIndex == _tileColorIndex || _backgroundColorIndex == _tileColorIndex || _tileColorIndex == 0)
-                _tileColorIndex = (_tileColorIndex + 1) % _ressourceColors.size();
-            _TileColor = _ressourceColors[_tileColorIndex];
-        }
-        if (raylib::Keyboard::IsKeyPressed(KEY_TWO)) {
-            _tileBorderColorIndex = (_tileBorderColorIndex + 1) % _ressourceColors.size();
-            _TileBorderColor      = _ressourceColors[_tileBorderColorIndex];
-        }
-        if (raylib::Keyboard::IsKeyPressed(KEY_THREE)) {
-            _backgroundColorIndex = (_backgroundColorIndex + 1) % _ressourceColors.size();
-            while (_backgroundColorIndex == _tileColorIndex || _backgroundColorIndex == _TextColorIndex)
-                _backgroundColorIndex = (_backgroundColorIndex + 1) % _ressourceColors.size();
-            _BackgroundColor = _ressourceColors[_backgroundColorIndex];
-        }
-        if (raylib::Keyboard::IsKeyPressed(KEY_FOUR)) {
-            _TextColorIndex = (_TextColorIndex + 1) % _ressourceColors.size();
-            while (_TextColorIndex == _backgroundColorIndex || _TextColorIndex == _tileColorIndex)
-                _TextColorIndex = (_TextColorIndex + 1) % _ressourceColors.size();
-            _TextColor = _ressourceColors[_TextColorIndex];
-        }
+        _colors.handleEvents();
     }
 
     void Core::displayBasicGui() {
@@ -93,21 +60,20 @@ namespace zappy {
         const int   fontSize = 15;
         const float spacing  = 2.0f;
 
-        _font.DrawText("INFORMATIONS :", x, y, fontSize + 10, spacing, _TextColor);
-        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y + 40, fontSize, spacing, _TextColor);
-        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x + 150, y + 40, fontSize, spacing, _TextColor);
-        _font.DrawText("Frequency: " + std::to_string(server.world().getTimeReference()), x + 300, y + 40, fontSize, spacing, _TextColor);
+        _font.DrawText("INFORMATIONS :", x, y, fontSize + 10, spacing, _colors.getTextColor());
+        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y + 40, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x + 150, y + 40, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Frequency: " + std::to_string(server.world().getTimeReference()), x + 300, y + 40, fontSize, spacing, _colors.getTextColor());
         _font.DrawText("Map size: " + std::to_string(server.world().getMapSize().first) + "x" + std::to_string(server.world().getMapSize().second), x + 450, y + 40, fontSize,
-                       spacing, _TextColor);
-        _font.DrawText("TOTAL RESOURCES :", x, y + 80, fontSize + 10, spacing, _TextColor);
-        _font.DrawText("Food: " + std::to_string(server.resources().getTotalFood()), x, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Linemate: " + std::to_string(server.resources().getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 370, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x + 570, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 730, y + 120, fontSize, spacing, _TextColor);
-        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x, y + 150, fontSize, spacing, _TextColor);
-        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x + 160, y + 150, fontSize, spacing, _TextColor);
-        //displayPlayersStats();
+                       spacing, _colors.getTextColor());
+        _font.DrawText("TOTAL RESOURCES :", x, y + 80, fontSize + 10, spacing, _colors.getTextColor());
+        _font.DrawText("Food: " + std::to_string(server.resources().getTotalFood()), x, y + 120, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Linemate: " + std::to_string(server.resources().getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 370, y + 120, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x + 570, y + 120, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 730, y + 120, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x, y + 150, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x + 160, y + 150, fontSize, spacing, _colors.getTextColor());
     }
 
     void Core::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
@@ -127,8 +93,8 @@ namespace zappy {
             const int      playerY = offsetY + y * tileSizeClamped + tileSizeClamped / 2;
 
             raylib::Circle circle;
-            circle.CircleDraw(playerX, playerY, std::max(4, tileSizeClamped / 6), RED);
-            _font.DrawText("P" + std::to_string(id), playerX - 6, playerY - 8, 12, 1.0f, BLACK);
+            circle.CircleDraw(playerX, playerY, std::max(4, tileSizeClamped / 6), _colors.getPlayerColor());
+            _font.DrawText("P" + std::to_string(id), playerX - 6, playerY - 8, 12, 1.0f, _colors.getPlayerNumberColor());
             id++;
         }
     }
@@ -159,8 +125,8 @@ namespace zappy {
                 std::vector<int> resources = tile.getRessources();
                 resources.resize(7, 0);
                 raylib::Rectangle rect(rectX, rectY, tileSizeClamped - 1, tileSizeClamped - 1);
-                rect.Draw(_TileColor);
-                rect.DrawLines(_TileBorderColor);
+                rect.Draw(_colors.getTileColor());
+                rect.DrawLines(_colors.getTileBorderColor());
                 const std::vector<std::pair<int, int>> positions = {
                     {2, 2},
                     {tileSizeClamped / 2, 2},
@@ -171,12 +137,12 @@ namespace zappy {
                     {tileSizeClamped / 2, tileSizeClamped - 12},
                 };
                 for (size_t i = 0; i < positions.size(); ++i) {
-                    _font.DrawText(std::to_string(resources[i]), rectX + positions[i].first, rectY + positions[i].second, textSize, 1.0f, _TextColor);
+                    _font.DrawText(std::to_string(resources[i]), rectX + positions[i].first, rectY + positions[i].second, textSize, 1.0f, _colors.getTextColor());
                 }
             }
         }
         displayPlayers(server, offsetX, offsetY, tileSizeClamped);
-        _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _TextColor);
+        _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _colors.getTextColor());
         displayStats(server);
     }
 
@@ -205,7 +171,7 @@ namespace zappy {
                 updateFuture.get();
             }
             _window.BeginDrawing();
-            _window.ClearBackground(_BackgroundColor);
+            _window.ClearBackground(_colors.getBackgroundColor());
             displayServerElements(server);
             displayBasicGui();
             handleEvents();

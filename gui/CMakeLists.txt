@@ -15,6 +15,7 @@ add_executable(zappy_gui
     src/server/ServerParser.cpp
     src/world/Tile.cpp
     src/world/Worldstate.cpp
+    src/Colors/Colors.cpp
 )
 
 target_include_directories(zappy_gui PRIVATE src)
