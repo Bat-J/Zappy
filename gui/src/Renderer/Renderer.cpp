@@ -23,6 +23,7 @@ namespace zappy {
         _window.SetIcon(_logo);
         _font = raylib::Font("assets/font/akashi.ttf");
         _logo.Unload();
+        _textBeginPosX = _window.GetWidth() / 2;
     }
 
     void Renderer::displayBasicGui(bool isFpsDisplayed, bool isCursorDefault) {
@@ -39,25 +40,46 @@ namespace zappy {
     }
 
     void Renderer::displayStats(const Server& server) {
-        const int   x        = _window.GetWidth() / 2;
-        const int   y        = 110;
-        const int   fontSize = 15;
-        const float spacing  = 2.0f;
+        const int x = _textBeginPosX;
+        const int y = _textBeginPosY;
 
-        _font.DrawText("INFORMATIONS :", x, y, fontSize + 10, spacing, _colors.getTextColor());
-        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y + 40, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x + 150, y + 40, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Frequency: " + std::to_string(server.world().getTimeReference()), x + 300, y + 40, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Map size: " + std::to_string(server.world().getMapSize().first) + "x" + std::to_string(server.world().getMapSize().second), x + 450, y + 40, fontSize,
-                       spacing, _colors.getTextColor());
-        _font.DrawText("TOTAL RESOURCES :", x, y + 80, fontSize + 10, spacing, _colors.getTextColor());
-        _font.DrawText("Food: " + std::to_string(server.resources().getTotalFood()), x, y + 120, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Linemate: " + std::to_string(server.resources().getTotalLinemate()), x + 180, y + 120, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 370, y + 120, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x + 570, y + 120, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 730, y + 120, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x, y + 150, fontSize, spacing, _colors.getTextColor());
-        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x + 160, y + 150, fontSize, spacing, _colors.getTextColor());
+        _font.DrawText("INFORMATIONS :", x, y, _fontSize + 10, _spacing, _colors.getTextColor());
+        _font.DrawText("Players: " + std::to_string(server.players().getNbPlayers()), x, y + 40, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Deaths: " + std::to_string(server.players().getNbDeath()), x + 150, y + 40, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Frequency: " + std::to_string(server.world().getTimeReference()), x + 300, y + 40, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Map size: " + std::to_string(server.world().getMapSize().first) + "x" + std::to_string(server.world().getMapSize().second), x + 450, y + 40, _fontSize,
+                       _spacing, _colors.getTextColor());
+    }
+
+    void Renderer::displayTotalResources(const Server& server) {
+        const int x = _textBeginPosX;
+        const int y = _textBeginPosY;
+
+        _font.DrawText("TOTAL RESOURCES :", x, y + 80, _fontSize + 10, _spacing, _colors.getTextColor());
+        _font.DrawText("Food: " + std::to_string(server.resources().getTotalFood()), x, y + 120, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Linemate: " + std::to_string(server.resources().getTotalLinemate()), x + 180, y + 120, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Deraumere: " + std::to_string(server.resources().getTotalDeraumere()), x + 370, y + 120, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Sibur: " + std::to_string(server.resources().getTotalSibur()), x + 570, y + 120, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Mendiane: " + std::to_string(server.resources().getTotalMendiane()), x + 730, y + 120, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Phiras: " + std::to_string(server.resources().getTotalPhiras()), x, y + 150, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Thystame: " + std::to_string(server.resources().getTotalThystame()), x + 160, y + 150, _fontSize, _spacing, _colors.getTextColor());
+    }
+
+    void Renderer::displaySelectedTile(const Server& server) {
+        const int  x    = _textBeginPosX;
+        const int  y    = _textBeginPosY;
+        const auto tile = server.world().catchTile(_selectedTile.first, _selectedTile.second);
+        if (!tile)
+            return;
+        _font.DrawText("SELECTED TILE : (x = " + std::to_string(_selectedTile.first + 1) + " y = " + std::to_string(_selectedTile.second + 1) + ") :", x, y + 200, _fontSize + 10,
+                       _spacing, _colors.getTextColor());
+        _font.DrawText("Food: " + std::to_string(tile->getRessources()[0]), x + 425, y + 205, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Linemate: " + std::to_string(tile->getRessources()[1]), x + 525, y + 205, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Deraumere: " + std::to_string(tile->getRessources()[2]), x + 650, y + 205, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Sibur: " + std::to_string(tile->getRessources()[3]), x + 800, y + 205, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Mendiane: " + std::to_string(tile->getRessources()[4]), x, y + 230, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Phiras: " + std::to_string(tile->getRessources()[5]), x + 150, y + 230, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Thystame: " + std::to_string(tile->getRessources()[5]), x + 300, y + 230, _fontSize, _spacing, _colors.getTextColor());
     }
 
     void Renderer::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
@@ -130,11 +152,13 @@ namespace zappy {
     void Renderer::displayServerElements(const Server& server) {
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
         const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
-        const int                       tileSize       = std::min(availableWidth / mapSize.first, (_window.GetHeight() - 100 - 2 * 10) / mapSize.second);
+        const int                       tileSize       = std::min(availableWidth / mapSize.first, (_window.GetHeight() - 120) / mapSize.second);
         displayTiles(server);
         displayPlayers(server, 10, 110, tileSize);
         _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _colors.getTextColor());
         displayStats(server);
+        displayTotalResources(server);
+        displaySelectedTile(server);
     }
 
     void Renderer::displayAll(const Server& server, bool isFpsDisplayed, bool isCursorDefault) {
@@ -148,5 +172,21 @@ namespace zappy {
         _cursor.Unload();
         _font.Unload();
         _window.Close();
+    }
+
+    raylib::Window& Renderer::getWindow() {
+        return _window;
+    }
+
+    Colors& Renderer::getColors() {
+        return _colors;
+    }
+
+    void Renderer::setSelectedTile(std::pair<int, int>& pair) {
+        _selectedTile = pair;
+    }
+
+    std::vector<std::vector<raylib::Rectangle>> Renderer::getDrawnTiles() {
+        return _drawnTiles;
     }
 }

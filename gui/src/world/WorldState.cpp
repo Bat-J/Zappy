@@ -6,6 +6,7 @@
 */
 
 #include "WorldState.hpp"
+#include <utility>
 
 namespace zappy {
     std::pair<size_t, size_t> WorldState::getMapSize() const {
@@ -27,5 +28,12 @@ namespace zappy {
     }
     void WorldState::setTiles(std::vector<Tile> tiles) {
         _tiles = std::move(tiles);
+    }
+    std::optional<const Tile> WorldState::catchTile(int x, int y) const {
+        for (int i = 0; i < _tiles.size(); i++) {
+            if (_tiles[i].getPosition().first == x && _tiles[i].getPosition().second == y)
+                return _tiles[i];
+        }
+        return std::nullopt;
     }
 }
