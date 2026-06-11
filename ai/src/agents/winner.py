@@ -40,7 +40,7 @@ class WinnerAgent:
                     self.state = WinnerAgent.State.elevating
 
             if self.state == WinnerAgent.State.collecting_ressources:
-                if random.random() < 0.1:
+                if random.random() < 1 / min(self.ai_interface.world_x_size, self.ai_interface.world_y_size) * 2: # pyright: ignore[reportArgumentType]
                     if random.random() < 0.5:
                         self.ai_interface.send_turn_left_action()
                     else:
@@ -89,7 +89,7 @@ class WinnerAgent:
                                         for _ in range(current_amount - required_amount):
                                             self.ai_interface.send_set_object_down_action_and_block_until_response(resource)
                         else:
-                            self.ai_interface.send_broadcast_action_and_block_until_response(f"wawa_{self.ai_interface.level}")            #print(f"{len(self.ai_interface.message_history) - self.last_addressed_message_index} new messages since last check.")  # Debug print
+                            self.ai_interface.send_broadcast_action_and_block_until_response(f"wawa_{self.ai_interface.level}")
                             for message in self.ai_interface.message_history[self.last_addressed_message_index:]:
                                 print(f"Checking message: {message['text']} from direction {message['direction']}")  # Debug print
                                 if message["text"].startswith("wawa_") and can_cast(str, int, message["text"][5:]) and int(message["text"][5:]) == self.ai_interface.level:
