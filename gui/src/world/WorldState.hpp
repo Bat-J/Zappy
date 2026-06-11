@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <optional>
 #include <sys/types.h>
 #include <utility>
 #include <vector>
@@ -17,6 +18,7 @@ namespace zappy {
       public:
         std::pair<size_t, size_t> getMapSize() const;
         const std::vector<Tile>&  getTiles() const;
+        std::optional<const Tile> catchTile(int x, int y) const;
         int                       getTimeReference() const;
 
         void                      setMapSize(int x, int y);

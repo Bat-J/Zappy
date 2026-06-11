@@ -18,6 +18,7 @@ namespace zappy {
       public:
         int  Run(Socket& socket);
         void handleEvents();
+        void handleSelectTile();
 
       private:
         bool     _isFullscreen    = true;
