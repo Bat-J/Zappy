@@ -14,8 +14,7 @@ class WinnerAgent:
     def __init__(self, ai_interface: interface.AI_server_interface):
         self.ai_interface = ai_interface
         self.state = WinnerAgent.State.none
-        self.awaiting_pickup_list = []
-        self.last_addressed_message_index = 0
+        self.elevation_broadcast_direction = interface.direction.southeast
 
     def run(self):
         while True:
@@ -26,6 +25,12 @@ class WinnerAgent:
             if not self.ai_interface.is_alive():
                 print("Trantorian is no longer alive.")
                 break
+
+            for message in self.ai_interface.message_history:
+                if message["text"].startswith("wawa_") and can_cast(str, int, message["text"][5:]) and int(message["text"][5:]) == self.ai_interface.level:
+                    self.elevation_broadcast_direction = message["direction"].add_cardinal_direction(self.ai_interface.relative_direction) #TODO fix direction calc
+                    print(f"Received elevation broadcast from direction {message['direction']}, moving towards {self.elevation_broadcast_direction}")
+                self.ai_interface.message_history.remove(message)
 
             if self.state == WinnerAgent.State.none:
                 self.ai_interface.send_inventory_action()
@@ -90,12 +95,8 @@ class WinnerAgent:
                                             self.ai_interface.send_set_object_down_action_and_block_until_response(resource)
                         else:
                             self.ai_interface.send_broadcast_action_and_block_until_response(f"wawa_{self.ai_interface.level}")
-                            for message in self.ai_interface.message_history[self.last_addressed_message_index:]:
-                                print(f"Checking message: {message['text']} from direction {message['direction']}")  # Debug print
-                                if message["text"].startswith("wawa_") and can_cast(str, int, message["text"][5:]) and int(message["text"][5:]) == self.ai_interface.level:
-                                    print(f"Received matching broadcast message: {message['text']} from direction {message['direction']}")  # Debug print
-                                    self.ai_interface.move_towards_direction(message["direction"].sub_cardinal_direction(self.ai_interface.relative_direction))
-                                    self.state = WinnerAgent.State.elevating
+                            if self.elevation_broadcast_direction:
+                                self.ai_interface.move_towards_direction(self.elevation_broadcast_direction)
 
                 if (self.ai_interface.completed_actions 
                 and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.start_incantation 
@@ -103,5 +104,3 @@ class WinnerAgent:
                 and self.ai_interface.completed_actions[-1]["response"] != "ko"):
                     self.state = WinnerAgent.State.none
 
-            if len(self.ai_interface.message_history) > self.last_addressed_message_index:
-                self.last_addressed_message_index = len(self.ai_interface.message_history)

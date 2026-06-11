@@ -74,7 +74,7 @@ class direction(Enum):
 def parse_direction(direction_value: int) -> direction:
     if direction_value == 0:
         return direction.none
-    return direction((direction_value - 1) % 8 + 1)
+    return direction(direction_value)
 
 
 RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP = {
@@ -418,6 +418,8 @@ class AI_server_interface:
     def collect_tile_ressources(self):
         """Collects all ressources on the current tile. blocking"""
         self.send_look_action_and_block_until_response()
+        if self.completed_actions[-1]["action_type"] != action_type.look or not self.completed_actions[-1]["success"] or not self.completed_actions[-1]["response"]:
+            return
         for obj, count in self.completed_actions[-1]["response"][0].items():
             if obj != object_type.player and obj != object_type.egg and count > 0:
                 for _ in range(count):
@@ -427,6 +429,8 @@ class AI_server_interface:
     def collect_matching_tile_ressources(self, ressources: dict):
         """Collects the specified amount of ressources on the current tile. blocking"""
         self.send_look_action_and_block_until_response()
+        if self.completed_actions[-1]["action_type"] != action_type.look or not self.completed_actions[-1]["success"] or not self.completed_actions[-1]["response"]:
+            return
         for obj, count in self.completed_actions[-1]["response"][0].items():
             if obj != object_type.player and obj != object_type.egg and count > 0:
                 needed_count = ressources.get(obj, 0)
