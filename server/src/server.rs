@@ -1,7 +1,9 @@
+use std::cell::RefCell;
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_short, c_ulong};
+use std::vec;
 
 use crate::args::Config;
 use crate::command::Command;
@@ -27,15 +29,23 @@ unsafe extern "C" {
     fn poll(fds: *mut PollFd, nfds: Nfds, timeout: c_int) -> c_int;
 }
 
-struct Player {
-    x: u32,
-    y: u32,
-    orientation: u8,
-    level: u8,
-    inventory: [u32; 7],
+pub enum Orientation {
+    North = 1,
+    East = 2,
+    South = 3,
+    West = 4,
 }
 
-enum ClientState {
+pub struct Player {
+    pub x: u32,
+    pub y: u32,
+    pub id: u32,
+    pub orientation: Orientation,
+    pub level: u8,
+    pub inventory: [u32; 7],
+}
+
+pub enum ClientState {
     AwaitingTeamName,
     AwaitingEgg { team: String },
     Ai { team: String, player: Player },
@@ -46,7 +56,7 @@ pub struct Client {
     id: u32,
     pub stream: TcpStream,
     addr: SocketAddr,
-    state: ClientState,
+    pub state: ClientState,
     pending: String,
 }
 
@@ -238,7 +248,7 @@ impl Server {
 
             let client_id = self.clients[index as usize].id;
             let drop = Self::read_client(
-                &mut self.clients[index as usize],
+                &mut self.clients,
                 &mut buffer,
                 &mut self.team_slots,
                 game,
@@ -282,7 +292,8 @@ impl Server {
                 player: Player {
                     x: egg.x as u32,
                     y: egg.y as u32,
-                    orientation: 1,
+                    id: egg.id,
+                    orientation: Orientation::North,
                     level: 1,
                     inventory: [0; 7],
                 },
@@ -325,31 +336,31 @@ impl Server {
     }
 
     fn read_client(
-        client: &mut Client,
+        clients: &mut Vec<Client>,
         buffer: &mut [u8; 1024],
         team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: u32,
     ) -> bool {
-        let n = match client.stream.read(buffer) {
+        let n = match clients[client_id as usize].stream.read(buffer) {
             Ok(0) => return true,
             Ok(n) => n,
             Err(err) => {
-                eprintln!("Read error from {}: {err}", client.addr);
+                eprintln!("Read error from {}: {err}", clients[client_id as usize].addr);
                 return true;
             }
         };
 
-        client
+        clients[client_id as usize]
             .pending
             .push_str(&String::from_utf8_lossy(&buffer[..n]));
 
-        while let Some(pos) = client.pending.find('\n') {
-            let line = client.pending[..pos].trim_end_matches('\r').to_string();
-            client.pending.drain(..=pos);
+        while let Some(pos) = clients[client_id as usize].pending.find('\n') {
+            let line = clients[client_id as usize].pending[..pos].trim_end_matches('\r').to_string();
+            clients[client_id as usize].pending.drain(..=pos);
 
-            if Self::handle_line(client, &line, team_slots, game, time_manager, client_id) {
+            if Self::handle_line(clients, &line, team_slots, game, time_manager, client_id) {
                 return true;
             }
         }
@@ -358,43 +369,43 @@ impl Server {
     }
 
     fn handle_line(
-        client: &mut Client,
+        clients: &mut Vec<Client>,
         line: &str,
         team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: u32,
     ) -> bool {
-        match client.state {
-            ClientState::AwaitingTeamName => Self::handle_team_name(client, line, team_slots, game),
+        match clients[client_id as usize].state {
+            ClientState::AwaitingTeamName => Self::handle_team_name(&mut clients[client_id as usize], line, team_slots, game),
             ClientState::Ai { .. } => {
-                Self::handle_ai_command(client, line, time_manager, client_id)
+                Self::handle_ai_command(&mut clients[client_id as usize], line, time_manager, client_id)
             }
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
-            ClientState::Gui => Self::handle_gui_command(client, line, game),
+            ClientState::Gui => Self::handle_gui_command(clients, client_id, line, game),
         }
     }
 
-    fn handle_gui_command(client: &mut Client, line: &str, game: &mut Game) -> bool {
+    fn handle_gui_command(clients: &mut Vec<Client>, client_id: u32, line: &str, game: &mut Game) -> bool {
         let trimmed = line.trim();
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
 
         if parts.is_empty() {
-            eprintln!("Parse error from {}: empty command", client.addr);
-            return client.stream.write_all("ko\n".as_bytes()).is_err();
+            eprintln!("Parse error from {}: empty command", clients[client_id as usize].addr);
+            return clients[client_id as usize].stream.write_all("ko\n".as_bytes()).is_err();
         }
         match parts[0] {
-            "msz" => Self::msz_parse(parts, client, game),
-            "bct" => Self::bct_parse(parts, client, game),
-            "mct" => Self::mct_parse(parts, client, game),
-            "tna" => Self::tna_parse(parts, client, game),
-            "ppo" => false, //TODO implement ppo
+            "msz" => Self::msz_parse(parts, &mut clients[client_id as usize], game),
+            "bct" => Self::bct_parse(parts, &mut clients[client_id as usize], game),
+            "mct" => Self::mct_parse(parts, &mut clients[client_id as usize], game),
+            "tna" => Self::tna_parse(parts, &mut clients[client_id as usize], game),
+            "ppo" => Self::ppo_parse(parts, &mut RefCell::new(clients), client_id),
             "plv" => false, // TODO implement plv
             "pin" => false, // TODO implement pin
-            "sgt" => Self::sgt_parse(parts, client, game),
-            "sst" => Self::sst_parse(parts, client, game),
-            _ => Self::bad_command(parts, client),
+            "sgt" => Self::sgt_parse(parts, &mut clients[client_id as usize], game),
+            "sst" => Self::sst_parse(parts, &mut clients[client_id as usize], game),
+            _ => Self::bad_command(parts, &mut clients[client_id as usize]),
         }
     }
 
@@ -456,7 +467,8 @@ impl Server {
                         player: Player {
                             x: egg.x as u32,
                             y: egg.y as u32,
-                            orientation: 1,
+                            id: egg.id,
+                            orientation: Orientation::North,
                             level: 1,
                             inventory: [0; 7],
                         },
