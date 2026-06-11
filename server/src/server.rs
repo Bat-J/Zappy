@@ -347,7 +347,10 @@ impl Server {
             Ok(0) => return true,
             Ok(n) => n,
             Err(err) => {
-                eprintln!("Read error from {}: {err}", clients[client_id as usize].addr);
+                eprintln!(
+                    "Read error from {}: {err}",
+                    clients[client_id as usize].addr
+                );
                 return true;
             }
         };
@@ -357,7 +360,9 @@ impl Server {
             .push_str(&String::from_utf8_lossy(&buffer[..n]));
 
         while let Some(pos) = clients[client_id as usize].pending.find('\n') {
-            let line = clients[client_id as usize].pending[..pos].trim_end_matches('\r').to_string();
+            let line = clients[client_id as usize].pending[..pos]
+                .trim_end_matches('\r')
+                .to_string();
             clients[client_id as usize].pending.drain(..=pos);
 
             if Self::handle_line(clients, &line, team_slots, game, time_manager, client_id) {
@@ -377,23 +382,39 @@ impl Server {
         client_id: u32,
     ) -> bool {
         match clients[client_id as usize].state {
-            ClientState::AwaitingTeamName => Self::handle_team_name(&mut clients[client_id as usize], line, team_slots, game),
-            ClientState::Ai { .. } => {
-                Self::handle_ai_command(&mut clients[client_id as usize], line, time_manager, client_id)
+            ClientState::AwaitingTeamName => {
+                Self::handle_team_name(&mut clients[client_id as usize], line, team_slots, game)
             }
+            ClientState::Ai { .. } => Self::handle_ai_command(
+                &mut clients[client_id as usize],
+                line,
+                time_manager,
+                client_id,
+            ),
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
             ClientState::Gui => Self::handle_gui_command(clients, client_id, line, game),
         }
     }
 
-    fn handle_gui_command(clients: &mut Vec<Client>, client_id: u32, line: &str, game: &mut Game) -> bool {
+    fn handle_gui_command(
+        clients: &mut Vec<Client>,
+        client_id: u32,
+        line: &str,
+        game: &mut Game,
+    ) -> bool {
         let trimmed = line.trim();
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
 
         if parts.is_empty() {
-            eprintln!("Parse error from {}: empty command", clients[client_id as usize].addr);
-            return clients[client_id as usize].stream.write_all("ko\n".as_bytes()).is_err();
+            eprintln!(
+                "Parse error from {}: empty command",
+                clients[client_id as usize].addr
+            );
+            return clients[client_id as usize]
+                .stream
+                .write_all("ko\n".as_bytes())
+                .is_err();
         }
         match parts[0] {
             "msz" => Self::msz_parse(parts, &mut clients[client_id as usize], game),

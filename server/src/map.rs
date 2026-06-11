@@ -73,7 +73,10 @@ pub fn bct_reply(x: u32, y: u32, map: &[Vec<Tile>], config: &Config) -> Option<S
     let mut string = String::with_capacity(
         17 + x.checked_ilog10().unwrap_or(0) as usize
             + y.checked_ilog10().unwrap_or(0) as usize
-            + map[y as usize][x as usize].food.checked_ilog10().unwrap_or(0) as usize
+            + map[y as usize][x as usize]
+                .food
+                .checked_ilog10()
+                .unwrap_or(0) as usize
             + map[y as usize][x as usize]
                 .resources
                 .linemate
