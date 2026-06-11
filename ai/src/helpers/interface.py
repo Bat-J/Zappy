@@ -488,7 +488,7 @@ class AI_server_interface:
     def generate_fake_broadcast_message(self, message: str = ""):
         """Generates a fake broadcast message from the server with the specified message and direction. Message parameter is optional"""
         if message != "":
-            random_action = randint(0, 10)
+            random_action = randint(0, 11)
             if random_action == 0:
                 # return the message as is
                 return self.replace_spaces_with_underscores(message)
@@ -517,7 +517,13 @@ class AI_server_interface:
                 return "Current_level:_" + str(randint(1, 8))
             elif random_action == 6:
                 # return a very long message to confuse other agents
-                return self.replace_spaces_with_underscores("A chair is a type of seat, typically designed for one person and consisting of one or more legs, a flat or slightly angled seat, and a back-rest. It may be made of wood, metal, or synthetic materials, and may be padded or upholstered in various colors and fabrics. Chairs vary in design. An armchair has armrests fixed to the seat; a recliner is upholstered and features a mechanism that lowers the chair's back and raises into place a footrest; a rocking chair has legs fixed to two long curved slats; and a wheelchair has wheels fixed to an axis under the seat.")
+                return self.replace_spaces_with_underscores("A chair is a type of seat, "
+                "typically designed for one person and consisting of one or more legs, "
+                "a flat or slightly angled seat, and a back-rest. It may be made of wood, "
+                "metal, or synthetic materials, and may be padded or upholstered in various colors and fabrics. "
+                "Chairs vary in design. An armchair has armrests fixed to the seat; "
+                "a recliner is upholstered and features a mechanism that lowers the chair's back and raises into place a footrest; "
+                "a rocking chair has legs fixed to two long curved slats; and a wheelchair has wheels fixed to an axis under the seat.")
             elif random_action == 7:
                 # cesar code the message with a random shift
                 shift = randint(1, 25)
@@ -550,3 +556,25 @@ class AI_server_interface:
                 for consonant in consonants:
                     message = message.replace(consonant, vowels[randint(0, len(vowels) - 1)])
                 return self.replace_spaces_with_underscores(message)
+            elif random_action == 11:
+                # return a message with all the keywords of the project
+                return self.replace_spaces_with_underscores("zappy zapfrites server gui ai network team tile map resource "
+                "winner mover simple lawn mower winning player maximum elevation 0 1 2 3 4 5 6 7 8 9 environment geography "
+                "game world inhabitant trantor board up down left right planet food stone linemate deraumere sibur mendiane "
+                "phiras thystame spawn time limit width height density feed trantorian collecting objective activity individual "
+                "eat creature see survive unit live ritual goal everyone level incantation generation action vision look sound "
+                "transmission broadcasting broadcast message direction event egg north east west south inventory fork eject position direction")
+        else:
+            # return a random message from the server
+            random_messages = [
+                "Incantation underway",
+                "Current level: 2",
+                "Current level: 3",
+                "Current level: 4",
+                "Current level: 5",
+                "Current level: 6",
+                "Current level: 7",
+                "Current_level: 8",
+                "Hello! 👋😃🚀",
+            ]
+            return self.replace_spaces_with_underscores(random_messages[randint(0, len(random_messages) - 1)])
