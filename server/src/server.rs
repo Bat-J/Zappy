@@ -5,6 +5,8 @@ use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
 use crate::command::Command;
+use crate::map::create_gui_connection_string;
+use crate::map::{Egg, Tile};
 use crate::time_manager::TimeManager;
 
 type Nfds = c_ulong;
@@ -31,20 +33,24 @@ enum ClientState {
     Gui,
 }
 
-struct Client {
+pub struct Client {
     id: usize,
-    stream: TcpStream,
+    pub stream: TcpStream,
     addr: SocketAddr,
     state: ClientState,
     pending: String,
+}
+
+pub struct Game {
+    pub map: Vec<Vec<Tile>>,
+    pub config: Config,
+    pub eggs: Vec<Egg>,
 }
 
 pub struct Server {
     listener: TcpListener,
     clients: Vec<Client>,
     team_slots: Vec<(String, usize)>,
-    width: u32,
-    height: u32,
     time_manager: TimeManager,
     next_client_id: usize,
 }
@@ -76,8 +82,6 @@ pub fn start(config: Config) -> io::Result<Server> {
         listener,
         clients: Vec::new(),
         team_slots,
-        width: config.width,
-        height: config.height,
         time_manager,
         next_client_id: 0,
     })
@@ -216,7 +220,7 @@ impl Server {
         Ok(())
     }
 
-    pub fn read(&mut self, ready: &Ready) -> io::Result<ReadOutcome> {
+    pub fn read(&mut self, ready: &Ready, game: &mut Game) -> io::Result<ReadOutcome> {
         let mut disconnected = ready.disconnected.clone();
         let mut buffer = [0u8; 1024];
 
@@ -231,8 +235,7 @@ impl Server {
                 &mut self.clients[index],
                 &mut buffer,
                 &mut self.team_slots,
-                self.width,
-                self.height,
+                game,
                 &mut self.time_manager,
                 client_id,
             );
@@ -267,8 +270,7 @@ impl Server {
         client: &mut Client,
         buffer: &mut [u8; 1024],
         team_slots: &mut [(String, usize)],
-        width: u32,
-        height: u32,
+        game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: usize,
     ) -> bool {
@@ -289,15 +291,7 @@ impl Server {
             let line = client.pending[..pos].trim_end_matches('\r').to_string();
             client.pending.drain(..=pos);
 
-            if Self::handle_line(
-                client,
-                &line,
-                team_slots,
-                width,
-                height,
-                time_manager,
-                client_id,
-            ) {
+            if Self::handle_line(client, &line, team_slots, game, time_manager, client_id) {
                 return true;
             }
         }
@@ -309,22 +303,38 @@ impl Server {
         client: &mut Client,
         line: &str,
         team_slots: &mut [(String, usize)],
-        width: u32,
-        height: u32,
+        game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: usize,
     ) -> bool {
         match client.state {
-            ClientState::AwaitingTeamName => {
-                Self::handle_team_name(client, line, team_slots, width, height)
-            }
+            ClientState::AwaitingTeamName => Self::handle_team_name(client, line, team_slots, game),
             ClientState::Ai { .. } => {
                 Self::handle_ai_command(client, line, time_manager, client_id)
             }
-            ClientState::Gui => {
-                println!("GUI command from {}: {line}", client.addr);
-                false
-            }
+            ClientState::Gui => Self::handle_gui_command(client, line, game),
+        }
+    }
+
+    fn handle_gui_command(client: &mut Client, line: &str, game: &mut Game) -> bool {
+        let trimmed = line.trim();
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+
+        if parts.is_empty() {
+            eprintln!("Parse error from {}: empty command", client.addr);
+            return client.stream.write_all("ko\n".as_bytes()).is_err();
+        }
+        match parts[0] {
+            "msz" => Self::msz_parse(parts, client, game),
+            "bct" => Self::bct_parse(parts, client, game),
+            "mct" => Self::mct_parse(parts, client, game),
+            "tna" => Self::tna_parse(parts, client, game),
+            "ppo" => false, //TODO implement ppo
+            "plv" => false, // TODO implement plv
+            "pin" => false, // TODO implement pin
+            "sgt" => Self::sgt_parse(parts, client, game),
+            "sst" => Self::sst_parse(parts, client, game),
+            _ => Self::bad_command(parts, client),
         }
     }
 
@@ -355,13 +365,19 @@ impl Server {
         client: &mut Client,
         name: &str,
         team_slots: &mut [(String, usize)],
-        width: u32,
-        height: u32,
+        game: &Game,
     ) -> bool {
         if name == "GRAPHIC" {
             client.state = ClientState::Gui;
             println!("{} identified as GUI", client.addr);
-            return false;
+            match create_gui_connection_string(&game.config, &game.map, &game.eggs) {
+                Some(message) => {
+                    return client.stream.write_all(message.as_bytes()).is_err();
+                }
+                None => {
+                    return false;
+                }
+            }
         }
 
         let slot = team_slots
@@ -372,7 +388,10 @@ impl Server {
             Some(entry) => {
                 entry.1 -= 1;
                 let remaining = entry.1;
-                let response = format!("{remaining}\n{width} {height}\n");
+                let response = format!(
+                    "{remaining}\n{} {}\n",
+                    game.config.width, game.config.height
+                );
                 client.state = ClientState::Ai {
                     team: name.to_string(),
                 };

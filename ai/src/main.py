@@ -1,8 +1,10 @@
 import sys
 from helpers.print_help import print_help
 import helpers.interface as interface
-import agents.winner as winner
-import agents.simple_lawn_mower as simple_lawn_mower
+import agents.winner
+import agents.simple_lawn_mower
+import agents.mover
+
 
 for arg in sys.argv:
     if arg == "--help":
@@ -54,11 +56,13 @@ else:
 # creating the agent
 
 if agent_name == "default":
-    agent = winner.WinnerAgent(ai_interface)
+    agent = agents.winner.WinnerAgent(ai_interface)
 elif agent_name == "winner":
-    agent = winner.WinnerAgent(ai_interface)
+    agent = agents.winner.WinnerAgent(ai_interface)
 elif agent_name == "simple_lawn_mower":
-    agent = simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+    agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
+elif agent_name == "mover":
+    agent = agents.mover.MoverAgent(ai_interface)
 else:
     print(f"Error: Unknown agent '{agent_name}'.")
     sys.exit(84)
