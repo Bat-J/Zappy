@@ -28,8 +28,8 @@ unsafe extern "C" {
 }
 
 struct Player {
-    x: usize,
-    y: usize,
+    x: u32,
+    y: u32,
     orientation: u8,
     level: u8,
     inventory: [u32; 7],
@@ -59,19 +59,19 @@ pub struct Game {
 pub struct Server {
     listener: TcpListener,
     clients: Vec<Client>,
-    team_slots: Vec<(String, usize)>,
+    team_slots: Vec<(String, u32)>,
     time_manager: TimeManager,
     next_client_id: u32,
 }
 
 pub struct Ready {
     pub accept: bool,
-    pub readable: Vec<usize>,
-    pub disconnected: Vec<usize>,
+    pub readable: Vec<u32>,
+    pub disconnected: Vec<u32>,
 }
 
 pub struct ReadOutcome {
-    pub disconnected: Vec<usize>,
+    pub disconnected: Vec<u32>,
 }
 
 pub fn start(config: Config) -> io::Result<Server> {
@@ -185,7 +185,7 @@ impl Server {
 
         for (index, fd) in fds.iter().enumerate().skip(1) {
             let revents = fd.revents;
-            let index = index - 1;
+            let index = (index - 1) as u32;
 
             if revents & (POLLERR | POLLHUP | POLLNVAL) != 0 {
                 disconnected.push(index);
@@ -231,14 +231,14 @@ impl Server {
         let mut buffer = [0u8; 1024];
 
         for &index in &ready.readable {
-            if index >= self.clients.len() {
+            if index >= self.clients.len() as u32 {
                 disconnected.push(index);
                 continue;
             }
 
-            let client_id = self.clients[index].id;
+            let client_id = self.clients[index as usize].id;
             let drop = Self::read_client(
-                &mut self.clients[index],
+                &mut self.clients[index as usize],
                 &mut buffer,
                 &mut self.team_slots,
                 game,
@@ -280,8 +280,8 @@ impl Server {
             client.state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
-                    x: egg.x as usize,
-                    y: egg.y as usize,
+                    x: egg.x as u32,
+                    y: egg.y as u32,
                     orientation: 1,
                     level: 1,
                     inventory: [0; 7],
@@ -300,14 +300,14 @@ impl Server {
         }
     }
 
-    pub fn cleanup(&mut self, disconnected: impl IntoIterator<Item = usize>) {
+    pub fn cleanup(&mut self, disconnected: impl IntoIterator<Item = u32>) {
         let mut disconnected = disconnected.into_iter().collect::<Vec<_>>();
         disconnected.sort_unstable();
         disconnected.dedup();
 
         for index in disconnected.into_iter().rev() {
-            if index < self.clients.len() {
-                let client = self.clients.swap_remove(index);
+            if index < self.clients.len() as u32 {
+                let client = self.clients.swap_remove(index as usize);
                 // Restore the slot for both active AI players and queued clients
                 let team = match &client.state {
                     ClientState::Ai { team, .. } => Some(team.as_str()),
@@ -327,7 +327,7 @@ impl Server {
     fn read_client(
         client: &mut Client,
         buffer: &mut [u8; 1024],
-        team_slots: &mut [(String, usize)],
+        team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: u32,
@@ -360,7 +360,7 @@ impl Server {
     fn handle_line(
         client: &mut Client,
         line: &str,
-        team_slots: &mut [(String, usize)],
+        team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: u32,
@@ -423,7 +423,7 @@ impl Server {
     fn handle_team_name(
         client: &mut Client,
         name: &str,
-        team_slots: &mut [(String, usize)],
+        team_slots: &mut [(String, u32)],
         game: &mut Game,
     ) -> bool {
         if name == "GRAPHIC" {
@@ -454,8 +454,8 @@ impl Server {
                     client.state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
-                            x: egg.x as usize,
-                            y: egg.y as usize,
+                            x: egg.x as u32,
+                            y: egg.y as u32,
                             orientation: 1,
                             level: 1,
                             inventory: [0; 7],

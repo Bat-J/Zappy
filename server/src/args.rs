@@ -6,7 +6,7 @@ pub struct Config {
     pub width: u32,
     pub height: u32,
     pub teams: Vec<String>,
-    pub clients_per_team: usize,
+    pub clients_per_team: u32,
     pub frequency: u32,
 }
 
@@ -16,7 +16,7 @@ const USAGE: &str =
 const DEFAULT_PORT: u16 = 4242;
 const DEFAULT_WIDTH: u32 = 10;
 const DEFAULT_HEIGHT: u32 = 10;
-const DEFAULT_CLIENTS: usize = 1;
+const DEFAULT_CLIENTS: u32 = 1;
 const DEFAULT_FREQ: u64 = 100;
 
 pub fn parse() -> Result<Config, String> {
@@ -34,12 +34,12 @@ pub fn parse() -> Result<Config, String> {
     let mut freq = DEFAULT_FREQ;
 
     let mut i = 0;
-    while i < args.len() {
-        match args[i].as_str() {
+    while i < args.len() as u32 {
+        match args[i as usize].as_str() {
             "-p" => port = next_value::<u16>(&args, &mut i, "-p")?,
             "-x" => width = next_value::<u32>(&args, &mut i, "-x")?,
             "-y" => height = next_value::<u32>(&args, &mut i, "-y")?,
-            "-c" => clients_per_team = next_value::<usize>(&args, &mut i, "-c")?,
+            "-c" => clients_per_team = next_value::<u32>(&args, &mut i, "-c")?,
             "-f" => freq = next_value::<u64>(&args, &mut i, "-f")?,
             "-n" => teams = collect_names(&args, &mut i)?,
             flag => return Err(format!("unknown flag: {flag}\n{USAGE}")),
@@ -57,27 +57,27 @@ pub fn parse() -> Result<Config, String> {
     })
 }
 
-fn next_value<T>(args: &[String], i: &mut usize, flag: &str) -> Result<T, String>
+fn next_value<T>(args: &[String], i: &mut u32, flag: &str) -> Result<T, String>
 where
     T: std::str::FromStr,
     T::Err: std::fmt::Display,
 {
     *i += 1;
-    args.get(*i)
+    args.get(*i as usize)
         .ok_or_else(|| format!("{flag} requires a value"))?
         .parse()
         .map_err(|e| format!("{flag}: {e}"))
 }
 
-fn collect_names(args: &[String], i: &mut usize) -> Result<Vec<String>, String> {
+fn collect_names(args: &[String], i: &mut u32) -> Result<Vec<String>, String> {
     let mut names = Vec::new();
 
-    while let Some(next) = args.get(*i + 1) {
+    while let Some(next) = args.get((*i + 1) as usize) {
         if next.starts_with('-') {
             break;
         }
         *i += 1;
-        names.push(args[*i].clone());
+        names.push(args[*i as usize].clone());
     }
 
     if names.is_empty() {
