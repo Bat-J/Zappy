@@ -21,9 +21,6 @@ namespace zappy {
     }
 
     bool ServerParser::parsePlayerPositionLine(const std::vector<std::string>& words, Player& player) {
-        if (words.size() < 5 || (words[0] != "ppo" && words[0] != "pnw")) {
-            return false;
-        }
         std::pair<std::pair<int, int>, Orientation> pos;
         pos.first.first  = std::atoi(words[2].c_str());
         pos.first.second = std::atoi(words[3].c_str());

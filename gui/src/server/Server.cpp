@@ -31,7 +31,7 @@ namespace zappy {
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
             if (wordsByLine[i].empty())
                 continue;
-            if ((wordsByLine[i][0] == "ppo" || wordsByLine[i][0] == "pnw") && wordsByLine[i].size() > 4) {
+            if ((wordsByLine[i][0] == "ppo" || wordsByLine[i][0] == "pnw") && wordsByLine[i].size() == 5 || wordsByLine[i].size() == 7) {
                 const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 int       oldSize = static_cast<int>(players.size());
                 if (static_cast<std::size_t>(number) >= players.size()) {
