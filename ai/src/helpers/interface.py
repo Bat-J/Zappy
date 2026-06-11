@@ -14,6 +14,11 @@ class object_type(Enum):
     phiras = "phiras"
     thystame = "thystame"
 
+def object_type_from_string(value: str) -> object_type:
+    try:
+        return object_type(value)
+    except ValueError:
+        raise ValueError(f"Invalid object type: {value}")
 
 def str_to_object_type(value: str) -> object_type:
     return object_type(value)
@@ -71,6 +76,28 @@ def parse_direction(direction_value: int) -> direction:
         return direction.none
     return direction((direction_value - 1) % 8 + 1)
 
+
+RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP = {
+    1: {object_type.linemate: 1, object_type.deraumere: 0, object_type.sibur: 0, object_type.mendiane: 0, object_type.phiras: 0, object_type.thystame: 0},
+    2: {object_type.linemate: 1, object_type.deraumere: 1, object_type.sibur: 1, object_type.mendiane: 0, object_type.phiras: 0, object_type.thystame: 0},
+    3: {object_type.linemate: 2, object_type.deraumere: 0, object_type.sibur: 1, object_type.mendiane: 0, object_type.phiras: 2, object_type.thystame: 0},
+    4: {object_type.linemate: 1, object_type.deraumere: 1, object_type.sibur: 2, object_type.mendiane: 0, object_type.phiras: 1, object_type.thystame: 0},
+    5: {object_type.linemate: 1, object_type.deraumere: 2, object_type.sibur: 1, object_type.mendiane: 3, object_type.phiras: 0, object_type.thystame: 0},
+    6: {object_type.linemate: 1, object_type.deraumere: 2, object_type.sibur: 3, object_type.mendiane: 0, object_type.phiras: 1, object_type.thystame: 0},
+    7: {object_type.linemate: 2, object_type.deraumere: 2, object_type.sibur: 2, object_type.mendiane: 2, object_type.phiras: 2, object_type.thystame: 1},
+}
+
+
+PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP = {
+    1: 1,
+    2: 2,
+    3: 2,
+    4: 4,
+    5: 4,
+    6: 6,
+    7: 6,
+}
+    
 
 class AI_server_interface:
     def __init__(self, host: str, port: int, team_name: str):
@@ -150,15 +177,15 @@ class AI_server_interface:
             if tile == "":
                 parsed_response.append(
                     {
-                        "player": 0,
-                        "food": 0,
-                        "egg": 0,
-                        "linemate": 0,
-                        "deraumere": 0,
-                        "sibur": 0,
-                        "mendiane": 0,
-                        "phiras": 0,
-                        "thystame": 0,
+                        object_type.player: 0,
+                        object_type.food: 0,
+                        object_type.egg: 0,
+                        object_type.linemate: 0,
+                        object_type.deraumere: 0,
+                        object_type.sibur: 0,
+                        object_type.mendiane: 0,
+                        object_type.phiras: 0,
+                        object_type.thystame: 0,
                     }
                 )
                 continue
@@ -166,9 +193,9 @@ class AI_server_interface:
             object_counts = {}
             for obj in objects:
                 if obj in object_counts:
-                    object_counts[obj] += 1
+                    object_counts[object_type_from_string(obj)] += 1
                 else:
-                    object_counts[obj] = 1
+                    object_counts[object_type_from_string(obj)] = 1
             parsed_response.append(object_counts)
         return parsed_response
 
@@ -176,13 +203,13 @@ class AI_server_interface:
         response = response.strip()[1:-1].strip()
         items = response.split(",")
         inventory = {
-            "food": 0,
-            "linemate": 0,
-            "deraumere": 0,
-            "sibur": 0,
-            "mendiane": 0,
-            "phiras": 0,
-            "thystame": 0,
+            object_type.food: 0,
+            object_type.linemate: 0,
+            object_type.deraumere: 0,
+            object_type.sibur: 0,
+            object_type.mendiane: 0,
+            object_type.phiras: 0,
+            object_type.thystame: 0,
         }
         for item in items:
             item = item.strip()
@@ -190,7 +217,7 @@ class AI_server_interface:
                 continue
             try:
                 obj, count = item.split()
-                inventory[obj] = int(count)
+                inventory[object_type_from_string(obj)] = int(count)
             except Exception:
                 continue
         return inventory
@@ -256,7 +283,7 @@ class AI_server_interface:
                 )
                 self.last_known_inventory = inventory
             pass
-        elif can_cast(str, int) and int(message) >= 0:
+        elif can_cast(str, int, message) and int(message) >= 0:
             completed_action = self.pending_response_actions.pop(0)
             self.completed_actions.append(
                 {
@@ -270,7 +297,8 @@ class AI_server_interface:
             pass
         elif message == "Elevation underway":
             pass
-        elif message.startswith("Current level:"):
+        elif message.startswith("Current level: "):
+            self.pending_response_actions.pop(0)
             self.level = int(message.split(":")[1].strip())
             self.completed_actions.append(
                 {
@@ -323,6 +351,7 @@ class AI_server_interface:
             pass
 
     def orient_to_direction(self, direction: cardinal_direction):
+        """Orients the Trantorian to the specified cardinal direction (relative to its starting orientation)."""
         if self.relative_direction == direction:
             return
         elif (self.relative_direction.value - direction.value) % 4 == 1:
@@ -334,6 +363,7 @@ class AI_server_interface:
             self.send_turn_left_action_and_block_until_response()
 
     def goto(self, x_target: int, y_target: int):
+        """Moves the Trantorian to the specified relative coordinates (relative to its starting position)."""
         if self.relative_x_position < x_target:
             self.orient_to_direction(cardinal_direction.north)
             for _ in range(x_target - self.relative_x_position):
@@ -350,6 +380,112 @@ class AI_server_interface:
             self.orient_to_direction(cardinal_direction.west)
             for _ in range(self.relative_y_position - y_target):
                 self.send_forward_action_and_block_until_response()
+
+    def move_towards_direction(self, direction: direction):
+        if direction == direction.north:
+            self.orient_to_direction(cardinal_direction.north)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.northwest:
+            self.orient_to_direction(cardinal_direction.north)
+            self.send_forward_action()
+            self.orient_to_direction(cardinal_direction.west)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.west:
+            self.orient_to_direction(cardinal_direction.west)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.southwest:
+            self.orient_to_direction(cardinal_direction.south)
+            self.send_forward_action()
+            self.orient_to_direction(cardinal_direction.west)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.south:
+            self.orient_to_direction(cardinal_direction.south)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.southeast:
+            self.orient_to_direction(cardinal_direction.south)
+            self.send_forward_action()
+            self.orient_to_direction(cardinal_direction.east)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.east:
+            self.orient_to_direction(cardinal_direction.east)
+            self.send_forward_action_and_block_until_response()
+        elif direction == direction.northeast:
+            self.orient_to_direction(cardinal_direction.north)
+            self.send_forward_action()
+            self.orient_to_direction(cardinal_direction.east)
+            self.send_forward_action_and_block_until_response()
+
+    def collect_tile_ressources(self):
+        """Collects all ressources on the current tile. blocking"""
+        self.send_look_action_and_block_until_response()
+        for obj, count in self.completed_actions[-1]["response"][0].items():
+            if obj != object_type.player and obj != object_type.egg and count > 0:
+                for _ in range(count):
+                    self.send_take_action(obj)
+        self.block_until_all_responses_received()
+
+    def collect_matching_tile_ressources(self, ressources: dict):
+        """Collects the specified amount of ressources on the current tile. blocking"""
+        self.send_look_action_and_block_until_response()
+        for obj, count in self.completed_actions[-1]["response"][0].items():
+            if obj != object_type.player and obj != object_type.egg and count > 0:
+                needed_count = ressources.get(obj, 0)
+                if needed_count > 0:
+                    for _ in range(min(count, needed_count)):
+                        self.send_take_action(obj)
+        self.block_until_all_responses_received()
+
+    def are_ressources_sufficient_for_level_up(self, amount: dict, needed_amount: dict) -> bool:
+        """Checks if the Trantorian has enough ressources in its inventory for the next level."""
+        if amount is None or needed_amount is None:
+            return False
+        for resource, required_amount in needed_amount.items():
+            if amount.get(resource, 0) < required_amount:
+                return False
+        return True
+
+    def has_enough_ressources_for_next_level(self) -> bool:
+        """Checks if the Trantorian has enough ressources in its inventory for the next level."""
+        if self.last_known_inventory is None:
+            return False
+        requirements = RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.level, None)
+        if requirements is None:
+            return False
+        return self.are_ressources_sufficient_for_level_up(self.last_known_inventory, requirements)
+
+    def get_ressources_needed_for_level(self, level: int) -> dict:
+        """Returns a dictionary of the ressources needed for the specified level."""
+        return RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(level, {})
+
+    def get_missing_ressources_for_next_level(self, inventory: dict) -> dict:
+        """Returns a dictionary of the missing ressources needed for the next level."""
+        if inventory is None:
+            return {}
+        requirements = RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.level, None)
+        if requirements is None:
+            return {}
+        missing = {}
+        for resource, required_amount in requirements.items():
+            current_amount = inventory.get(resource, 0)
+            if current_amount < required_amount:
+                missing[resource] = required_amount - current_amount
+        return missing
+    
+    def add_objects_dicts(self, dict1: dict, dict2: dict) -> dict:
+        """Adds the counts of two dictionaries of object types and returns the result."""
+        result = dict1.copy()
+        for obj, count in dict2.items():
+            result[obj] = result.get(obj, 0) + count
+        return result
+    
+    def subtract_objects_dicts(self, dict1: dict, dict2: dict) -> dict:
+        """Subtracts the counts of two dictionaries of object types and returns the result."""
+        result = dict1.copy()
+        for obj, count in dict2.items():
+            result[obj] = result.get(obj, 0) - count
+            if result[obj] < 0:
+                result[obj] = 0
+        return result
 
     def handle_server_messages_blocking(self):
         """Handles incoming messages from the server and updates the internal state accordingly."""
@@ -428,9 +564,7 @@ class AI_server_interface:
 
     def send_set_object_down_action(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object."""
-        self.connection.send_message(
-            f"{action_type.set_object_down.value} {object_type.value}\n"
-        )
+        self.connection.send_message(f"{action_type.set_object_down.value} {object_type.value}\n")
         self.pending_response_actions.append(action_type.set_object_down)
 
     def send_start_incantation_action(self):
@@ -498,9 +632,7 @@ class AI_server_interface:
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
 
-    def send_set_object_down_action_and_block_until_response(
-        self, object_type: object_type
-    ):
+    def send_set_object_down_action_and_block_until_response(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object and blocks until a response is received."""
         self.send_set_object_down_action(object_type)
         self.block_until_all_responses_received()

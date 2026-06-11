@@ -1,5 +1,7 @@
 import helpers.interface as interface
 from enum import Enum
+import random
+from helpers.can_cast import can_cast
 
 
 class WinnerAgent:
@@ -9,16 +11,11 @@ class WinnerAgent:
         egg_laying = 2
         elevating = 3
 
-    class Collecting_State(Enum):
-        moving = 1
-        looking = 2
-        picking = 3
-
     def __init__(self, ai_interface: interface.AI_server_interface):
         self.ai_interface = ai_interface
         self.state = WinnerAgent.State.none
         self.awaiting_pickup_list = []
-        self.collecting_state = WinnerAgent.Collecting_State.moving
+        self.last_addressed_message_index = 0
 
     def run(self):
         while True:
@@ -31,54 +28,80 @@ class WinnerAgent:
                 break
 
             if self.state == WinnerAgent.State.none:
-                self.ai_interface.send_inventory_action_and_block_until_response()
-                self.ai_interface.send_look_action_and_block_until_response()
-                if (
-                    self.ai_interface.last_known_inventory
-                    and self.ai_interface.last_known_inventory["food"] < 10
-                ):  # or not enough ressources for the next level
+                self.ai_interface.send_inventory_action()
+                self.ai_interface.send_connect_nbr_action_and_block_until_response()
+                if (self.ai_interface.last_known_inventory
+                    and self.ai_interface.last_known_inventory[interface.object_type.food] < 15) or not self.ai_interface.has_enough_ressources_for_next_level():
                     self.state = WinnerAgent.State.collecting_ressources
-                    self.collecting_state = WinnerAgent.Collecting_State.moving
-                elif (
-                    self.ai_interface.last_known_number_of_unused_slots
-                    and self.ai_interface.last_known_number_of_unused_slots > 0
-                ):
+                elif (self.ai_interface.last_known_number_of_unused_slots
+                      and self.ai_interface.last_known_number_of_unused_slots == 0):
                     self.state = WinnerAgent.State.egg_laying
                 else:
                     self.state = WinnerAgent.State.elevating
 
-            elif self.state == WinnerAgent.State.collecting_ressources:
-                if self.collecting_state == WinnerAgent.Collecting_State.moving:
-                    self.ai_interface.goto(
-                        self.ai_interface.relative_x_position + 1,
-                        self.ai_interface.relative_y_position + 0,
-                    )
-                    self.collecting_state = WinnerAgent.Collecting_State.looking
-                elif self.collecting_state == WinnerAgent.Collecting_State.looking:
-                    self.awaiting_pickup_list = []
-                    self.ai_interface.send_look_action_and_block_until_response()
-                    for obj, count in self.ai_interface.completed_actions[-1][
-                        "response"
-                    ][0].items():
-                        if obj != "player" and obj != "egg" and count > 0:
-                            for _ in range(count):
-                                self.awaiting_pickup_list.append(obj)
-                    if self.awaiting_pickup_list != []:
-                        self.collecting_state = WinnerAgent.Collecting_State.picking
+            if self.state == WinnerAgent.State.collecting_ressources:
+                if random.random() < 0.1:
+                    if random.random() < 0.5:
+                        self.ai_interface.send_turn_left_action()
                     else:
-                        self.collecting_state = WinnerAgent.Collecting_State.moving
-                elif self.collecting_state == WinnerAgent.Collecting_State.picking:
-                    self.ai_interface.send_take_action_and_block_until_response(
-                        interface.str_to_object_type(self.awaiting_pickup_list[0])
-                    )
-                    self.awaiting_pickup_list.remove(self.awaiting_pickup_list[0])
-                    if self.awaiting_pickup_list == []:
-                        self.state = WinnerAgent.State.none
+                        self.ai_interface.send_turn_right_action()
+                self.ai_interface.send_forward_action_and_block_until_response()
+                self.ai_interface.send_inventory_action_and_block_until_response()
+                # ressources needed for the next two incantations
+                needed_ressources = self.ai_interface.subtract_objects_dicts(self.ai_interface.add_objects_dicts(self.ai_interface.get_ressources_needed_for_level(self.ai_interface.level + 1), self.ai_interface.get_ressources_needed_for_level(self.ai_interface.level)), self.ai_interface.last_known_inventory) # pyright: ignore[reportArgumentType]
+                needed_ressources[interface.object_type.food] = 100 # collect all
+                self.ai_interface.collect_matching_tile_ressources(needed_ressources)
+                self.state = WinnerAgent.State.none
 
             elif self.state == WinnerAgent.State.egg_laying:
                 self.ai_interface.send_fork_action_and_block_until_response()
                 self.state = WinnerAgent.State.none
 
             elif self.state == WinnerAgent.State.elevating:
-                self.state = WinnerAgent.State.none
-                pass  # todo elevate
+                self.ai_interface.send_inventory_action_and_block_until_response()
+                if self.ai_interface.last_known_inventory and self.ai_interface.last_known_inventory[interface.object_type.food] < 5: # critically low on food abort
+                    self.state = WinnerAgent.State.none
+                elif not self.ai_interface.has_enough_ressources_for_next_level():
+                     self.state = WinnerAgent.State.none
+                else:
+                    if self.ai_interface.level == 1:
+                        for type, count in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP[1].items():
+                            for _ in range(count):
+                                self.ai_interface.send_set_object_down_action_and_block_until_response(type)
+                        self.ai_interface.send_start_incantation_action_and_block_until_response()
+                    else:
+                        self.ai_interface.send_look_action_and_block_until_response()
+                        if (self.ai_interface.completed_actions
+                            and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.look 
+                            and self.ai_interface.completed_actions[-1]["response"] 
+                            and self.ai_interface.completed_actions[-1]["response"][0] 
+                            and  self.ai_interface.completed_actions[-1]["response"][0][interface.object_type.player] >= interface.PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP.get(self.ai_interface.level, 0)):
+                            if (self.ai_interface.completed_actions 
+                                and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.look 
+                                and self.ai_interface.completed_actions[-1]["response"] 
+                                and self.ai_interface.completed_actions[-1]["response"][0] 
+                                and self.ai_interface.are_ressources_sufficient_for_level_up(self.ai_interface.completed_actions[-1]["response"][0], interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.ai_interface.level, {}))):
+                                self.ai_interface.send_start_incantation_action_and_block_until_response()
+                            else:
+                                for resource, required_amount in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.ai_interface.level, {}).items():
+                                    current_amount = self.ai_interface.completed_actions[-1]["response"][0].get(resource, 0) if self.ai_interface.completed_actions and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.look and self.ai_interface.completed_actions[-1]["response"] and self.ai_interface.completed_actions[-1]["response"][0] else 0
+                                    if current_amount > required_amount:
+                                        for _ in range(current_amount - required_amount):
+                                            self.ai_interface.send_set_object_down_action_and_block_until_response(resource)
+                        else:
+                            self.ai_interface.send_broadcast_action_and_block_until_response(f"wawa_{self.ai_interface.level}")            #print(f"{len(self.ai_interface.message_history) - self.last_addressed_message_index} new messages since last check.")  # Debug print
+                            for message in self.ai_interface.message_history[self.last_addressed_message_index:]:
+                                print(f"Checking message: {message['text']} from direction {message['direction']}")  # Debug print
+                                if message["text"].startswith("wawa_") and can_cast(str, int, message["text"][5:]) and int(message["text"][5:]) == self.ai_interface.level:
+                                    print(f"Received matching broadcast message: {message['text']} from direction {message['direction']}")  # Debug print
+                                    self.ai_interface.move_towards_direction(message["direction"].sub_cardinal_direction(self.ai_interface.relative_direction))
+                                    self.state = WinnerAgent.State.elevating
+
+                if (self.ai_interface.completed_actions 
+                and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.start_incantation 
+                and self.ai_interface.completed_actions[-1]["response"]
+                and self.ai_interface.completed_actions[-1]["response"] != "ko"):
+                    self.state = WinnerAgent.State.none
+
+            if len(self.ai_interface.message_history) > self.last_addressed_message_index:
+                self.last_addressed_message_index = len(self.ai_interface.message_history)

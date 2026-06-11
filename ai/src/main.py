@@ -1,8 +1,8 @@
 import sys
 from helpers.print_help import print_help
 import helpers.interface as interface
-import ai.src.agents.winner as winner
-import ai.src.agents.simple_lawn_mower as simple_lawn_mower
+import agents.winner as winner
+import agents.simple_lawn_mower as simple_lawn_mower
 
 for arg in sys.argv:
     if arg == "--help":
@@ -54,6 +54,8 @@ else:
 # creating the agent
 
 if agent_name == "default":
+    agent = winner.WinnerAgent(ai_interface)
+elif agent_name == "winner":
     agent = winner.WinnerAgent(ai_interface)
 elif agent_name == "simple_lawn_mower":
     agent = simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
