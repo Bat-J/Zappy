@@ -481,20 +481,24 @@ class AI_server_interface:
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
 
+    def replace_spaces_with_underscores(self, message: str) -> str:
+        """Replaces spaces in the message with underscores."""
+        return message.replace(" ", "_")
+
     def generate_fake_broadcast_message(self, message: str = ""):
         """Generates a fake broadcast message from the server with the specified message and direction. Message parameter is optional"""
         if message != "":
             random_action = randint(0, 10)
             if random_action == 0:
                 # return the message as is
-                return message
+                return self.replace_spaces_with_underscores(message)
             elif random_action == 1 and any(char.isdigit() for char in message):
                 # replace digits in the message with random digits
                 for char in message:
                     if char.isdigit():
                         random_digit = randint(0, 9)
                         message = message.replace(char, str(random_digit), 1)
-                return message
+                return self.replace_spaces_with_underscores(message)
             elif random_action == 2:
                 # censor a random word in the message
                 words = message.split()
@@ -504,7 +508,7 @@ class AI_server_interface:
                     return "_".join(words)
             elif random_action == 3:
                 # put the message in uppercase
-                return message.upper()
+                return self.replace_spaces_with_underscores(message.upper())
             elif random_action == 4:
                 # return a message indicating that an incantation is underway
                 return "Incantation_underway"
@@ -513,7 +517,7 @@ class AI_server_interface:
                 return "Current_level:_" + str(randint(1, 8))
             elif random_action == 6:
                 # return a very long message to confuse other agents
-                return "A_chair_is_a_type_of_seat,_typically_designed_for_one_person_and_consisting_of_one_or_more_legs,_a_flat_or_slightly_angled_seat,_and_a_back-rest._It_may_be_made_of_wood,_metal,_or_synthetic_materials,_and_may_be_padded_or_upholstered_in_various_colors_and_fabrics._Chairs_vary_in_design._An_armchair_has_armrests_fixed_to_the_seat;_a_recliner_is_upholstered_and_features_a_mechanism_that_lowers_the_chair's_back_and_raises_into_place_a_footrest;_a_rocking_chair_has_legs_fixed_to_two_long_curved_slats;_and_a_wheelchair_has_wheels_fixed_to_an_axis_under_the_seat."
+                return self.replace_spaces_with_underscores("A chair is a type of seat, typically designed for one person and consisting of one or more legs, a flat or slightly angled seat, and a back-rest. It may be made of wood, metal, or synthetic materials, and may be padded or upholstered in various colors and fabrics. Chairs vary in design. An armchair has armrests fixed to the seat; a recliner is upholstered and features a mechanism that lowers the chair's back and raises into place a footrest; a rocking chair has legs fixed to two long curved slats; and a wheelchair has wheels fixed to an axis under the seat.")
             elif random_action == 7:
                 # cesar code the message with a random shift
                 shift = randint(1, 25)
@@ -528,20 +532,21 @@ class AI_server_interface:
                         encrypted_message += encrypted_char
                     else:
                         encrypted_message += char
+                    return self.replace_spaces_with_underscores(encrypted_message)
             elif random_action == 8:
                 # reverse message
-                return message[::-1]
+                return self.replace_spaces_with_underscores(message[::-1])
             elif random_action == 9:
                 # replace vowels with consonants and vice versa
                 vowels = "aeiouyAEIOUY"
                 consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
                 for vowel in vowels:
                     message = message.replace(vowel, consonants[randint(0, len(consonants) - 1)])
-                return message
+                return self.replace_spaces_with_underscores(message)
             elif random_action == 10:
                 # replace consonants with vowels and vice versa
                 vowels = "aeiouyAEIOUY"
                 consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
                 for consonant in consonants:
                     message = message.replace(consonant, vowels[randint(0, len(vowels) - 1)])
-                return message
+                return self.replace_spaces_with_underscores(message)
