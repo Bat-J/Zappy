@@ -42,7 +42,7 @@ namespace zappy {
     }
 
     bool Player::getIsAlive() const {
-        return isAlive;
+        return _isAlive;
     }
 
     std::pair<std::pair<int, int>, Orientation> Player::getPos() const {
@@ -81,7 +81,7 @@ namespace zappy {
     }
 
     void Player::setIsAlive(bool alive) {
-        isAlive = alive;
+        _isAlive = alive;
     }
 
     void Player::setPos(std::pair<std::pair<int, int>, Orientation> pos) {

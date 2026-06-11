@@ -50,7 +50,7 @@ namespace zappy {
         size_t                                      _totalMendiane  = 0;
         size_t                                      _totalPhiras    = 0;
         size_t                                      _totalThystame  = 0;
-        bool                                        isAlive         = true;
+        bool                                        _isAlive        = true;
         std::pair<std::pair<int, int>, Orientation> _pos;
     };
 

@@ -14,7 +14,7 @@ add_executable(zappy_gui
     src/server/Server.cpp
     src/server/ServerParser.cpp
     src/world/Tile.cpp
-    src/world/Worldstate.cpp
+    src/world/WorldState.cpp
     src/Renderer/Colors.cpp
     src/Renderer/Renderer.cpp
 )
