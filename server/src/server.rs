@@ -33,9 +33,9 @@ enum ClientState {
     Gui,
 }
 
-struct Client {
+pub struct Client {
     id: usize,
-    stream: TcpStream,
+    pub stream: TcpStream,
     addr: SocketAddr,
     state: ClientState,
     pending: String,
@@ -220,7 +220,7 @@ impl Server {
         Ok(())
     }
 
-    pub fn read(&mut self, ready: &Ready, game: &Game) -> io::Result<ReadOutcome> {
+    pub fn read(&mut self, ready: &Ready, game: &mut Game) -> io::Result<ReadOutcome> {
         let mut disconnected = ready.disconnected.clone();
         let mut buffer = [0u8; 1024];
 
@@ -270,7 +270,7 @@ impl Server {
         client: &mut Client,
         buffer: &mut [u8; 1024],
         team_slots: &mut [(String, usize)],
-        game: &Game,
+        game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: usize,
     ) -> bool {
@@ -303,7 +303,7 @@ impl Server {
         client: &mut Client,
         line: &str,
         team_slots: &mut [(String, usize)],
-        game: &Game,
+        game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: usize,
     ) -> bool {
@@ -312,10 +312,29 @@ impl Server {
             ClientState::Ai { .. } => {
                 Self::handle_ai_command(client, line, time_manager, client_id)
             }
-            ClientState::Gui => {
-                println!("GUI command from {}: {line}", client.addr);
-                false
-            }
+            ClientState::Gui => Self::handle_gui_command(client, line, game),
+        }
+    }
+
+    fn handle_gui_command(client: &mut Client, line: &str, game: &mut Game) -> bool {
+        let trimmed = line.trim();
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+
+        if parts.is_empty() {
+            eprintln!("Parse error from {}: empty command", client.addr);
+            return client.stream.write_all("ko\n".as_bytes()).is_err();
+        }
+        match parts[0] {
+            "msz" => Self::msz_parse(parts, client, game),
+            "bct" => Self::bct_parse(parts, client, game),
+            "mct" => Self::mct_parse(parts, client, game),
+            "tna" => Self::tna_parse(parts, client, game),
+            "ppo" => false, //TODO implement ppo
+            "plv" => false, // TODO implement plv
+            "pin" => false, // TODO implement pin
+            "sgt" => Self::sgt_parse(parts, client, game),
+            "sst" => Self::sst_parse(parts, client, game),
+            _ => Self::bad_command(parts, client),
         }
     }
 
