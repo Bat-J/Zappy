@@ -42,9 +42,9 @@ enum ClientState {
     Gui,
 }
 
-struct Client {
+pub struct Client {
     id: u32,
-    stream: TcpStream,
+    pub stream: TcpStream,
     addr: SocketAddr,
     state: ClientState,
     pending: String,
@@ -288,7 +288,10 @@ impl Server {
                 },
             };
 
-            let response = format!("{remaining}\n{} {}\n", game.config.width, game.config.height);
+            let response = format!(
+                "{remaining}\n{} {}\n",
+                game.config.width, game.config.height
+            );
             println!(
                 "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
                 client.addr, egg.x, egg.y
@@ -312,9 +315,10 @@ impl Server {
                     _ => None,
                 };
                 if let Some(team) = team
-                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team) {
-                        slot.1 += 1;
-                    }
+                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team)
+                {
+                    slot.1 += 1;
+                }
                 println!("Client disconnected: {}", client.addr);
             }
         }
@@ -362,18 +366,35 @@ impl Server {
         client_id: u32,
     ) -> bool {
         match client.state {
-            ClientState::AwaitingTeamName => {
-                Self::handle_team_name(client, line, team_slots, game)
-            }
+            ClientState::AwaitingTeamName => Self::handle_team_name(client, line, team_slots, game),
             ClientState::Ai { .. } => {
                 Self::handle_ai_command(client, line, time_manager, client_id)
             }
-            ClientState::Gui => {
-                println!("GUI command from {}: {line}", client.addr);
-                false
-            }
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
+            ClientState::Gui => Self::handle_gui_command(client, line, game),
+        }
+    }
+
+    fn handle_gui_command(client: &mut Client, line: &str, game: &mut Game) -> bool {
+        let trimmed = line.trim();
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+
+        if parts.is_empty() {
+            eprintln!("Parse error from {}: empty command", client.addr);
+            return client.stream.write_all("ko\n".as_bytes()).is_err();
+        }
+        match parts[0] {
+            "msz" => Self::msz_parse(parts, client, game),
+            "bct" => Self::bct_parse(parts, client, game),
+            "mct" => Self::mct_parse(parts, client, game),
+            "tna" => Self::tna_parse(parts, client, game),
+            "ppo" => false, //TODO implement ppo
+            "plv" => false, // TODO implement plv
+            "pin" => false, // TODO implement pin
+            "sgt" => Self::sgt_parse(parts, client, game),
+            "sst" => Self::sst_parse(parts, client, game),
+            _ => Self::bad_command(parts, client),
         }
     }
 

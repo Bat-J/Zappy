@@ -2,6 +2,7 @@ use crate::server::Game;
 
 mod args;
 mod command;
+mod gui_parser;
 mod map;
 mod server;
 mod time_manager;
