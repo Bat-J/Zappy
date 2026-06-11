@@ -479,3 +479,26 @@ class AI_server_interface:
         self.send_start_incantation_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
+
+    def generate_fake_broadcast_message(self, message: str = ""):
+        """Generates a fake broadcast message from the server with the specified message and direction. Message parameter is optional"""
+        if message != "":
+            random_action = randint(0, 10)
+            if random_action == 0:
+                return message
+            elif random_action == 1 and any(char.isdigit() for char in message):
+                for char in message:
+                    if char.isdigit():
+                        random_digit = randint(0, 9)
+                        message = message.replace(char, str(random_digit), 1)
+                return message
+            elif random_action == 2:
+                words = message.split()
+                if words:
+                    random_word_index = randint(0, len(words) - 1)
+                    words[random_word_index] = "[censored]"
+                    return " ".join(words)
+            elif random_action == 3:
+                return message.upper()
+            elif random_action == 4:
+                return "Incantation underway"
