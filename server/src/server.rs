@@ -3,11 +3,9 @@ use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_short, c_ulong};
-use std::vec;
 
 use crate::args::Config;
 use crate::command::Command;
-use crate::gui_parser::plv_reply;
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -433,7 +431,7 @@ impl Server {
             "tna" => Self::tna_parse(parts, &mut clients[client_id as usize], game),
             "ppo" => Self::ppo_parse(parts, &mut RefCell::new(clients), client_id),
             "plv" => Self::plv_parse(parts, &mut RefCell::new(clients), client_id),
-            "pin" => false, // TODO implement pin
+            "pin" => Self::pin_parse(parts, &mut RefCell::new(clients), client_id),
             "sgt" => Self::sgt_parse(parts, &mut clients[client_id as usize], game),
             "sst" => Self::sst_parse(parts, &mut clients[client_id as usize], game),
             _ => Self::bad_command(parts, &mut clients[client_id as usize]),
