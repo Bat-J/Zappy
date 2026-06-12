@@ -181,7 +181,6 @@ namespace zappy {
                                           return elapsed >= MAX_LIFETIME_S;
                                       }),
                        _circles.end());
-
         BeginBlendMode(BLEND_ALPHA);
         for (const BroadcastCircle& c : _circles) {
             float         elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
@@ -189,8 +188,7 @@ namespace zappy {
             float         radius  = t * MAX_RADIUS;
             unsigned char alpha   = static_cast<unsigned char>((1.0f - t) * 255);
             Color         color   = {255, 200, 50, alpha};
-
-            DrawRing({(float)c.centerX, (float)c.centerY}, radius - 2.0f, radius + 2.0f, 0.0f, 360.0f, 36, color);
+            raylib::Circle().DrawBorderCircle({(float)c.centerX, (float)c.centerY}, radius - 2.0f, radius + 2.0f, 0.0f, 360.0f, 36, color);
         }
         EndBlendMode();
     }
