@@ -573,7 +573,7 @@ class AI_server_interface:
                     "transmission broadcasting broadcast message direction event egg north east west south inventory fork eject position direction"
                 )
         else:
-            # return a random message from the server
+            # return a random message to the server if no message is provided
             random_messages = [
                 "Incantation underway",
                 "Current level: 2",
