@@ -65,8 +65,10 @@ namespace zappy {
                     server.updateTiles();
                     server.updateResources();
                     server.handleServerUpdate();
-                    _renderer.updateBroadcasters(server.takeBroadcasters(), server);
-                    server.clearBroadcasters();
+                    _renderer.updateBroadcasters(server.players().takeBroadcasters(), server);
+                    _renderer.updateIncreasers(server.players().takeIncreasers(), server);
+                    server.players().clearBroadcasters();
+                    server.players().clearIncreasers();
                 });
                 lastUpdate   = std::chrono::steady_clock::now();
             }

@@ -18,9 +18,21 @@ namespace zappy {
         size_t                     getNbPlayers() const;
         size_t                     getNbDeath() const;
         void                       getAllAlive();
+        void                       checkAlive(int pNumber, Socket& socket);
+        void                       updatePlayerpos(Socket& socket);
+        void                       checkIncrease(Socket& socket);
+        void                       increaseLvl(int n);
+        std::vector<int>           takeBroadcasters();
+        void                       clearBroadcasters();
+        void                       addBroadcaster(int i);
+        std::vector<int>           takeIncreasers();
+        void                       clearIncreasers();
+        void                       addIncreaser(int i);
 
       private:
         std::vector<Player> _Players;
+        std::vector<int>    _broadcasters;
+        std::vector<int>    _lvlIncreasers;
         size_t              _nbPlayers = 0;
         size_t              _nbDeath   = 0;
     };

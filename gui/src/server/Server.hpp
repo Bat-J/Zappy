@@ -30,17 +30,14 @@ namespace zappy {
         const WorldState& world() const {
             return _world;
         }
+        PlayerManager& players() {
+            return _players;
+        }
         const PlayerManager& players() const {
             return _players;
         }
         const ResourceTracker& resources() const {
             return _resources;
-        }
-        std::vector<int> takeBroadcasters() {
-            return std::move(_broadcasters);
-        }
-        void clearBroadcasters() {
-            _broadcasters.clear();
         }
 
       private:

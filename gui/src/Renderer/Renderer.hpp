@@ -34,7 +34,9 @@ namespace zappy {
         std::vector<std::vector<raylib::Rectangle>> getDrawnTiles();
         void                                        setSelectedTile(std::pair<int, int>& pair);
         void                                        updateBroadcasters(std::vector<int> vec, Server server);
+        void                                        updateIncreasers(std::vector<int> vec, Server server);
         void                                        drawBroadcastCircles();
+        void                                        drawIncreaseCircles();
 
       private:
         raylib::Image                               _logo;
@@ -48,6 +50,7 @@ namespace zappy {
         const int                                   _textBeginPosY = 110;
         const int                                   _fontSize      = 15;
         const float                                 _spacing       = 2.0f;
-        std::vector<BroadcastCircle>                _circles;
+        std::vector<BroadcastCircle>                _increasers;
+        std::vector<BroadcastCircle>                _broadcasters;
     };
 }

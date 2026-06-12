@@ -56,12 +56,14 @@ namespace zappy {
                     for (; oldSize < static_cast<int>(players.size()); oldSize++)
                         _players.checkAlive(oldSize, _socket);
                 }
-                _broadcasters.push_back(number);
+                _players.addBroadcaster(number);
             }
         }
         for (int i = 0; i < players.size(); i++)
             _players.checkAlive(i, _socket);
         _players.getAllAlive();
+        _players.checkIncrease(_socket);
+        _players.updatePlayerpos(_socket);
     }
 
     void Server::updateTiles() {

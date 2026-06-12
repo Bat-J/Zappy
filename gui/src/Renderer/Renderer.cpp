@@ -166,7 +166,26 @@ namespace zappy {
             const int playerY = offsetY + y * tileSize + tileSize / 2;
 
             if (player.getIsAlive() == true)
-                _circles.push_back({playerX, playerY, std::chrono::high_resolution_clock::now()});
+                _broadcasters.push_back({playerX, playerY, std::chrono::high_resolution_clock::now()});
+        }
+    }
+
+    void Renderer::updateIncreasers(std::vector<int> vec, Server server) {
+        const int                       offsetX        = 10;
+        const int                       offsetY        = 110;
+        const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
+        const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
+        const int                       tileSize       = std::min(availableWidth / (int)mapSize.first, (_window.GetHeight() - 120) / (int)mapSize.second);
+
+        for (int i = 0; i < (int)vec.size(); i++) {
+            Player    player  = server.players().getPlayer()[vec[i]];
+            const int x       = player.getPos().first.first;
+            const int y       = player.getPos().first.second;
+            const int playerX = offsetX + x * tileSize + tileSize / 2;
+            const int playerY = offsetY + y * tileSize + tileSize / 2;
+
+            if (player.getIsAlive() == true)
+                _increasers.push_back({playerX, playerY, std::chrono::high_resolution_clock::now()});
         }
     }
 
@@ -175,19 +194,42 @@ namespace zappy {
         const float MAX_RADIUS     = 80.0f;
         auto        now            = std::chrono::high_resolution_clock::now();
 
-        _circles.erase(std::remove_if(_circles.begin(), _circles.end(),
-                                      [&](const BroadcastCircle& c) {
-                                          float elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
-                                          return elapsed >= MAX_LIFETIME_S;
-                                      }),
-                       _circles.end());
+        _broadcasters.erase(std::remove_if(_broadcasters.begin(), _broadcasters.end(),
+                                           [&](const BroadcastCircle& c) {
+                                               float elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
+                                               return elapsed >= MAX_LIFETIME_S;
+                                           }),
+                            _broadcasters.end());
         BeginBlendMode(BLEND_ALPHA);
-        for (const BroadcastCircle& c : _circles) {
+        for (const BroadcastCircle& c : _broadcasters) {
             float         elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
             float         t       = elapsed / MAX_LIFETIME_S;
             float         radius  = t * MAX_RADIUS;
             unsigned char alpha   = static_cast<unsigned char>((1.0f - t) * 255);
             Color         color   = {255, 200, 50, alpha};
+            raylib::Circle().DrawBorderCircle({(float)c.centerX, (float)c.centerY}, radius - 2.0f, radius + 2.0f, 0.0f, 360.0f, 36, color);
+        }
+        EndBlendMode();
+    }
+
+    void Renderer::drawIncreaseCircles() {
+        const float MAX_LIFETIME_S = 5.0f;
+        const float MAX_RADIUS     = 80.0f;
+        auto        now            = std::chrono::high_resolution_clock::now();
+
+        _increasers.erase(std::remove_if(_increasers.begin(), _increasers.end(),
+                                         [&](const BroadcastCircle& c) {
+                                             float elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
+                                             return elapsed >= MAX_LIFETIME_S;
+                                         }),
+                          _increasers.end());
+        BeginBlendMode(BLEND_ALPHA);
+        for (const BroadcastCircle& c : _broadcasters) {
+            float         elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
+            float         t       = elapsed / MAX_LIFETIME_S;
+            float         radius  = t * MAX_RADIUS;
+            unsigned char alpha   = static_cast<unsigned char>((1.0f - t) * 255);
+            Color         color   = {0, 255, 0, alpha};
             raylib::Circle().DrawBorderCircle({(float)c.centerX, (float)c.centerY}, radius - 2.0f, radius + 2.0f, 0.0f, 360.0f, 36, color);
         }
         EndBlendMode();
@@ -211,6 +253,7 @@ namespace zappy {
         displayServerElements(server);
         displayBasicGui(isFpsDisplayed, isCursorDefault);
         drawBroadcastCircles();
+        drawIncreaseCircles();
         _window.EndDrawing();
     }
     void Renderer::close() {
