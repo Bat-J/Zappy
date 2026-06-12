@@ -28,7 +28,7 @@ class WinnerAgent:
 
             for message in self.ai_interface.message_history:
                 if message["text"].startswith("wawa_") and can_cast(str, int, message["text"][5:]) and int(message["text"][5:]) == self.ai_interface.level:
-                    self.elevation_broadcast_direction = message["direction"].add_cardinal_direction(self.ai_interface.relative_direction) #TODO fix direction calc
+                    self.elevation_broadcast_direction = message["direction"].sub_cardinal_direction(self.ai_interface.relative_direction) #TODO fix direction calc
                     print(f"Received elevation broadcast from direction {message['direction']}, moving towards {self.elevation_broadcast_direction}")
                 self.ai_interface.message_history.remove(message)
 

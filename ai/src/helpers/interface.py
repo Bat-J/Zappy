@@ -52,23 +52,24 @@ class cardinal_direction(Enum):
     def turn_left(self):
         return cardinal_direction((self.value - 2) % 4 + 1)
 
-
 class direction(Enum):
     none = 0
     north = 1
-    northwest = 2
-    west = 3
-    southwest = 4
+    northeast = 2
+    east = 3
+    southeast = 4
     south = 5
-    southeast = 6
-    east = 7
-    northeast = 8
+    southwest = 6
+    west = 7
+    northwest = 8
 
     def add_cardinal_direction(self, cardinal_direction: cardinal_direction):
-        return direction((self.value + cardinal_direction.value * 2 - 1) % 8 + 1)
+        rotation = (cardinal_direction.value - 1) * 2
+        return direction((self.value + rotation) % 8 + 1)
 
     def sub_cardinal_direction(self, cardinal_direction: cardinal_direction):
-        return direction((self.value - cardinal_direction.value * 2 - 1) % 8 + 1)
+        rotation = (cardinal_direction.value - 1) * 2
+        return direction((self.value - rotation - 1) % 8 + 1)
 
 
 def parse_direction(direction_value: int) -> direction:
