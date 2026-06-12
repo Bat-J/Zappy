@@ -1,7 +1,8 @@
 import helpers.networking as networking
 from enum import Enum
 from helpers.can_cast import can_cast
-from random import randint
+from random import choice, randint
+import helpers.broadcast_strings as broadcast_strings
 
 
 class object_type(Enum):
@@ -481,110 +482,88 @@ class AI_server_interface:
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
 
-    def replace_spaces_with_underscores(self, message: str) -> str:
-        """Replaces spaces in the message with underscores."""
-        return message.replace(" ", "_")
+    def sanitize_broadcast_message(self, message: str) -> str:
+        """sanitizes a broadcast"""
+        return message.replace(" ", "_").replace("\n", "_")
 
-    def generate_fake_broadcast_message(self, message: str = ""):
-        """Generates a fake broadcast message from the server with the specified message and direction. Message parameter is optional"""
-        if message != "":
-            random_action = randint(0, 11)
-            if random_action == 0:
-                # return the message as is
-                return self.replace_spaces_with_underscores(message)
-            elif random_action == 1 and any(char.isdigit() for char in message):
-                # replace digits in the message with random digits
-                for char in message:
-                    if char.isdigit():
-                        random_digit = randint(0, 9)
-                        message = message.replace(char, str(random_digit), 1)
-                return self.replace_spaces_with_underscores(message)
-            elif random_action == 2:
-                # censor a random word in the message
-                words = message.split()
-                if words:
-                    random_word_index = randint(0, len(words) - 1)
-                    words[random_word_index] = "******"
-                    return "_".join(words)
-            elif random_action == 3:
-                # put the message in uppercase
-                return self.replace_spaces_with_underscores(message.upper())
-            elif random_action == 4:
-                # return a message indicating that an incantation is underway
-                return "Incantation_underway"
-            elif random_action == 5:
-                # return a random level message
-                return "Current_level:_" + str(randint(1, 8))
-            elif random_action == 6:
-                # return a very long message to confuse other agents
-                return self.replace_spaces_with_underscores(
-                    "A chair is a type of seat, "
-                    "typically designed for one person and consisting of one or more legs, "
-                    "a flat or slightly angled seat, and a back-rest. It may be made of wood, "
-                    "metal, or synthetic materials, and may be padded or upholstered in various colors and fabrics. "
-                    "Chairs vary in design. An armchair has armrests fixed to the seat; "
-                    "a recliner is upholstered and features a mechanism that lowers the chair's back and raises into place a footrest; "
-                    "a rocking chair has legs fixed to two long curved slats; and a wheelchair has wheels fixed to an axis under the seat."
-                )
-            elif random_action == 7:
-                # cesar code the message with a random shift
-                shift = randint(1, 25)
-                encrypted_message = ""
-                for char in message:
-                    if char.isalpha():
-                        if char.isupper():
-                            offset = 65
-                        else:
-                            offset = 97
-                        encrypted_char = chr((ord(char) - offset + shift) % 26 + offset)
-                        encrypted_message += encrypted_char
+    def generate_fake_broadcast_random_message(self) -> str:
+        return choice(broadcast_strings.RANDOM_MESSAGES)
+
+    def generate_fake_broadcast_response_message(self, message: str) -> str:
+        random_action = randint(0, 9)
+        if random_action == 0:
+            # return the message as is
+            return message
+        elif random_action == 1 and any(char.isdigit() for char in message):
+            # replace digits in the message with random digits
+            for char in message:
+                if char.isdigit():
+                    random_digit = randint(0, 9)
+                    message = message.replace(char, str(random_digit), 1)
+            return message
+        elif random_action == 2:
+            # censor a random word in the message
+            words = message.split("_")
+            if words:
+                random_word_index = randint(0, len(words) - 1)
+                words[random_word_index] = "******"
+                return "_".join(words)
+        elif random_action == 3:
+            # put the message in uppercase
+            return message.upper()
+        elif random_action == 4:
+            # put the message in lowercase
+            return message.lower()
+        elif random_action == 5:
+            # return a random number
+            return str(randint(0, 99))
+        elif random_action == 6:
+            # cesar code the message with a random shift
+            shift = randint(1, 25)
+            encrypted_message = ""
+            for char in message:
+                if char.isalpha():
+                    if char.isupper():
+                        offset = 65
                     else:
-                        encrypted_message += char
-                    return self.replace_spaces_with_underscores(encrypted_message)
-            elif random_action == 8:
-                # reverse message
-                return self.replace_spaces_with_underscores(message[::-1])
-            elif random_action == 9:
-                # replace vowels with consonants and vice versa
-                vowels = "aeiouyAEIOUY"
-                consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
-                for vowel in vowels:
-                    message = message.replace(
-                        vowel, consonants[randint(0, len(consonants) - 1)]
-                    )
-                return self.replace_spaces_with_underscores(message)
-            elif random_action == 10:
-                # replace consonants with vowels and vice versa
-                vowels = "aeiouyAEIOUY"
-                consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
-                for consonant in consonants:
-                    message = message.replace(
-                        consonant, vowels[randint(0, len(vowels) - 1)]
-                    )
-                return self.replace_spaces_with_underscores(message)
-            elif random_action == 11:
-                # return a message with all the keywords of the project
-                return self.replace_spaces_with_underscores(
-                    "zappy zapfrites server gui ai network team tile map resource "
-                    "winner mover simple lawn mower winning player maximum elevation 0 1 2 3 4 5 6 7 8 9 environment geography "
-                    "game world inhabitant trantor board up down left right planet food stone linemate deraumere sibur mendiane "
-                    "phiras thystame spawn time limit width height density feed trantorian collecting objective activity individual "
-                    "eat creature see survive unit live ritual goal everyone level incantation generation action vision look sound "
-                    "transmission broadcasting broadcast message direction event egg north east west south inventory fork eject position direction"
+                        offset = 97
+                    encrypted_char = chr((ord(char) - offset + shift) % 26 + offset)
+                    encrypted_message += encrypted_char
+                else:
+                    encrypted_message += char
+                return encrypted_message
+        elif random_action == 7:
+            # reverse message
+            return message[::-1]
+        elif random_action == 8:
+            # replace vowels with consonants and vice versa
+            vowels = "aeiouyAEIOUY"
+            consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+            for vowel in vowels:
+                message = message.replace(
+                    vowel, consonants[randint(0, len(consonants) - 1)]
                 )
+            return message
+        elif random_action == 9:
+            # replace consonants with vowels and vice versa
+            vowels = "aeiouyAEIOUY"
+            consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+            for consonant in consonants:
+                message = message.replace(
+                    consonant, vowels[randint(0, len(vowels) - 1)]
+                )
+            return message
+        return ""
+
+    def generate_fake_broadcast_message(self, message: str = "") -> str:
+        """Generates a broadcast message meant to confuse other agents. Message parameter is optional"""
+        output = ""
+        if message is not None and message.strip() != "":
+            # 2/3 responce, 1/3 random
+            if randint(0, 2) != 0:
+                output = self.generate_fake_broadcast_response_message(message)
+            else:
+                output = self.generate_fake_broadcast_random_message()
         else:
-            # return a random message from the list of random messages if no message is provided
-            random_messages = [
-                "Incantation underway",
-                "Current level: 2",
-                "Current level: 3",
-                "Current level: 4",
-                "Current level: 5",
-                "Current level: 6",
-                "Current level: 7",
-                "Current_level: 8",
-                "Hello! 👋😃🚀",
-            ]
-            return self.replace_spaces_with_underscores(
-                random_messages[randint(0, len(random_messages) - 1)]
-            )
+            output = self.generate_fake_broadcast_random_message()
+        return self.sanitize_broadcast_message(output)
