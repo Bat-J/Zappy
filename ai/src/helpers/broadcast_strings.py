@@ -1,5 +1,4 @@
-WIKIPEDIA_CHAIR_DESCRIPTION = (
-"""
+WIKIPEDIA_CHAIR_DESCRIPTION = """
 Chair
 
     Article
@@ -181,7 +180,6 @@ See also
     Seating assignment
     Splat (furniture), the central vertical element of a wooden chair back
 """
-)
 
 SUBJECT_BUZZWORDS_COMPILATION = (
     "zappy zapfrites server gui ai network team tile map resource "
