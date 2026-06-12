@@ -7,8 +7,9 @@ use std::vec;
 
 use crate::args::Config;
 use crate::command::Command;
-use crate::map::create_gui_connection_string;
+use crate::gui_parser::plv_reply;
 use crate::map::{Egg, Tile};
+use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
 
 type Nfds = c_ulong;
@@ -42,7 +43,8 @@ pub struct Player {
     pub id: u32,
     pub orientation: Orientation,
     pub level: u8,
-    pub inventory: [u32; 7],
+    pub inventory: Resources,
+    pub food: u32,
 }
 
 pub enum ClientState {
@@ -295,7 +297,15 @@ impl Server {
                     id: egg.id,
                     orientation: Orientation::North,
                     level: 1,
-                    inventory: [0; 7],
+                    inventory: Resources {
+                        linemate: 0,
+                        deraumere: 0,
+                        sibur: 0,
+                        mendiane: 0,
+                        phiras: 0,
+                        thystame: 0,
+                    },
+                    food: 10,
                 },
             };
 
@@ -422,7 +432,7 @@ impl Server {
             "mct" => Self::mct_parse(parts, &mut clients[client_id as usize], game),
             "tna" => Self::tna_parse(parts, &mut clients[client_id as usize], game),
             "ppo" => Self::ppo_parse(parts, &mut RefCell::new(clients), client_id),
-            "plv" => false, // TODO implement plv
+            "plv" => Self::plv_parse(parts, &mut RefCell::new(clients), client_id),
             "pin" => false, // TODO implement pin
             "sgt" => Self::sgt_parse(parts, &mut clients[client_id as usize], game),
             "sst" => Self::sst_parse(parts, &mut clients[client_id as usize], game),
@@ -491,7 +501,15 @@ impl Server {
                             id: egg.id,
                             orientation: Orientation::North,
                             level: 1,
-                            inventory: [0; 7],
+                            inventory: Resources {
+                                linemate: 0,
+                                deraumere: 0,
+                                sibur: 0,
+                                mendiane: 0,
+                                phiras: 0,
+                                thystame: 0,
+                            },
+                            food: 10
                         },
                     };
 

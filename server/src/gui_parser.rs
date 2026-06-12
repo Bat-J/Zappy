@@ -90,10 +90,83 @@ impl Server {
                         _ => continue,
                     }
                 }
-                true
+                Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n")
             }
             None => {
-                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp");
+                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+            }
+        }
+    }
+
+
+    pub fn plv_parse(
+        parts: Vec<&str>,
+        clients: &mut RefCell<&mut Vec<Client>>,
+        client_id: u32,
+    ) -> bool {
+        if parts.len() != 2 || !parts[1].starts_with("#") {
+            return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+        }
+        match parts[1].chars().next().map(|c| &parts[1][c.len_utf8()..]) {
+            Some(string) => {
+                let player_id = string;
+                if player_id.parse::<u32>().is_err() {
+                    return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+                }
+                for client in clients.borrow().iter() {
+                    match &client.state {
+                        ClientState::Ai { team: _, player } => {
+                            if player.id != player_id.parse::<u32>().unwrap() {
+                                continue;
+                            }
+                            return clients.borrow_mut()[client_id as usize]
+                                .stream
+                                .write_all(plv_reply(player).as_bytes())
+                                .is_err();
+                        }
+                        _ => continue,
+                    }
+                }
+                Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n")
+            }
+            None => {
+                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+            }
+        }
+    }
+
+    pub fn pin_parse(
+        parts: Vec<&str>,
+        clients: &mut RefCell<&mut Vec<Client>>,
+        client_id: u32,
+    ) -> bool {
+        if parts.len() != 2 || !parts[1].starts_with("#") {
+            return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+        }
+        match parts[1].chars().next().map(|c| &parts[1][c.len_utf8()..]) {
+            Some(string) => {
+                let player_id = string;
+                if player_id.parse::<u32>().is_err() {
+                    return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+                }
+                for client in clients.borrow().iter() {
+                    match &client.state {
+                        ClientState::Ai { team: _, player } => {
+                            if player.id != player_id.parse::<u32>().unwrap() {
+                                continue;
+                            }
+                            return clients.borrow_mut()[client_id as usize]
+                                .stream
+                                .write_all(pin_reply(player).as_bytes())
+                                .is_err();
+                        }
+                        _ => continue,
+                    }
+                }
+                Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n")
+            }
+            None => {
+                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
             }
         }
     }
@@ -127,6 +200,7 @@ impl Server {
 
 pub fn ppo_reply(player: &Player) -> String {
     let mut string = String::new();
+
     string.push_str("ppo #");
     string.push_str(&player.id.to_string());
     string.push(' ');
@@ -140,6 +214,44 @@ pub fn ppo_reply(player: &Player) -> String {
         Orientation::South => string.push('S'),
         Orientation::West => string.push('W'),
     }
+    string.push('\n');
+    string
+}
+
+pub fn plv_reply(player: &Player) -> String {
+    let mut string = String::new();
+
+    string.push_str("plv #");
+    string.push_str(&player.id.to_string());
+    string.push(' ');
+    string.push_str(&player.level.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pin_reply(player: &Player) -> String {
+    let mut string = String::new();
+
+    string.push_str("pin #");
+    string.push_str(&player.id.to_string());
+    string.push(' ');
+    string.push_str(&player.x.to_string());
+    string.push(' ');
+    string.push_str(&player.y.to_string());
+    string.push(' ');
+    string.push_str(&player.food.to_string());
+    string.push(' ');
+    string.push_str(&player.inventory.linemate.to_string());
+    string.push(' ');
+    string.push_str(&player.inventory.deraumere.to_string());
+    string.push(' ');
+    string.push_str(&player.inventory.sibur.to_string());
+    string.push(' ');
+    string.push_str(&player.inventory.mendiane.to_string());
+    string.push(' ');
+    string.push_str(&player.inventory.phiras.to_string());
+    string.push(' ');
+    string.push_str(&player.inventory.thystame.to_string());
     string.push('\n');
     string
 }

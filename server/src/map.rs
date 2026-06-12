@@ -10,12 +10,12 @@ pub struct Tile {
 
 #[derive(Default, Clone)]
 pub struct Resources {
-    linemate: u32,
-    deraumere: u32,
-    sibur: u32,
-    mendiane: u32,
-    phiras: u32,
-    thystame: u32,
+    pub linemate: u32,
+    pub deraumere: u32,
+    pub sibur: u32,
+    pub mendiane: u32,
+    pub phiras: u32,
+    pub thystame: u32,
 }
 
 #[derive(Default)]
