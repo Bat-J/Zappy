@@ -10,7 +10,8 @@
 #include "../server/Server.hpp"
 #include "Colors.hpp"
 #include <raylib-cpp.hpp>
-
+#include <vector>
+#include "BroadcastCircle.hpp"
 namespace zappy {
 
     class Renderer {
@@ -32,6 +33,8 @@ namespace zappy {
         Colors&                                     getColors();
         std::vector<std::vector<raylib::Rectangle>> getDrawnTiles();
         void                                        setSelectedTile(std::pair<int, int>& pair);
+        void                                        updateBroadcasters(std::vector<int> vec, Server server);
+        void                                        drawBroadcastCircles();
 
       private:
         raylib::Image                               _logo;
@@ -45,5 +48,6 @@ namespace zappy {
         const int                                   _textBeginPosY = 110;
         const int                                   _fontSize      = 15;
         const float                                 _spacing       = 2.0f;
+        std::vector<BroadcastCircle>                _circles;
     };
 }

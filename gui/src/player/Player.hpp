@@ -29,6 +29,7 @@ namespace zappy {
         size_t                                      getPhiras() const;
         size_t                                      getThystame() const;
         bool                                        getIsAlive() const;
+        int                                         getId() const;
         std::pair<std::pair<int, int>, Orientation> getPos() const;
         void                                        setLevel(u_int8_t lvl);
         void                                        setFood(size_t food);

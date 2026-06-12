@@ -61,10 +61,12 @@ namespace zappy {
             const auto t          = server.world().getTimeReference();
             const auto intervalMs = (t > 0) ? static_cast<long long>(1000.0 / t) : 1000LL;
             if (elapsedMs >= intervalMs && !updateFuture.valid()) {
-                updateFuture = std::async(std::launch::async, [&server]() {
+                updateFuture = std::async(std::launch::async, [&server, this]() {
                     server.updateTiles();
                     server.updateResources();
                     server.handleServerUpdate();
+                    _renderer.updateBroadcasters(server.takeBroadcasters(), server);
+                    server.clearBroadcasters();
                 });
                 lastUpdate   = std::chrono::steady_clock::now();
             }

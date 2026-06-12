@@ -12,6 +12,7 @@
 #include "../resources/ResourceTracker.hpp"
 #include "../world/WorldState.hpp"
 #include <mutex>
+#include <vector>
 
 namespace zappy {
     class Server {
@@ -35,12 +36,19 @@ namespace zappy {
         const ResourceTracker& resources() const {
             return _resources;
         }
+        std::vector<int> takeBroadcasters() {
+            return std::move(_broadcasters);
+        }
+        void clearBroadcasters() {
+            _broadcasters.clear();
+        }
 
       private:
-        Socket&         _socket;
-        WorldState      _world;
-        PlayerManager   _players;
-        ResourceTracker _resources;
-        std::mutex      _dataMutex;
+        Socket&          _socket;
+        WorldState       _world;
+        PlayerManager    _players;
+        ResourceTracker  _resources;
+        std::mutex       _dataMutex;
+        std::vector<int> _broadcasters;
     };
 }

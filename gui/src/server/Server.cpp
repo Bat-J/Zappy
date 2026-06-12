@@ -48,7 +48,19 @@ namespace zappy {
                 if (static_cast<std::size_t>(number) < players.size())
                     players[number].setIsAlive(false);
             }
+            if (wordsByLine[i][0] == "pbc") {
+                const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                int       oldSize = static_cast<int>(players.size());
+                if (static_cast<std::size_t>(number) >= players.size()) {
+                    players.resize(static_cast<std::size_t>(number) + 1);
+                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
+                        _players.checkAlive(oldSize, _socket);
+                }
+                _broadcasters.push_back(number);
+            }
         }
+        for (int i = 0; i < players.size(); i++)
+            _players.checkAlive(i, _socket);
         _players.getAllAlive();
     }
 

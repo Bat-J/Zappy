@@ -15,5 +15,8 @@ namespace raylib {
         void CircleDraw(int centerX, int centerY, float radius, Color color) {
             return DrawCircle(centerX, centerY, radius, color);
         }
+        void DrawBorderCircle(int centerX, int centerY, float radius, Color color) {
+            return DrawCircleLines(centerX, centerY, radius, color);
+        }
     };
 }
