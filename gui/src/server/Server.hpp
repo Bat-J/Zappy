@@ -39,13 +39,16 @@ namespace zappy {
         const ResourceTracker& resources() const {
             return _resources;
         }
+        const std::vector<std::string> logs() const {
+            return _logs;
+        }
 
       private:
-        Socket&          _socket;
-        WorldState       _world;
-        PlayerManager    _players;
-        ResourceTracker  _resources;
-        std::mutex       _dataMutex;
-        std::vector<int> _broadcasters;
+        Socket&                  _socket;
+        WorldState               _world;
+        PlayerManager            _players;
+        ResourceTracker          _resources;
+        std::mutex               _dataMutex;
+        std::vector<std::string> _logs;
     };
 }

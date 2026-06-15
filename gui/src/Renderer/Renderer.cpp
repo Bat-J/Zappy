@@ -235,6 +235,20 @@ namespace zappy {
         EndBlendMode();
     }
 
+    void Renderer::displayLastLogs(const Server& server) {
+        int pos = server.logs().size() - 15;
+        int beg = std::max(pos, 0);
+        int x   = 960;
+        int y   = 400;
+
+        _font.DrawText("LOGS :", x, y, 25, 1.0f, _colors.getTextColor());
+        y += 35;
+        for (; beg < server.logs().size(); beg++) {
+            _font.DrawText(server.logs()[beg], x, y, 12, 1.0f, _colors.getTextColor());
+            y += 22;
+        }
+    }
+
     void Renderer::displayServerElements(const Server& server) {
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
         const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
@@ -243,6 +257,7 @@ namespace zappy {
         displayPlayers(server, 10, 110, tileSize);
         _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _colors.getTextColor());
         displayStats(server);
+        displayLastLogs(server);
         displayTotalResources(server);
         displaySelectedTile(server);
     }

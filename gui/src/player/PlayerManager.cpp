@@ -8,7 +8,9 @@
 #include "PlayerManager.hpp"
 #include "../server/ServerParser.hpp"
 #include <sstream>
-#include <iostream>
+#include <string>
+#include <vector>
+
 namespace zappy {
 
     std::vector<Player>& PlayerManager::getPlayer() {
@@ -64,28 +66,63 @@ namespace zappy {
         _lvlIncreasers.push_back(i);
     }
 
-    void PlayerManager::checkIncrease(Socket& socket) {
-        std::string fullmess;
-        for (int p = 0; p < _Players.size(); p++) {
-            if (_Players[p].getIsAlive() == false)
-                continue;
-            std::string mess = "plv #" + std::to_string(p) + "\n";
-            socket.writeToSocket(mess);
-            fullmess += socket.readFromSocket();
+    void PlayerManager::checkAlive(int pNumber, Socket& socket, std::vector<std::string>& logs) {
+        std::string comm = "plv #" + std::to_string(pNumber) + "\n";
+        socket.writeToSocket(comm);
+        std::string                    resp = socket.readFromSocket();
+        ServerParser                   parser;
+        const std::vector<std::string> words = parser.splitWords(resp);
+
+        _Players[pNumber].setIsAlive(false);
+        for (std::size_t i = 0; i + 2 < words.size(); ++i) {
+            if (words[i] == "plv" && words[i + 1] == "#" + std::to_string(pNumber)) {
+                _Players[pNumber].setIsAlive(true);
+                if (std ::stoi(words[i + 2]) > _Players[pNumber].getLevel()) {
+                    _Players[pNumber].setLevel(std::stoi(words[i + 2]));
+                    addIncreaser(pNumber);
+                    logs.push_back("Player " + std::to_string(pNumber) + " increased Lvl to " + words[i + 2]);
+                }
+                break;
+            }
         }
-        std::istringstream stream(fullmess);
-        std::string        line;
-        while (std::getline(stream, line)) {
-            if (line.empty())
+        getAllAlive();
+    }
+
+    void PlayerManager::updatePlayerpos(Socket& socket, std::vector<std::string>& logs) {
+        std::string dir = "unk";
+        for (std::size_t i = 0; i < _Players.size(); ++i) {
+            if (!_Players[i].getIsAlive()) {
                 continue;
-            int n, L;
-            if (std::sscanf(line.c_str(), "plv #%d %d", &n, &L) == 2) {
-                if (L > _Players[n].getLevel()) {
-                    addIncreaser(n);
-                    _Players[n].setLevel(n);
+            }
+            std::string comm = "ppo #" + std::to_string(i) + "\n";
+            socket.writeToSocket(comm);
+            const std::string resp = socket.readFromSocket();
+            std::stringstream stream(resp);
+            std::string       token;
+            ServerParser      parser;
+
+            while (std::getline(stream, token)) {
+                if (token.empty()) {
+                    continue;
+                }
+                const auto words = parser.splitWords(token);
+                if (words.size() >= 5 && words[1] == "#" + std::to_string(i) && parser.parsePlayerPositionLine(words, _Players[i])) {
+                    _Players[i].setIsAlive(true);
+                    if (words[3].compare("1")) {
+                        dir = "North";
+                    }
+                    if (words[3].compare("2")) {
+                        dir = "East";
+                    }
+                    if (words[3].compare("3")) {
+                        dir = "South";
+                    }
+                    if (words[3].compare("4")) {
+                        dir = "West";
+                    }
+                    logs.push_back("Player " + std::to_string(i) + " moved to X: " + words[2] + " Y: " + words[3] + " facing " + dir);
                 }
             }
         }
     }
-
 }

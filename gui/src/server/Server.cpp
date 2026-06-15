@@ -38,6 +38,9 @@ namespace zappy {
                 const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 if (static_cast<std::size_t>(number) >= players.size())
                     players.resize(static_cast<std::size_t>(number) + 1);
+                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
+                        _players.checkAlive(oldSize, _socket, _logs);
+                }
                 parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
                 players[number].setIsAlive(true);
                 if (wordsByLine[i][0] == "pnw")
@@ -47,6 +50,7 @@ namespace zappy {
                 const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 if (static_cast<std::size_t>(number) < players.size())
                     players[number].setIsAlive(false);
+                _logs.push_back("Player " + std::to_string(number) + " died");
             }
             if (wordsByLine[i][0] == "pbc") {
                 const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
@@ -54,16 +58,16 @@ namespace zappy {
                 if (static_cast<std::size_t>(number) >= players.size()) {
                     players.resize(static_cast<std::size_t>(number) + 1);
                     for (; oldSize < static_cast<int>(players.size()); oldSize++)
-                        _players.checkAlive(oldSize, _socket);
+                        _players.checkAlive(oldSize, _socket, _logs);
                 }
+                _logs.push_back("Player " + std::to_string(number) + " sent the message " + wordsByLine[i][2]);
                 _players.addBroadcaster(number);
             }
         }
         for (int i = 0; i < players.size(); i++)
-            _players.checkAlive(i, _socket);
+            _players.checkAlive(i, _socket, _logs);
         _players.getAllAlive();
-        _players.checkIncrease(_socket);
-        _players.updatePlayerpos(_socket);
+        _players.updatePlayerpos(_socket, _logs);
     }
 
     void Server::updateTiles() {
