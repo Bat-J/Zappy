@@ -1,5 +1,5 @@
 use crate::{
-    map::{bct_reply, mct_reply, msz_reply, sgt_reply, tna_reply},
+    map::{Egg, bct_reply, mct_reply, msz_reply, sgt_reply, tna_reply},
     server::{Client, ClientState, Game, Orientation, Player, Server},
 };
 use std::{cell::RefCell, io::Write};
@@ -97,7 +97,6 @@ impl Server {
             }
         }
     }
-
 
     pub fn plv_parse(
         parts: Vec<&str>,
@@ -252,6 +251,149 @@ pub fn pin_reply(player: &Player) -> String {
     string.push_str(&player.inventory.phiras.to_string());
     string.push(' ');
     string.push_str(&player.inventory.thystame.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pnw_reply(player: &Player, team: &str) -> String {
+    let mut string = String::new();
+
+    string.push_str("pnw #");
+    string.push_str(&player.id.to_string());
+    string.push(' ');
+    string.push_str(&player.x.to_string());
+    string.push(' ');
+    string.push_str(&player.y.to_string());
+    string.push(' ');
+    match player.orientation {
+        Orientation::North => string.push('N'),
+        Orientation::East => string.push('E'),
+        Orientation::South => string.push('S'),
+        Orientation::West => string.push('W'),
+    }
+    string.push(' ');
+    string.push_str(&player.level.to_string());
+    string.push(' ');
+    string.push_str(team);
+    string.push('\n');
+    string
+}
+
+pub fn pex_reply(player: &Player) -> String {
+    let mut string = String::new();
+
+    string.push_str("pex #");
+    string.push_str(&player.id.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pbc_reply(player: &Player, broadcast: &str) -> String {
+    let mut string = String::new();
+
+    string.push_str("pbc #");
+    string.push_str(&player.id.to_string());
+    string.push(' ');
+    string.push_str(broadcast);
+    string.push('\n');
+    string
+}
+
+pub fn pic_reply(source: &Player, list: &Vec<&Player>) -> String {
+    let mut string = String::new();
+
+    string.push_str("pic #");
+    string.push_str(&source.id.to_string());
+    string.push(' ');
+    string.push_str(&source.x.to_string());
+    string.push(' ');
+    string.push_str(&source.y.to_string());
+    string.push(' ');
+    string.push_str(&source.level.to_string());
+    for player in list {
+        string.push_str(" #");
+        string.push_str(&player.id.to_string());
+    }
+    string.push('\n');
+    string
+}
+
+pub fn pie_reply(x: u32, y: u32, success: bool) -> String {
+    let mut string = String::new();
+
+    string.push_str("pie ");
+    string.push_str(&x.to_string());
+    string.push(' ');
+    string.push_str(&y.to_string());
+    string.push(' ');
+    string.push_str(&success.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pfk_reply(player: &Player) -> String {
+    let mut string = String::new();
+
+    string.push_str("pfk #");
+    string.push_str(&player.id.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pdr_reply(player: &Player, ressource: u8) -> String {
+    let mut string = String::new();
+
+    string.push_str("pdr #");
+    string.push_str(&player.id.to_string());
+    string.push(' ');
+    string.push_str(&ressource.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pgt_reply(player: &Player, ressource: u8) -> String {
+    let mut string = String::new();
+
+    string.push_str("pgt #");
+    string.push_str(&player.id.to_string());
+    string.push(' ');
+    string.push_str(&ressource.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn pdi_reply(player: &Player) -> String {
+    let mut string = String::new();
+
+    string.push_str("pdi #");
+    string.push_str(&player.id.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn ebo_reply(egg: &Egg) -> String {
+    let mut string = String::new();
+
+    string.push_str("ebo #");
+    string.push_str(&egg.id.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn edi_reply(egg: &Egg) -> String {
+    let mut string = String::new();
+
+    string.push_str("edi #");
+    string.push_str(&egg.id.to_string());
+    string.push('\n');
+    string
+}
+
+pub fn seg_reply(team: &str) -> String {
+    let mut string = String::new();
+
+    string.push_str("seg ");
+    string.push_str(team);
     string.push('\n');
     string
 }

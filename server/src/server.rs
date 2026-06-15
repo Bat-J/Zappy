@@ -507,7 +507,7 @@ impl Server {
                                 phiras: 0,
                                 thystame: 0,
                             },
-                            food: 10
+                            food: 10,
                         },
                     };
 
