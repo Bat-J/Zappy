@@ -126,7 +126,7 @@ fn convert_ressource_name_to_id(string: &str) -> u8 {
     }
 }
 
-fn send_string_to_all_guis(clients: &mut Vec<Client>, msg: String) {
+pub fn send_string_to_all_guis(clients: &mut Vec<Client>, msg: String) {
     for client in clients.iter_mut() {
         match client.state {
             ClientState::Gui => {

@@ -5,7 +5,8 @@ use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
-use crate::command::{Command, send_ai_command_to_gui};
+use crate::command::{Command, send_ai_command_to_gui, send_string_to_all_guis};
+use crate::gui_parser::{ebo_reply, pdi_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -292,7 +293,9 @@ impl Server {
     /// Call this whenever a new egg is added to `game.eggs`, to hatch any
     /// clients that were queued waiting for one.
     pub fn try_hatch_pending(&mut self, game: &mut Game) {
-        for client in self.clients.iter_mut() {
+        let reference = RefCell::new(&mut self.clients);
+
+        for client in reference.borrow_mut().into_iter() {
             let team = match &client.state {
                 ClientState::AwaitingEgg { team } => team.clone(),
                 _ => continue,
@@ -342,6 +345,7 @@ impl Server {
                 client.addr, egg.x, egg.y
             );
             let _ = client.stream.write_all(response.as_bytes());
+            send_string_to_all_guis(*reference.borrow_mut(), ebo_reply(&egg));
         }
     }
 
@@ -380,6 +384,7 @@ impl Server {
                     if player.time_left <= 0 {
                         player.food -= 1;
                         if player.food <= 0 {
+                            send_string_to_all_guis(*reference.borrow_mut(), pdi_reply(&player));
                             let _ = client.stream.shutdown(std::net::Shutdown::Both);
                             reference.borrow_mut().remove(i);
                             continue;
