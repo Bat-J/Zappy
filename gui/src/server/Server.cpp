@@ -8,6 +8,7 @@
 #include "Server.hpp"
 #include "ServerParser.hpp"
 #include <cstdlib>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -27,20 +28,20 @@ namespace zappy {
             if (!line.empty())
                 wordsByLine.push_back(parser.splitWords(line));
         }
-        std::vector<Player>& players = _players.getPlayer();
+
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        std::vector<Player>&        players = _players.getPlayer();
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
             if (wordsByLine[i].empty())
                 continue;
             if ((wordsByLine[i][0] == "ppo" && wordsByLine[i].size() == 5) || (wordsByLine[i][0] == "pnw" && wordsByLine[i].size() == 7)) {
-                const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                int       oldSize = static_cast<int>(players.size());
-                if (static_cast<std::size_t>(number) >= players.size()) {
+                const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                if (static_cast<std::size_t>(number) >= players.size())
                     players.resize(static_cast<std::size_t>(number) + 1);
-                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
-                        _players.checkAlive(oldSize, _socket);
-                }
                 parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
                 players[number].setIsAlive(true);
+                if (wordsByLine[i][0] == "pnw")
+                    players[number].setLevel(static_cast<u_int8_t>(std::atoi(wordsByLine[i][5].c_str())));
             }
             if (wordsByLine[i][0] == "pdi") {
                 const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
@@ -49,7 +50,6 @@ namespace zappy {
             }
         }
         _players.getAllAlive();
-        _players.updatePlayerpos(_socket);
     }
 
     void Server::updateTiles() {
@@ -78,11 +78,13 @@ namespace zappy {
                 i += 9;
             }
         }
+        std::lock_guard<std::mutex> lock(_dataMutex);
         _world.setTiles(tiles);
     }
 
     void Server::updateResources() {
-        return _resources.updateResources(world().getTiles());
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        _resources.updateResources(world().getTiles());
     }
 
     void Server::getInfo() {

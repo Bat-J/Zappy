@@ -20,7 +20,6 @@ int main(int argc, char** argv) {
         return 84;
     }
     zappy::Socket socket;
-    socket.createSocket();
     if (!socket.connectTo(inet_addr(argv[4]), std::stoi(argv[2]))) {
         std::cerr << "Failed to connect to server\n";
         return 84;
