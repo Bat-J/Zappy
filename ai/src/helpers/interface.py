@@ -14,11 +14,13 @@ class object_type(Enum):
     phiras = "phiras"
     thystame = "thystame"
 
+
 def object_type_from_string(value: str) -> object_type:
     try:
         return object_type(value)
     except ValueError:
         raise ValueError(f"Invalid object type: {value}")
+
 
 def str_to_object_type(value: str) -> object_type:
     return object_type(value)
@@ -57,6 +59,7 @@ class cardinal_direction(Enum):
             return cardinal_direction.none
         return cardinal_direction((self.value % 4) + 1)
 
+
 class direction(Enum):
     none = 0
     north = 1
@@ -84,13 +87,62 @@ def parse_direction(direction_value: int) -> direction:
 
 
 RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP = {
-    1: {object_type.linemate: 1, object_type.deraumere: 0, object_type.sibur: 0, object_type.mendiane: 0, object_type.phiras: 0, object_type.thystame: 0},
-    2: {object_type.linemate: 1, object_type.deraumere: 1, object_type.sibur: 1, object_type.mendiane: 0, object_type.phiras: 0, object_type.thystame: 0},
-    3: {object_type.linemate: 2, object_type.deraumere: 0, object_type.sibur: 1, object_type.mendiane: 0, object_type.phiras: 2, object_type.thystame: 0},
-    4: {object_type.linemate: 1, object_type.deraumere: 1, object_type.sibur: 2, object_type.mendiane: 0, object_type.phiras: 1, object_type.thystame: 0},
-    5: {object_type.linemate: 1, object_type.deraumere: 2, object_type.sibur: 1, object_type.mendiane: 3, object_type.phiras: 0, object_type.thystame: 0},
-    6: {object_type.linemate: 1, object_type.deraumere: 2, object_type.sibur: 3, object_type.mendiane: 0, object_type.phiras: 1, object_type.thystame: 0},
-    7: {object_type.linemate: 2, object_type.deraumere: 2, object_type.sibur: 2, object_type.mendiane: 2, object_type.phiras: 2, object_type.thystame: 1},
+    1: {
+        object_type.linemate: 1,
+        object_type.deraumere: 0,
+        object_type.sibur: 0,
+        object_type.mendiane: 0,
+        object_type.phiras: 0,
+        object_type.thystame: 0,
+    },
+    2: {
+        object_type.linemate: 1,
+        object_type.deraumere: 1,
+        object_type.sibur: 1,
+        object_type.mendiane: 0,
+        object_type.phiras: 0,
+        object_type.thystame: 0,
+    },
+    3: {
+        object_type.linemate: 2,
+        object_type.deraumere: 0,
+        object_type.sibur: 1,
+        object_type.mendiane: 0,
+        object_type.phiras: 2,
+        object_type.thystame: 0,
+    },
+    4: {
+        object_type.linemate: 1,
+        object_type.deraumere: 1,
+        object_type.sibur: 2,
+        object_type.mendiane: 0,
+        object_type.phiras: 1,
+        object_type.thystame: 0,
+    },
+    5: {
+        object_type.linemate: 1,
+        object_type.deraumere: 2,
+        object_type.sibur: 1,
+        object_type.mendiane: 3,
+        object_type.phiras: 0,
+        object_type.thystame: 0,
+    },
+    6: {
+        object_type.linemate: 1,
+        object_type.deraumere: 2,
+        object_type.sibur: 3,
+        object_type.mendiane: 0,
+        object_type.phiras: 1,
+        object_type.thystame: 0,
+    },
+    7: {
+        object_type.linemate: 2,
+        object_type.deraumere: 2,
+        object_type.sibur: 2,
+        object_type.mendiane: 2,
+        object_type.phiras: 2,
+        object_type.thystame: 1,
+    },
 }
 
 
@@ -103,7 +155,7 @@ PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP = {
     6: 6,
     7: 6,
 }
-    
+
 
 class AI_server_interface:
     def __init__(self, host: str, port: int, team_name: str):
@@ -420,7 +472,11 @@ class AI_server_interface:
     def collect_tile_ressources(self):
         """Collects all ressources on the current tile. blocking"""
         self.send_look_action_and_block_until_response()
-        if self.completed_actions[-1]["action_type"] != action_type.look or not self.completed_actions[-1]["success"] or not self.completed_actions[-1]["response"]:
+        if (
+            self.completed_actions[-1]["action_type"] != action_type.look
+            or not self.completed_actions[-1]["success"]
+            or not self.completed_actions[-1]["response"]
+        ):
             return
         for obj, count in self.completed_actions[-1]["response"][0].items():
             if obj != object_type.player and obj != object_type.egg and count > 0:
@@ -431,7 +487,11 @@ class AI_server_interface:
     def collect_matching_tile_ressources(self, ressources: dict):
         """Collects the specified amount of ressources on the current tile. blocking"""
         self.send_look_action_and_block_until_response()
-        if self.completed_actions[-1]["action_type"] != action_type.look or not self.completed_actions[-1]["success"] or not self.completed_actions[-1]["response"]:
+        if (
+            self.completed_actions[-1]["action_type"] != action_type.look
+            or not self.completed_actions[-1]["success"]
+            or not self.completed_actions[-1]["response"]
+        ):
             return
         for obj, count in self.completed_actions[-1]["response"][0].items():
             if obj != object_type.player and obj != object_type.egg and count > 0:
@@ -441,7 +501,9 @@ class AI_server_interface:
                         self.send_take_action(obj)
         self.block_until_all_responses_received()
 
-    def are_ressources_sufficient_for_level_up(self, amount: dict, needed_amount: dict) -> bool:
+    def are_ressources_sufficient_for_level_up(
+        self, amount: dict, needed_amount: dict
+    ) -> bool:
         """Checks if the Trantorian has enough ressources in its inventory for the next level."""
         if amount is None or needed_amount is None:
             return False
@@ -457,7 +519,9 @@ class AI_server_interface:
         requirements = RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.level, None)
         if requirements is None:
             return False
-        return self.are_ressources_sufficient_for_level_up(self.last_known_inventory, requirements)
+        return self.are_ressources_sufficient_for_level_up(
+            self.last_known_inventory, requirements
+        )
 
     def get_ressources_needed_for_level(self, level: int) -> dict:
         """Returns a dictionary of the ressources needed for the specified level."""
@@ -476,14 +540,14 @@ class AI_server_interface:
             if current_amount < required_amount:
                 missing[resource] = required_amount - current_amount
         return missing
-    
+
     def add_objects_dicts(self, dict1: dict, dict2: dict) -> dict:
         """Adds the counts of two dictionaries of object types and returns the result."""
         result = dict1.copy()
         for obj, count in dict2.items():
             result[obj] = result.get(obj, 0) + count
         return result
-    
+
     def subtract_objects_dicts(self, dict1: dict, dict2: dict) -> dict:
         """Subtracts the counts of two dictionaries of object types and returns the result."""
         result = dict1.copy()
@@ -570,7 +634,9 @@ class AI_server_interface:
 
     def send_set_object_down_action(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object."""
-        self.connection.send_message(f"{action_type.set_object_down.value} {object_type.value}\n")
+        self.connection.send_message(
+            f"{action_type.set_object_down.value} {object_type.value}\n"
+        )
         self.pending_response_actions.append(action_type.set_object_down)
 
     def send_start_incantation_action(self):
@@ -638,7 +704,9 @@ class AI_server_interface:
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
 
-    def send_set_object_down_action_and_block_until_response(self, object_type: object_type):
+    def send_set_object_down_action_and_block_until_response(
+        self, object_type: object_type
+    ):
         """Sends a set_object_down action to the server for the specified object and blocks until a response is received."""
         self.send_set_object_down_action(object_type)
         self.block_until_all_responses_received()
