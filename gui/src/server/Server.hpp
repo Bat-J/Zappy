@@ -19,11 +19,13 @@ namespace zappy {
         Server(Socket& socket) : _socket(socket) {}
         ~Server();
 
-        void              getInfo();
-        void              handleServerUpdate();
-        void              updateTiles();
-        void              updateResources();
-        std::mutex&       getMutex() { return _dataMutex; }
+        void        getInfo();
+        void        handleServerUpdate();
+        void        updateTiles();
+        void        updateResources();
+        std::mutex& getMutex() {
+            return _dataMutex;
+        }
         const WorldState& world() const {
             return _world;
         }
