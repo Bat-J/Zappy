@@ -14,7 +14,7 @@ class WinnerAgent:
     def __init__(self, ai_interface: interface.AI_server_interface):
         self.ai_interface = ai_interface
         self.state = WinnerAgent.State.none
-        self.elevation_broadcast_direction = interface.direction.southeast
+        self.elevation_broadcast_direction = interface.direction.none
 
     def run(self):
         while True:
@@ -28,8 +28,8 @@ class WinnerAgent:
 
             for message in self.ai_interface.message_history:
                 if message["text"].startswith("wawa_") and can_cast(str, int, message["text"][5:]) and int(message["text"][5:]) == self.ai_interface.level:
-                    self.elevation_broadcast_direction = message["direction"].sub_cardinal_direction(self.ai_interface.relative_direction) #TODO fix direction calc
-                    print(f"Received elevation broadcast from direction {message['direction']}, moving towards {self.elevation_broadcast_direction}")
+                    self.elevation_broadcast_direction = message["direction"] #TODO fix direction calc
+                    #print(f"Received elevation broadcast from direction {message['direction']}, moving towards {self.elevation_broadcast_direction}")
                 self.ai_interface.message_history.remove(message)
 
             if self.state == WinnerAgent.State.none:
@@ -80,7 +80,7 @@ class WinnerAgent:
                             and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.look 
                             and self.ai_interface.completed_actions[-1]["response"] 
                             and self.ai_interface.completed_actions[-1]["response"][0] 
-                            and  self.ai_interface.completed_actions[-1]["response"][0][interface.object_type.player] >= interface.PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP.get(self.ai_interface.level, 0)):
+                            and self.ai_interface.completed_actions[-1]["response"][0][interface.object_type.player] >= interface.PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP.get(self.ai_interface.level, 0)):
                             if (self.ai_interface.completed_actions 
                                 and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.look 
                                 and self.ai_interface.completed_actions[-1]["response"] 

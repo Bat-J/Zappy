@@ -41,34 +41,39 @@ class action_type(Enum):
 
 
 class cardinal_direction(Enum):
+    none = 0
     north = 1
-    east = 2
+    west = 2
     south = 3
-    west = 4
+    east = 4
 
-    def turn_right(self):
+    def right(self):
+        if self == cardinal_direction.none:
+            return cardinal_direction.none
+        return cardinal_direction(((self.value + 2) % 4) + 1)
+
+    def left(self):
+        if self == cardinal_direction.none:
+            return cardinal_direction.none
         return cardinal_direction((self.value % 4) + 1)
-
-    def turn_left(self):
-        return cardinal_direction((self.value - 2) % 4 + 1)
 
 class direction(Enum):
     none = 0
     north = 1
-    northeast = 2
-    east = 3
-    southeast = 4
+    northwest = 2
+    west = 3
+    southwest = 4
     south = 5
-    southwest = 6
-    west = 7
-    northwest = 8
+    southeast = 6
+    east = 7
+    northeast = 8
 
     def add_cardinal_direction(self, cardinal_direction: cardinal_direction):
-        rotation = (cardinal_direction.value - 1) * 2
-        return direction((self.value + rotation) % 8 + 1)
+        rotation = cardinal_direction.value * 2 - 2
+        return direction((self.value + rotation - 1) % 8 + 1)
 
     def sub_cardinal_direction(self, cardinal_direction: cardinal_direction):
-        rotation = (cardinal_direction.value - 1) * 2
+        rotation = cardinal_direction.value * 2 - 2
         return direction((self.value - rotation - 1) % 8 + 1)
 
 
@@ -238,13 +243,9 @@ class AI_server_interface:
                     {"action_type": completed_action, "success": True}
                 )
                 if completed_action == action_type.turn_right:
-                    self.relative_direction = cardinal_direction(
-                        (self.relative_direction.value % 4) + 1
-                    )
+                    self.relative_direction = self.relative_direction.right()
                 elif completed_action == action_type.turn_left:
-                    self.relative_direction = cardinal_direction(
-                        (self.relative_direction.value - 2) % 4 + 1
-                    )
+                    self.relative_direction = self.relative_direction.left()
                 elif completed_action == action_type.forward:
                     if self.relative_direction == cardinal_direction.north:
                         self.relative_x_position += 1
@@ -355,9 +356,9 @@ class AI_server_interface:
         """Orients the Trantorian to the specified cardinal direction (relative to its starting orientation)."""
         if self.relative_direction == direction:
             return
-        elif (self.relative_direction.value - direction.value) % 4 == 1:
-            self.send_turn_left_action_and_block_until_response()
         elif (self.relative_direction.value - direction.value) % 4 == 3:
+            self.send_turn_left_action_and_block_until_response()
+        elif (self.relative_direction.value - direction.value) % 4 == 1:
             self.send_turn_right_action_and_block_until_response()
         else:
             self.send_turn_left_action_and_block_until_response()
