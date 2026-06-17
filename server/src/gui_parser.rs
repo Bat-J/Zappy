@@ -397,3 +397,153 @@ pub fn seg_reply(team: &str) -> String {
     string.push('\n');
     string
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::map::Resources;
+
+    use super::*;
+
+    #[test]
+    fn seg_basic() {
+        assert_eq!(seg_reply("Zapfrites"), "seg Zapfrites\n");
+    }
+
+    #[test]
+    fn edi_basic() {
+        assert_eq!(
+            edi_reply(&Egg {
+                x: 1,
+                y: 2,
+                id: 1,
+                player_id: 0,
+                is_starting: false,
+                team: "Zapfrites".to_string()
+            }),
+            "edi #1\n"
+        );
+    }
+
+    #[test]
+    fn ebo_basic() {
+        assert_eq!(
+            ebo_reply(&Egg {
+                x: 1,
+                y: 2,
+                id: 1,
+                player_id: 0,
+                is_starting: false,
+                team: "Zapfrites".to_string()
+            }),
+            "ebo #1\n"
+        );
+    }
+
+    #[test]
+    fn pdi_basic() {
+        assert_eq!(
+            pdi_reply(&Player {
+                x: 5,
+                y: 8,
+                id: 10,
+                orientation: Orientation::North,
+                food: 10,
+                level: 2,
+                inventory: Resources {
+                    deraumere: 0,
+                    linemate: 0,
+                    mendiane: 0,
+                    thystame: 0,
+                    phiras: 0,
+                    sibur: 0
+                },
+                time_left: 0,
+            }),
+            "pdi #10\n"
+        );
+    }
+
+    #[test]
+    fn pgt_basic() {
+        assert_eq!(
+            pgt_reply(
+                &Player {
+                    x: 5,
+                    y: 8,
+                    id: 10,
+                    orientation: Orientation::North,
+                    food: 10,
+                    level: 2,
+                    inventory: Resources {
+                        deraumere: 0,
+                        linemate: 0,
+                        mendiane: 0,
+                        thystame: 0,
+                        phiras: 0,
+                        sibur: 0
+                    },
+                    time_left: 0,
+                },
+                2
+            ),
+            "pgt #10 2\n"
+        );
+    }
+
+    #[test]
+    fn pdr_basic() {
+        assert_eq!(
+            pdr_reply(
+                &Player {
+                    x: 5,
+                    y: 8,
+                    id: 10,
+                    orientation: Orientation::North,
+                    food: 10,
+                    level: 2,
+                    inventory: Resources {
+                        deraumere: 0,
+                        linemate: 0,
+                        mendiane: 0,
+                        thystame: 0,
+                        phiras: 0,
+                        sibur: 0
+                    },
+                    time_left: 0,
+                },
+                2
+            ),
+            "pdr #10 2\n"
+        );
+    }
+
+    #[test]
+    fn pfk_basic() {
+        assert_eq!(
+            pfk_reply(&Player {
+                x: 5,
+                y: 8,
+                id: 10,
+                orientation: Orientation::North,
+                food: 10,
+                level: 2,
+                inventory: Resources {
+                    deraumere: 0,
+                    linemate: 0,
+                    mendiane: 0,
+                    thystame: 0,
+                    phiras: 0,
+                    sibur: 0
+                },
+                time_left: 0,
+            }),
+            "pfk #10\n"
+        );
+    }
+
+    #[test]
+    fn pie_basic() {
+        assert_eq!(pie_reply(5, 80, true), "pie 5 80 true\n");
+    }
+}
