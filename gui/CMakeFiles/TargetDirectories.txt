@@ -1,3 +1,0 @@
-/home/odranj/EPT/ZAPPY/zappy/gui/CMakeFiles/zappy_gui.dir
-/home/odranj/EPT/ZAPPY/zappy/gui/CMakeFiles/edit_cache.dir
-/home/odranj/EPT/ZAPPY/zappy/gui/CMakeFiles/rebuild_cache.dir
