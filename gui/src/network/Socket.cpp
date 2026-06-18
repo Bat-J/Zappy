@@ -25,59 +25,6 @@ namespace zappy {
         closeSocket();
     }
 
-    void Socket::createSocket(uint16_t port) {
-        if (port == 0) {
-            createSocket();
-            return;
-        }
-        closeSocket();
-        _port     = port;
-        _socketFD = socket(AF_INET, SOCK_STREAM, 0);
-        if (_socketFD == -1) {
-            throw Error("Failed to create socket");
-        }
-        struct sockaddr_in serverAddress;
-        serverAddress.sin_family      = AF_INET;
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
-        serverAddress.sin_port        = htons(port);
-        if (bind(_socketFD, reinterpret_cast<sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1) {
-            throw Error("Failed to bind socket");
-        }
-    }
-
-    void Socket::createSocket() {
-        closeSocket();
-        _socketFD = socket(AF_INET, SOCK_STREAM, 0);
-        if (_socketFD == -1) {
-            throw Error("Failed to create socket");
-        }
-        struct sockaddr_in serverAddress;
-        serverAddress.sin_family      = AF_INET;
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
-        serverAddress.sin_port        = htons(0);
-        if (bind(_socketFD, reinterpret_cast<sockaddr*>(&serverAddress), sizeof(serverAddress)) == -1) {
-            throw Error("Failed to bind socket");
-        }
-        socklen_t serverAddressSize = sizeof(serverAddress);
-        if (getsockname(_socketFD, reinterpret_cast<sockaddr*>(&serverAddress), &serverAddressSize) == -1) {
-            throw Error("Failed to get socket name");
-        }
-        _port = ntohs(serverAddress.sin_port);
-    }
-
-    void Socket::createSocket(Socket& socket) {
-        closeSocket();
-        struct sockaddr_in serverAddress;
-        serverAddress.sin_family      = AF_INET;
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
-        serverAddress.sin_port        = htons(socket._port);
-        socklen_t serverAddressSize   = sizeof(struct sockaddr_in);
-        _socketFD                     = accept(socket._socketFD, reinterpret_cast<sockaddr*>(&serverAddress), &serverAddressSize);
-        if (_socketFD == -1) {
-            throw Error("Failed to accept client connection");
-        }
-    }
-
     void Socket::closeSocket() {
         if (_socketFD != -1) {
             shutdown(_socketFD, SHUT_RDWR);
@@ -112,39 +59,6 @@ namespace zappy {
         return message;
     }
 
-    bool Socket::acceptConnection() {
-        struct sockaddr_in serverAddress;
-        serverAddress.sin_family      = AF_INET;
-        serverAddress.sin_addr.s_addr = INADDR_ANY;
-        serverAddress.sin_port        = htons(_port);
-        socklen_t serverAddressSize   = sizeof(struct sockaddr_in);
-        pollfd    pollFD;
-        pollFD.fd      = _socketFD;
-        pollFD.events  = POLLIN;
-        pollFD.revents = 0;
-        if (poll(&pollFD, 1, 0) == -1) {
-            throw Error("Failed to poll socket");
-        }
-        if (pollFD.revents & POLLIN) {
-            int newSocketFD = accept(_socketFD, reinterpret_cast<sockaddr*>(&serverAddress), &serverAddressSize);
-            if (newSocketFD == -1) {
-                return (false);
-            } else {
-                close(_socketFD);
-                _socketFD = newSocketFD;
-                return (true);
-            }
-        } else {
-            return (false);
-        }
-    }
-
-    void Socket::listenForConnections(int maxConnections) {
-        if (listen(_socketFD, maxConnections) == -1) {
-            throw Error("Failed to listen on socket");
-        }
-    }
-
     bool Socket::connectTo(const uint32_t ipAddress, uint16_t port) {
         closeSocket();
         _socketFD = socket(AF_INET, SOCK_STREAM, 0);
@@ -159,22 +73,6 @@ namespace zappy {
             return false;
         }
         return true;
-    }
-
-    std::string Socket::getLocalIP() const {
-        struct sockaddr_in localAddress;
-        socklen_t          localAddressSize = sizeof(localAddress);
-        if (getsockname(_socketFD, reinterpret_cast<sockaddr*>(&localAddress), &localAddressSize) == -1) {
-            throw Error("Failed to get socket name");
-        }
-        std::string addressString(INET_ADDRSTRLEN, '\0');
-        inet_ntop(AF_INET, &localAddress.sin_addr, addressString.data(), addressString.size());
-        for (char& c : addressString) {
-            if (c == '.') {
-                c = ',';
-            }
-        }
-        return addressString;
     }
 
     bool Socket::CheckIfOpen() const {

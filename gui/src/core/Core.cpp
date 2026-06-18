@@ -10,6 +10,7 @@
 #include <Window.hpp>
 #include <chrono>
 #include <future>
+#include <mutex>
 #include <raylib.h>
 #include <utility>
 
@@ -71,7 +72,10 @@ namespace zappy {
                 updateFuture.get();
             }
             handleEvents();
-            _renderer.displayAll(server, _isFpsDisplayed, _isCursorDefault);
+            {
+                std::lock_guard<std::mutex> lock(server.getMutex());
+                _renderer.displayAll(server, _isFpsDisplayed, _isCursorDefault);
+            }
         }
         _renderer.close();
         return 0;

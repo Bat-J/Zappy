@@ -11,6 +11,7 @@
 #include "../player/PlayerManager.hpp"
 #include "../resources/ResourceTracker.hpp"
 #include "../world/WorldState.hpp"
+#include <mutex>
 
 namespace zappy {
     class Server {
@@ -18,10 +19,13 @@ namespace zappy {
         Server(Socket& socket) : _socket(socket) {}
         ~Server();
 
-        void              getInfo();
-        void              handleServerUpdate();
-        void              updateTiles();
-        void              updateResources();
+        void        getInfo();
+        void        handleServerUpdate();
+        void        updateTiles();
+        void        updateResources();
+        std::mutex& getMutex() {
+            return _dataMutex;
+        }
         const WorldState& world() const {
             return _world;
         }
@@ -37,5 +41,6 @@ namespace zappy {
         WorldState      _world;
         PlayerManager   _players;
         ResourceTracker _resources;
+        std::mutex      _dataMutex;
     };
 }

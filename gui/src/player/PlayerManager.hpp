@@ -9,7 +9,6 @@
 
 #include <vector>
 #include "Player.hpp"
-#include "../network/Socket.hpp"
 
 namespace zappy {
     class PlayerManager {
@@ -19,8 +18,6 @@ namespace zappy {
         size_t                     getNbPlayers() const;
         size_t                     getNbDeath() const;
         void                       getAllAlive();
-        void                       checkAlive(int pNumber, Socket& socket);
-        void                       updatePlayerpos(Socket& socket);
 
       private:
         std::vector<Player> _Players;
