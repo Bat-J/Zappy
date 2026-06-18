@@ -48,6 +48,10 @@ namespace zappy {
     std::pair<std::pair<int, int>, Orientation> Player::getPos() const {
         return _pos;
     }
+
+    int Player::getId() const {
+        return _id;
+    }
     void Player::setLevel(u_int8_t lvl) {
         _lvl = lvl;
     }
@@ -86,5 +90,11 @@ namespace zappy {
 
     void Player::setPos(std::pair<std::pair<int, int>, Orientation> pos) {
         _pos = pos;
+    }
+
+    void Player::setId() {
+        static int id = 0;
+        _id = id;
+        id++;
     }
 }

@@ -6,6 +6,7 @@
 */
 
 #include "Core.hpp"
+#include <Keyboard.hpp>
 #include <Rectangle.hpp>
 #include <Window.hpp>
 #include <chrono>
@@ -13,6 +14,7 @@
 #include <mutex>
 #include <raylib.h>
 #include <utility>
+#include <vector>
 
 namespace zappy {
 
@@ -30,9 +32,10 @@ namespace zappy {
         }
     }
 
-    void Core::handleEvents() {
+    void Core::handleEvents(std::vector<Player> players) {
         raylib::Window& window = _renderer.getWindow();
         Colors&         colors = _renderer.getColors();
+        static int indexPlayer = 0;
 
         if (raylib::Keyboard::IsKeyPressed(KEY_F3))
             _isFpsDisplayed = !_isFpsDisplayed;
@@ -42,6 +45,16 @@ namespace zappy {
         }
         if (raylib::Keyboard::IsKeyPressed(KEY_F2))
             _isCursorDefault = !_isCursorDefault;
+        if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD) && !players.empty()) {
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD) && !players.empty()) {
+                indexPlayer = (indexPlayer + 1) % players.size();
+                _renderer.setSelectedPlayer(players[indexPlayer]);
+            }
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT) && !players.empty()) {
+                indexPlayer = (indexPlayer - 1 + players.size()) % players.size();
+                _renderer.setSelectedPlayer(players[indexPlayer]);
+            }
+        }
         colors.handleEvents();
         handleSelectTile();
     }
@@ -75,11 +88,8 @@ namespace zappy {
             if (updateFuture.valid() && updateFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
                 updateFuture.get();
             }
-            handleEvents();
-            {
-                std::lock_guard<std::mutex> lock(server.getMutex());
-                _renderer.displayAll(server, _isFpsDisplayed, _isCursorDefault);
-            }
+            handleEvents(server.players().getPlayer());
+            _renderer.displayAll(server, _isFpsDisplayed, _isCursorDefault);
         }
         _renderer.close();
         return 0;

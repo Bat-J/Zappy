@@ -8,8 +8,10 @@
 #include "Renderer.hpp"
 #include "Circle.hpp"
 #include <chrono>
+#include <string>
 #include <vector>
 #include <algorithm>
+
 namespace zappy {
 
     void Renderer::setupColors() {
@@ -84,10 +86,34 @@ namespace zappy {
         _font.DrawText("Thystame: " + std::to_string(tile->getRessources()[5]), x + 300, y + 230, _fontSize, _spacing, _colors.getTextColor());
     }
 
-    void Renderer::displayPlayers(const Server& server, int offsetX, int offsetY, int tileSizeClamped) {
+    void Renderer::displaySelectedPlayer(const Server& server) {
+        int x = 1000;
+        int y = 200;
+        auto p = _selectedPlayer;
+        int id = 0;
+
+        if (!p.has_value()) {
+            _font.DrawText("No Player selected or found.", x + 200, 400, 20, _spacing, _colors.getTextColor());
+            return;
+        }
+        id = _selectedPlayer->getId();
+        _font.DrawText("SELECTED Player : " + std::to_string(id + 1), x + 300, y + 200, _fontSize + 10, _spacing, _colors.getTextColor());
+        _font.DrawText("Food : " + std::to_string(p->getFood()), x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Linemate : " + std::to_string(p->getLinemate()), x + 300, y + 280, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Deraumere : " + std::to_string(p->getDeraumere()), x + 300, y + 310, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Sibur : " + std::to_string(p->getSibur()), x + 300, y + 340, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Mendiane : " + std::to_string(p->getMendiane()), x + 300, y + 370, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Phiras : " + std::to_string(p->getPhiras()), x + 300, y + 400, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Thystame : " + std::to_string(p->getThystame()), x + 300, y + 430, _fontSize, _spacing, _colors.getTextColor());
+    }
+
+    void Renderer::displayPlayers(Server& server, int offsetX, int offsetY, int tileSizeClamped) {
         auto& players = server.players().getPlayer();
         int   id      = 1;
-        for (const auto& player : players) {
+        for (auto& player : players) {
+            if (player.getId() < 0) {
+                player.setId();
+            }
             if (!player.getIsAlive()) {
                 id++;
                 continue;
@@ -249,7 +275,7 @@ namespace zappy {
         }
     }
 
-    void Renderer::displayServerElements(const Server& server) {
+    void Renderer::displayServerElements(Server& server) {
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
         const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
         const int                       tileSize       = std::min(availableWidth / mapSize.first, (_window.GetHeight() - 120) / mapSize.second);
@@ -260,9 +286,10 @@ namespace zappy {
         displayLastLogs(server);
         displayTotalResources(server);
         displaySelectedTile(server);
+        displaySelectedPlayer(server);
     }
 
-    void Renderer::displayAll(const Server& server, bool isFpsDisplayed, bool isCursorDefault) {
+    void Renderer::displayAll(Server& server, bool isFpsDisplayed, bool isCursorDefault) {
         _window.BeginDrawing();
         _window.ClearBackground(_colors.getBackgroundColor());
         displayServerElements(server);
@@ -287,6 +314,10 @@ namespace zappy {
 
     void Renderer::setSelectedTile(std::pair<int, int>& pair) {
         _selectedTile = pair;
+    }
+
+    void Renderer::setSelectedPlayer(Player& p) {
+        _selectedPlayer = p;
     }
 
     std::vector<std::vector<raylib::Rectangle>> Renderer::getDrawnTiles() {

@@ -17,7 +17,7 @@ namespace zappy {
     class Core {
       public:
         int  Run(Socket& socket);
-        void handleEvents();
+        void handleEvents(std::vector<Player> players);
         void handleSelectTile();
 
       private:
