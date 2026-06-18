@@ -125,7 +125,11 @@ impl Server {
                 scheduled.client_id, scheduled.command
             );
 
-            let idx = match self.clients.iter().position(|c| c.id == scheduled.client_id) {
+            let idx = match self
+                .clients
+                .iter()
+                .position(|c| c.id == scheduled.client_id)
+            {
                 Some(i) => i,
                 None => {
                     eprintln!("Client {} not found for execution", scheduled.client_id);
@@ -136,7 +140,8 @@ impl Server {
             let response = match &scheduled.command {
                 Command::Look => "[ player ]\n".to_string(),
                 Command::Inventory => {
-                    "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n".to_string()
+                    "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n"
+                        .to_string()
                 }
                 Command::ConnectNbr => {
                     if let ClientState::Ai { ref team, .. } = self.clients[idx].state {
@@ -451,12 +456,9 @@ impl Server {
     ) -> bool {
         let state = clients[client_id as usize].state.clone();
         match state {
-            ClientState::AwaitingTeamName => Self::handle_team_name(
-                &mut clients[client_id as usize],
-                line,
-                team_slots,
-                game,
-            ),
+            ClientState::AwaitingTeamName => {
+                Self::handle_team_name(&mut clients[client_id as usize], line, team_slots, game)
+            }
             ClientState::Ai { player, .. } => {
                 Self::handle_ai_command(clients, line, time_manager, client_id, &player)
             }
@@ -519,12 +521,18 @@ impl Server {
         match Command::parse(line, &list, player, clients) {
             Ok(cmd) => {
                 let execute_at = time_manager.schedule(cmd.clone(), client_id);
-                println!("AI command from {}: {} (execute at {:?})", addr, cmd, execute_at);
+                println!(
+                    "AI command from {}: {} (execute at {:?})",
+                    addr, cmd, execute_at
+                );
                 false
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", addr, err);
-                clients[client_id as usize].stream.write_all(b"ko\n").is_err()
+                clients[client_id as usize]
+                    .stream
+                    .write_all(b"ko\n")
+                    .is_err()
             }
         }
     }

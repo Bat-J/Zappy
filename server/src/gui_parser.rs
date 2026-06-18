@@ -75,7 +75,10 @@ impl Server {
             _ => None,
         });
         match reply {
-            Some(msg) => clients[client_id as usize].stream.write_all(msg.as_bytes()).is_err(),
+            Some(msg) => clients[client_id as usize]
+                .stream
+                .write_all(msg.as_bytes())
+                .is_err(),
             None => Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
         }
     }
@@ -93,7 +96,10 @@ impl Server {
             _ => None,
         });
         match reply {
-            Some(msg) => clients[client_id as usize].stream.write_all(msg.as_bytes()).is_err(),
+            Some(msg) => clients[client_id as usize]
+                .stream
+                .write_all(msg.as_bytes())
+                .is_err(),
             None => Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
         }
     }
@@ -111,7 +117,10 @@ impl Server {
             _ => None,
         });
         match reply {
-            Some(msg) => clients[client_id as usize].stream.write_all(msg.as_bytes()).is_err(),
+            Some(msg) => clients[client_id as usize]
+                .stream
+                .write_all(msg.as_bytes())
+                .is_err(),
             None => Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
         }
     }
