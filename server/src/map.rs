@@ -5,25 +5,27 @@ use rand::RngExt;
 pub struct Tile {
     food: u32,
     resources: Resources,
-    _ais: Vec<usize>,
+    _ais: Vec<u32>,
 }
 
 #[derive(Default, Clone)]
 pub struct Resources {
-    linemate: u32,
-    deraumere: u32,
-    sibur: u32,
-    mendiane: u32,
-    phiras: u32,
-    thystame: u32,
+    pub linemate: u32,
+    pub deraumere: u32,
+    pub sibur: u32,
+    pub mendiane: u32,
+    pub phiras: u32,
+    pub thystame: u32,
 }
 
 #[derive(Default)]
 pub struct Egg {
-    x: u32,
-    y: u32,
-    id: u32,
-    player_id: i32,
+    pub x: u32,
+    pub y: u32,
+    pub id: u32,
+    pub player_id: u32,
+    pub is_starting: bool,
+    pub team: String,
 }
 
 pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
@@ -31,14 +33,14 @@ pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
     map
 }
 
-pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: usize) {
+pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
     if x >= config.width || y >= config.height || !map[y as usize][x as usize]._ais.contains(&id) {
         return;
     }
     map[y as usize][x as usize]._ais.retain(|&x| x != id);
 }
 
-pub fn _add_ai_to_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: usize) {
+pub fn _add_ai_to_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
     if x >= config.width || y >= config.height || map[x as usize][y as usize]._ais.contains(&id) {
         return;
     }
@@ -176,7 +178,11 @@ pub fn enw_string(egg: &Egg) -> String {
     string.push_str("enw #");
     string.push_str(&egg.id.to_string());
     string.push_str(" #");
-    string.push_str(&egg.player_id.to_string());
+    if egg.is_starting {
+        string.push_str("-1");
+    } else {
+        string.push_str(&egg.player_id.to_string());
+    }
     string.push(' ');
     string.push_str(&egg.x.to_string());
     string.push(' ');
@@ -187,12 +193,14 @@ pub fn enw_string(egg: &Egg) -> String {
 
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
     let mut eggs = Vec::new();
-    for id in 0..config.clients_per_team * config.teams.len() {
+    for id in 0..config.clients_per_team * config.teams.len() as u32 {
         let egg = Egg {
             x: rand::rng().random_range(0..config.width),
             y: rand::rng().random_range(0..config.height),
-            id: id as u32,
-            player_id: -1,
+            id,
+            player_id: 0,
+            is_starting: true,
+            team: String::new(),
         };
         eggs.push(egg);
     }
@@ -210,7 +218,24 @@ mod test {
                 x: 5,
                 y: 6,
                 id: 0,
-                player_id: -1,
+                player_id: 0,
+                is_starting: false,
+                team: String::new(),
+            }),
+            "enw #0 #0 5 6\n"
+        );
+    }
+
+    #[test]
+    fn enw_starting() {
+        assert_eq!(
+            enw_string(&Egg {
+                x: 5,
+                y: 6,
+                id: 0,
+                player_id: 0,
+                is_starting: true,
+                team: String::new(),
             }),
             "enw #0 #-1 5 6\n"
         );

@@ -26,6 +26,8 @@ fn main() -> std::io::Result<()> {
         let timeout_ms = server.next_poll_timeout_ms();
         let ready = server.poll(timeout_ms)?;
         server.accept(&ready)?;
+        server.decrement_food();
+        server.try_hatch_pending(&mut game);
         let read = server.read(&ready, &mut game)?;
         server.cleanup(ready.disconnected.into_iter().chain(read.disconnected));
     }
