@@ -29,8 +29,7 @@ unsafe extern "C" {
     fn poll(fds: *mut PollFd, nfds: Nfds, timeout: c_int) -> c_int;
 }
 
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 #[allow(dead_code)]
 pub enum Orientation {
     #[default]
@@ -91,7 +90,6 @@ pub struct Ready {
 pub struct ReadOutcome {
     pub disconnected: Vec<u32>,
 }
-
 
 pub fn start(config: Config) -> io::Result<Server> {
     let addr = format!("0.0.0.0:{}", config.port);
