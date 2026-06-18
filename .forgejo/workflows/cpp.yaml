@@ -24,7 +24,7 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: install missing deps
-        run: apk add --no-cache libsm-dev
+        run: apk add --no-cache libsm-dev libice-dev libx11-dev libxext-dev
 
       - name: compile
         run: make zappy_gui
