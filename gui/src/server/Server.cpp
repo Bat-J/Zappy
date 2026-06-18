@@ -50,7 +50,7 @@ namespace zappy {
                 const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
                 if (static_cast<std::size_t>(number) < players.size())
                     players[number].setIsAlive(false);
-                _logs.push_back("Player " + std::to_string(number) + " died");
+                _logs.push_back("Player " + std::to_string(number + 1) + " died");
             }
             if (wordsByLine[i][0] == "pbc") {
                 const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());

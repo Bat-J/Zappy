@@ -80,7 +80,7 @@ namespace zappy {
                 if (std ::stoi(words[i + 2]) > _Players[pNumber].getLevel()) {
                     _Players[pNumber].setLevel(std::stoi(words[i + 2]));
                     addIncreaser(pNumber);
-                    logs.push_back("Player " + std::to_string(pNumber) + " increased Lvl to " + words[i + 2]);
+                    logs.push_back("Player " + std::to_string(pNumber + 1) + " increased Lvl to " + words[i + 2]);
                 }
                 break;
             }
@@ -120,7 +120,7 @@ namespace zappy {
                     if (words[3].compare("4")) {
                         dir = "West";
                     }
-                    logs.push_back("Player " + std::to_string(i) + " moved to X: " + words[2] + " Y: " + words[3] + " facing " + dir);
+                    logs.push_back("Player " + std::to_string(i + 1) + " moved to X: " + words[2] + " Y: " + words[3] + " facing " + dir);
                 }
             }
         }

@@ -73,7 +73,7 @@ namespace zappy {
         const auto tile = server.world().catchTile(_selectedTile.first, _selectedTile.second);
         if (!tile)
             return;
-        _font.DrawText("SELECTED TILE : (x = " + std::to_string(_selectedTile.first + 1) + " y = " + std::to_string(_selectedTile.second + 1) + ") :", x, y + 200, _fontSize + 10,
+        _font.DrawText("SELECTED TILE : (x = " + std::to_string(_selectedTile.first) + " y = " + std::to_string(_selectedTile.second) + ") :", x, y + 200, _fontSize + 10,
                        _spacing, _colors.getTextColor());
         _font.DrawText("Food: " + std::to_string(tile->getRessources()[0]), x + 425, y + 205, _fontSize, _spacing, _colors.getTextColor());
         _font.DrawText("Linemate: " + std::to_string(tile->getRessources()[1]), x + 525, y + 205, _fontSize, _spacing, _colors.getTextColor());
