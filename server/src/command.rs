@@ -29,7 +29,7 @@ impl Command {
         input: &str,
         list: &Vec<&Player>,
         source: &Player,
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
     ) -> Result<Self, String> {
         let trimmed = input.trim();
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
@@ -126,7 +126,7 @@ fn convert_ressource_name_to_id(string: &str) -> u8 {
     }
 }
 
-pub fn send_string_to_all_guis(clients: &mut Vec<Client>, msg: String) {
+pub fn send_string_to_all_guis(clients: &mut [Client], msg: String) {
     for client in clients.iter_mut() {
         match client.state {
             ClientState::Gui => {
@@ -142,7 +142,7 @@ pub fn send_ai_command_to_gui(
     cmd: Command,
     player: &Player,
     incantation_success: bool,
-    clients: &mut Vec<Client>,
+    clients: &mut [Client],
     new_egg: &Egg,
 ) {
     match cmd {
@@ -159,7 +159,7 @@ pub fn send_ai_command_to_gui(
             clients,
             pgt_reply(player, convert_ressource_name_to_id(&string)),
         ),
-        _ => return,
+        _ => (),
     }
 }
 

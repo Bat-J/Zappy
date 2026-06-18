@@ -197,7 +197,7 @@ pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
         let egg = Egg {
             x: rand::rng().random_range(0..config.width),
             y: rand::rng().random_range(0..config.height),
-            id: id as u32,
+            id,
             player_id: 0,
             is_starting: true,
             team: String::new(),

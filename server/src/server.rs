@@ -30,7 +30,10 @@ unsafe extern "C" {
 }
 
 #[derive(Clone)]
+#[derive(Default)]
+#[allow(dead_code)]
 pub enum Orientation {
+    #[default]
     North = 1,
     East = 2,
     South = 3,
@@ -89,11 +92,6 @@ pub struct ReadOutcome {
     pub disconnected: Vec<u32>,
 }
 
-impl Default for Orientation {
-    fn default() -> Self {
-        Self::North
-    }
-}
 
 pub fn start(config: Config) -> io::Result<Server> {
     let addr = format!("0.0.0.0:{}", config.port);
@@ -134,7 +132,7 @@ impl Server {
 
             if let Some(client) = reference
                 .borrow_mut()
-                .into_iter()
+                .iter_mut()
                 .find(|c| c.id == scheduled.client_id)
             {
                 let response = match scheduled.command {
@@ -156,7 +154,7 @@ impl Server {
                     Command::Broadcast(ref msg) => {
                         let _ = client.stream.write_all(b"ok\n");
                         let broadcast = format!("{}\n", msg);
-                        for other in reference.borrow_mut().into_iter() {
+                        for other in reference.borrow_mut().iter_mut() {
                             if let ClientState::Ai { .. } = other.state {
                                 let _ = other.stream.write_all(broadcast.as_bytes());
                             }
@@ -168,17 +166,14 @@ impl Server {
 
                 let _ = client.stream.write_all(response.as_bytes());
 
-                match &client.state {
-                    ClientState::Ai { player, .. } => {
-                        send_ai_command_to_gui(
-                            scheduled.command,
-                            &player,
-                            false, /* TODO implement check for incantation */
-                            *reference.borrow_mut(),
-                            &Egg::default(), /* TODO implement from fork */
-                        );
-                    }
-                    _ => {}
+                if let ClientState::Ai { player, .. } = &client.state {
+                    send_ai_command_to_gui(
+                        scheduled.command,
+                        player,
+                        false, /* TODO implement check for incantation */
+                        *reference.borrow_mut(),
+                        &Egg::default(), /* TODO implement from fork */
+                    );
                 }
             } else {
                 eprintln!("Client {} not found for execution", scheduled.client_id);
@@ -295,7 +290,7 @@ impl Server {
     pub fn try_hatch_pending(&mut self, game: &mut Game) {
         let reference = RefCell::new(&mut self.clients);
 
-        for client in reference.borrow_mut().into_iter() {
+        for client in reference.borrow_mut().iter_mut() {
             let team = match &client.state {
                 ClientState::AwaitingEgg { team } => team.clone(),
                 _ => continue,
@@ -318,8 +313,8 @@ impl Server {
             client.state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
-                    x: egg.x as u32,
-                    y: egg.y as u32,
+                    x: egg.x,
+                    y: egg.y,
                     id: egg.id,
                     orientation: Orientation::North,
                     level: 1,
@@ -381,9 +376,9 @@ impl Server {
             match client.state.clone() {
                 ClientState::Ai { mut player, .. } => {
                     player.time_left -= 1;
-                    if player.time_left <= 0 {
+                    if player.time_left == 0 {
                         player.food -= 1;
-                        if player.food <= 0 {
+                        if player.food == 0 {
                             send_string_to_all_guis(*reference.borrow_mut(), pdi_reply(&player));
                             let _ = client.stream.shutdown(std::net::Shutdown::Both);
                             reference.borrow_mut().remove(i);
@@ -457,7 +452,7 @@ impl Server {
                 line,
                 time_manager,
                 client_id,
-                &player,
+                player,
             ),
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
@@ -510,7 +505,7 @@ impl Server {
     ) -> bool {
         let mut list: Vec<&Player> = Vec::new();
         let mut content = clients.borrow_mut();
-        for c in content.into_iter() {
+        for c in content.iter_mut() {
             match &c.state {
                 ClientState::Ai { player, .. } => list.push(player),
                 _ => continue,
@@ -566,8 +561,8 @@ impl Server {
                     client.state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
-                            x: egg.x as u32,
-                            y: egg.y as u32,
+                            x: egg.x,
+                            y: egg.y,
                             id: egg.id,
                             orientation: Orientation::North,
                             level: 1,
