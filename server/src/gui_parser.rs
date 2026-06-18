@@ -62,7 +62,7 @@ impl Server {
             .is_err()
     }
 
-    pub fn ppo_parse(parts: Vec<&str>, clients: &mut Vec<Client>, client_id: u32) -> bool {
+    pub fn ppo_parse(parts: Vec<&str>, clients: &mut [Client], client_id: u32) -> bool {
         if parts.len() != 2 || !parts[1].starts_with('#') {
             return Self::gui_error(&mut clients[client_id as usize], "sbp\n");
         }
@@ -83,7 +83,7 @@ impl Server {
         }
     }
 
-    pub fn plv_parse(parts: Vec<&str>, clients: &mut Vec<Client>, client_id: u32) -> bool {
+    pub fn plv_parse(parts: Vec<&str>, clients: &mut [Client], client_id: u32) -> bool {
         if parts.len() != 2 || !parts[1].starts_with('#') {
             return Self::gui_error(&mut clients[client_id as usize], "sbp\n");
         }
@@ -104,7 +104,7 @@ impl Server {
         }
     }
 
-    pub fn pin_parse(parts: Vec<&str>, clients: &mut Vec<Client>, client_id: u32) -> bool {
+    pub fn pin_parse(parts: Vec<&str>, clients: &mut [Client], client_id: u32) -> bool {
         if parts.len() != 2 || !parts[1].starts_with('#') {
             return Self::gui_error(&mut clients[client_id as usize], "sbp\n");
         }

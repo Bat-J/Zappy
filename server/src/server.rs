@@ -409,7 +409,7 @@ impl Server {
     }
 
     fn read_client(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         buffer: &mut [u8; 1024],
         team_slots: &mut [(String, u32)],
         game: &mut Game,
@@ -447,7 +447,7 @@ impl Server {
     }
 
     fn handle_line(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         line: &str,
         team_slots: &mut [(String, u32)],
         game: &mut Game,
@@ -469,7 +469,7 @@ impl Server {
     }
 
     fn handle_gui_command(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         client_id: u32,
         line: &str,
         game: &mut Game,
@@ -502,7 +502,7 @@ impl Server {
     }
 
     fn handle_ai_command(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         line: &str,
         time_manager: &mut TimeManager,
         client_id: u32,
