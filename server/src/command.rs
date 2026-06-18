@@ -1,9 +1,10 @@
 use std::{fmt, io::Write};
 
 use crate::{
+    args::Config,
     gui_parser::{pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
     map::{Egg, enw_string},
-    server::{Client, ClientState, Player},
+    server::{Client, ClientState, Orientation, Player},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -160,6 +161,70 @@ pub fn send_ai_command_to_gui(
             pgt_reply(player, convert_ressource_name_to_id(&string)),
         ),
         _ => (),
+    }
+}
+
+pub fn move_forward(client: &mut Client, config: &Config) {
+    match &mut client.state {
+        ClientState::Ai { player, .. } => match player.orientation {
+            Orientation::North => {
+                if player.y == 0 {
+                    player.y = config.height - 1;
+                } else {
+                    player.y -= 1;
+                }
+            }
+            Orientation::East => {
+                if player.x == config.width - 1 {
+                    player.x = 0;
+                } else {
+                    player.x += 1;
+                }
+            }
+            Orientation::South => {
+                if player.y == config.height - 1 {
+                    player.y = 0;
+                } else {
+                    player.y += 1;
+                }
+            }
+            Orientation::West => {
+                if player.x == 0 {
+                    player.x = config.width - 1;
+                } else {
+                    player.x -= 1;
+                }
+            }
+        },
+        _ => return,
+    }
+}
+
+pub fn turn_right(client: &mut Client) {
+    match &mut client.state {
+        ClientState::Ai { player, .. } => {
+            player.orientation = match player.orientation {
+                Orientation::East => Orientation::South,
+                Orientation::North => Orientation::East,
+                Orientation::South => Orientation::West,
+                Orientation::West => Orientation::North,
+            }
+        }
+        _ => return,
+    }
+}
+
+pub fn turn_left(client: &mut Client) {
+    match &mut client.state {
+        ClientState::Ai { player, .. } => {
+            player.orientation = match player.orientation {
+                Orientation::East => Orientation::North,
+                Orientation::North => Orientation::West,
+                Orientation::South => Orientation::East,
+                Orientation::West => Orientation::South,
+            }
+        }
+        _ => return,
     }
 }
 

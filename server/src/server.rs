@@ -5,7 +5,9 @@ use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
-use crate::command::{Command, send_ai_command_to_gui, send_string_to_all_guis};
+use crate::command::{
+    Command, move_forward, send_ai_command_to_gui, send_string_to_all_guis, turn_left, turn_right
+};
 use crate::gui_parser::{ebo_reply, pdi_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
@@ -118,7 +120,7 @@ impl Server {
         self.time_manager.next_timeout_ms().unwrap_or(-1)
     }
 
-    pub fn execute_ready_commands(&mut self) {
+    pub fn execute_ready_commands(&mut self, config: &Config) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
             println!(
@@ -134,6 +136,18 @@ impl Server {
                 .find(|c| c.id == scheduled.client_id)
             {
                 let response = match scheduled.command {
+                    Command::Forward => {
+                        move_forward(client, config);
+                        "ok\n".to_string()
+                    }
+                    Command::Right => {
+                        turn_right(client);
+                        "ok\n".to_string()
+                    }
+                    Command::Left => {
+                        turn_left(client);
+                        "ok\n".to_string()
+                    }
                     Command::Look => "[ player ]\n".to_string(),
                     Command::Inventory => {
                         "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n".to_string()
