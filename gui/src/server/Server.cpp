@@ -18,57 +18,68 @@ namespace zappy {
     Server::~Server() {}
 
     void Server::handleServerUpdate() {
-        const std::string                     message = _socket.readFromSocket();
-        std::vector<std::vector<std::string>> wordsByLine;
-        std::stringstream                     stream(message);
-        std::string                           line;
-        ServerParser                          parser;
+            const std::string                 message = _socket.readFromSocket();
+            std::vector<std::vector<std::string>> wordsByLine;
+            std::stringstream                     stream(message);
+            std::string                           line;
+            ServerParser                          parser;
+            std::string                           dir    = "unk";
 
-        while (std::getline(stream, line)) {
-            if (!line.empty())
-                wordsByLine.push_back(parser.splitWords(line));
-        }
+            while (std::getline(stream, line)) {
+                if (!line.empty())
+                    wordsByLine.push_back(parser.splitWords(line));
+            }
+            std::vector<Player>& players = _players.getPlayer();
+            for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
+                if (wordsByLine[i].empty())
+                    continue;
+                if ((wordsByLine[i][0] == "ppo" && wordsByLine[i].size() == 5) || (wordsByLine[i][0] == "pnw" && wordsByLine[i].size() == 7)) {
+                    const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                    int       oldSize = static_cast<int>(players.size());
+                    if (static_cast<std::size_t>(number) >= players.size()) {
+                        players.resize(static_cast<std::size_t>(number) + 1);
+                        for (; oldSize < static_cast<int>(players.size()); oldSize++)
+                            _players.checkAlive(oldSize, _socket, _logs);
+                        if (wordsByLine[i][0] == "pnw")
+                            _logs.push_back("New player " + std::to_string(number + 1) + " connected");
+                    }
+                    parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
+                    players[number].setIsAlive(true);
+                    if (wordsByLine[i][0] == "ppo") {
+                        int orientCode = std::atoi(wordsByLine[i][4].c_str());
 
-        std::lock_guard<std::mutex> lock(_dataMutex);
-        std::vector<Player>&        players = _players.getPlayer();
-        for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
-            if (wordsByLine[i].empty())
-                continue;
-            if ((wordsByLine[i][0] == "ppo" && wordsByLine[i].size() == 5) || (wordsByLine[i][0] == "pnw" && wordsByLine[i].size() == 7)) {
-                const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                if (static_cast<std::size_t>(number) >= players.size())
-                    players.resize(static_cast<std::size_t>(number) + 1);
-                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
-                        _players.checkAlive(oldSize, _socket, _logs);
+                        if (orientCode == 1) dir = "North";
+                        else if (orientCode == 2) dir = "East";
+                        else if (orientCode == 3) dir = "South";
+                        else if (orientCode == 4) dir = "West";
+                        _logs.push_back("Player " + std::to_string(number + 1) +
+                                        " moved to position (" + wordsByLine[i][2] + ", " + wordsByLine[i][3] +
+                                        ") orientation " + dir);
+                    }
                 }
-                parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
-                players[number].setIsAlive(true);
-                if (wordsByLine[i][0] == "pnw")
-                    players[number].setLevel(static_cast<u_int8_t>(std::atoi(wordsByLine[i][5].c_str())));
-            }
-            if (wordsByLine[i][0] == "pdi") {
-                const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                if (static_cast<std::size_t>(number) < players.size())
-                    players[number].setIsAlive(false);
-                _logs.push_back("Player " + std::to_string(number + 1) + " died");
-            }
-            if (wordsByLine[i][0] == "pbc") {
-                const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                int       oldSize = static_cast<int>(players.size());
-                if (static_cast<std::size_t>(number) >= players.size()) {
-                    players.resize(static_cast<std::size_t>(number) + 1);
-                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
-                        _players.checkAlive(oldSize, _socket, _logs);
+                if (wordsByLine[i][0] == "pdi") {
+                    const int number = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                    if (static_cast<std::size_t>(number) < players.size())
+                        players[number].setIsAlive(false);
+                    _logs.push_back("Player " + std::to_string(number + 1) + " died");
                 }
-                _logs.push_back("Player " + std::to_string(number) + " sent the message " + wordsByLine[i][2]);
-                _players.addBroadcaster(number);
+                if (wordsByLine[i][0] == "pbc") {
+                    const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
+                    int       oldSize = static_cast<int>(players.size());
+                    if (static_cast<std::size_t>(number) >= players.size()) {
+                        players.resize(static_cast<std::size_t>(number) + 1);
+                        for (; oldSize < static_cast<int>(players.size()); oldSize++)
+                            _players.checkAlive(oldSize, _socket, _logs);
+                    }
+                    _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + wordsByLine[i][2]);
+                    _players.addBroadcaster(number);
+                }
             }
+            for (int i = 0; i < players.size(); i++)
+                _players.checkAlive(i, _socket, _logs);
+            _players.getAllAlive();
+            _players.updatePlayerpos(_socket, _logs);
         }
-        for (int i = 0; i < players.size(); i++)
-            _players.checkAlive(i, _socket, _logs);
-        _players.getAllAlive();
-        _players.updatePlayerpos(_socket, _logs);
-    }
 
     void Server::updateTiles() {
         std::string mess = "mct\n";

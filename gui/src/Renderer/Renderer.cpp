@@ -98,13 +98,18 @@ namespace zappy {
         }
         id = _selectedPlayer->getId();
         _font.DrawText("SELECTED Player : " + std::to_string(id + 1), x + 300, y + 200, _fontSize + 10, _spacing, _colors.getTextColor());
-        _font.DrawText("Food : " + std::to_string(p->getFood()), x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Linemate : " + std::to_string(p->getLinemate()), x + 300, y + 280, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Deraumere : " + std::to_string(p->getDeraumere()), x + 300, y + 310, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Sibur : " + std::to_string(p->getSibur()), x + 300, y + 340, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Mendiane : " + std::to_string(p->getMendiane()), x + 300, y + 370, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Phiras : " + std::to_string(p->getPhiras()), x + 300, y + 400, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Thystame : " + std::to_string(p->getThystame()), x + 300, y + 430, _fontSize, _spacing, _colors.getTextColor());
+        if (!p->getIsAlive()) {
+            _font.DrawText("Status : DEAD", x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
+        } else {
+            _font.DrawText("Status : ALIVE", x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Food : " + std::to_string(p->getFood()), x + 300, y + 280, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Linemate : " + std::to_string(p->getLinemate()), x + 300, y + 310, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Deraumere : " + std::to_string(p->getDeraumere()), x + 300, y + 340, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Sibur : " + std::to_string(p->getSibur()), x + 300, y + 370, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Mendiane : " + std::to_string(p->getMendiane()), x + 300, y + 400, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Phiras : " + std::to_string(p->getPhiras()), x + 300, y + 430, _fontSize, _spacing, _colors.getTextColor());
+            _font.DrawText("Thystame : " + std::to_string(p->getThystame()), x + 300, y + 460, _fontSize, _spacing, _colors.getTextColor());
+        }
     }
 
     void Renderer::displayPlayers(Server& server, int offsetX, int offsetY, int tileSizeClamped) {

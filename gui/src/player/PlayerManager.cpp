@@ -7,6 +7,7 @@
 
 #include "PlayerManager.hpp"
 #include "../server/ServerParser.hpp"
+#include <cstddef>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -96,7 +97,9 @@ namespace zappy {
             }
             std::string comm = "ppo #" + std::to_string(i) + "\n";
             socket.writeToSocket(comm);
-            const std::string resp = socket.readFromSocket();
+            std::string resp;
+            while (resp.empty())
+                resp = socket.readFromSocket();
             std::stringstream stream(resp);
             std::string       token;
             ServerParser      parser;
@@ -108,19 +111,10 @@ namespace zappy {
                 const auto words = parser.splitWords(token);
                 if (words.size() >= 5 && words[1] == "#" + std::to_string(i) && parser.parsePlayerPositionLine(words, _Players[i])) {
                     _Players[i].setIsAlive(true);
-                    if (words[3].compare("1")) {
-                        dir = "North";
-                    }
-                    if (words[3].compare("2")) {
-                        dir = "East";
-                    }
-                    if (words[3].compare("3")) {
-                        dir = "South";
-                    }
-                    if (words[3].compare("4")) {
-                        dir = "West";
-                    }
-                    logs.push_back("Player " + std::to_string(i + 1) + " moved to X: " + words[2] + " Y: " + words[3] + " facing " + dir);
+                    if (words[3] == "1") { dir = "North"; }
+                    else if (words[3] == "2") { dir = "East"; }
+                    else if (words[3] == "3") { dir = "South"; }
+                    else if (words[3] == "4") { dir = "West"; }
                 }
             }
         }
