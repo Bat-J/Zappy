@@ -71,13 +71,24 @@ class direction(Enum):
     east = 7
     northeast = 8
 
+    def __wrap_around(self, value: int) -> int:
+        while value > 8:
+            value -= 7
+        while value < 1:
+            value += 7
+        return value
+
     def add_cardinal_direction(self, cardinal_direction: cardinal_direction):
+        if cardinal_direction == cardinal_direction.none or self == direction.none:
+            return direction.none
         rotation = cardinal_direction.value * 2 - 2
-        return direction((self.value + rotation - 1) % 8 + 1)
+        return direction(self.__wrap_around(self.value + rotation - 1))
 
     def sub_cardinal_direction(self, cardinal_direction: cardinal_direction):
+        if cardinal_direction == cardinal_direction.none or self == direction.none:
+            return direction.none
         rotation = cardinal_direction.value * 2 - 2
-        return direction((self.value - rotation - 1) % 8 + 1)
+        return direction(self.__wrap_around(self.value - rotation - 1))
 
 
 def parse_direction(direction_value: int) -> direction:
@@ -436,6 +447,7 @@ class AI_server_interface:
                 self.send_forward_action_and_block_until_response()
 
     def move_towards_direction(self, direction: direction):
+        """Moves the Trantorian one tile in the specified direction (relative to its starting orientation)."""
         if direction == direction.north:
             self.orient_to_direction(cardinal_direction.north)
             self.send_forward_action_and_block_until_response()

@@ -55,6 +55,7 @@ class WinnerAgent:
                 ):
                     self.state = WinnerAgent.State.egg_laying
                 else:
+                    self.elevation_broadcast_direction = interface.direction.none
                     self.state = WinnerAgent.State.elevating
 
             if self.state == WinnerAgent.State.collecting_ressources:
@@ -62,10 +63,11 @@ class WinnerAgent:
                     random.random()
                     < 1
                     / min(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
+                        self.ai_interface.world_x_size,  # pyright: ignore[reportArgumentType]
+                        self.ai_interface.world_y_size,  # pyright: ignore[reportArgumentType]
                     )
                     * 2
-                ):  # pyright: ignore[reportArgumentType]
+                ):
                     if random.random() < 0.5:
                         self.ai_interface.send_turn_left_action()
                     else:
@@ -82,8 +84,8 @@ class WinnerAgent:
                             self.ai_interface.level
                         ),
                     ),
-                    self.ai_interface.last_known_inventory,
-                )  # pyright: ignore[reportArgumentType]
+                    self.ai_interface.last_known_inventory,  # pyright: ignore[reportArgumentType]
+                )
                 needed_ressources[interface.object_type.food] = 100  # collect all
                 self.ai_interface.collect_matching_tile_ressources(needed_ressources)
                 self.state = WinnerAgent.State.none
@@ -182,13 +184,19 @@ class WinnerAgent:
                                                 resource
                                             )
                         else:
-                            self.ai_interface.send_broadcast_action_and_block_until_response(
-                                f"wawa_{self.ai_interface.level}"
-                            )
-                            if self.elevation_broadcast_direction:
+                            if (
+                                self.elevation_broadcast_direction
+                                and random.random() < 0.5
+                            ):
                                 self.ai_interface.move_towards_direction(
                                     self.elevation_broadcast_direction
                                 )
+                                self.elevation_broadcast_direction = (
+                                    interface.direction.none
+                                )
+                            self.ai_interface.send_broadcast_action_and_block_until_response(
+                                f"wawa_{self.ai_interface.level}"
+                            )
 
                 if (
                     self.ai_interface.completed_actions
