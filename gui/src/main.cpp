@@ -21,10 +21,10 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: ./zappy_gui -p port -h machine\n";
         return 84;
     }
-    struct addrinfo hints{};
+    struct addrinfo  hints{};
     struct addrinfo* res = nullptr;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family      = AF_INET;
+    hints.ai_socktype    = SOCK_STREAM;
     if (getaddrinfo(argv[4], nullptr, &hints, &res) != 0 || res == nullptr) {
         std::cerr << "Failed to resolve host: " << argv[4] << "\n";
         return 84;
