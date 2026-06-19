@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::os::fd::AsRawFd;
@@ -126,55 +125,59 @@ impl Server {
                 scheduled.client_id, scheduled.command
             );
 
-            let reference = RefCell::new(&mut self.clients);
-
-            if let Some(client) = reference
-                .borrow_mut()
-                .iter_mut()
-                .find(|c| c.id == scheduled.client_id)
+            let idx = match self
+                .clients
+                .iter()
+                .position(|c| c.id == scheduled.client_id)
             {
-                let response = match scheduled.command {
-                    Command::Look => "[ player ]\n".to_string(),
-                    Command::Inventory => {
-                        "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n".to_string()
-                    }
-                    Command::ConnectNbr => {
-                        if let ClientState::Ai { ref team, .. } = client.state {
-                            if let Some(slot) = self.team_slots.iter().find(|(name, _)| name == team) {
-                                format!("{}\n", slot.1)
-                            } else {
-                                "0\n".to_string()
-                            }
+                Some(i) => i,
+                None => {
+                    eprintln!("Client {} not found for execution", scheduled.client_id);
+                    continue;
+                }
+            };
+
+            let response = match &scheduled.command {
+                Command::Look => "[ player ]\n".to_string(),
+                Command::Inventory => {
+                    "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n"
+                        .to_string()
+                }
+                Command::ConnectNbr => {
+                    if let ClientState::Ai { ref team, .. } = self.clients[idx].state {
+                        if let Some(slot) = self.team_slots.iter().find(|(name, _)| name == team) {
+                            format!("{}\n", slot.1)
                         } else {
                             "0\n".to_string()
                         }
+                    } else {
+                        "0\n".to_string()
                     }
-                    Command::Broadcast(ref msg) => {
-                        let _ = client.stream.write_all(b"ok\n");
-                        let broadcast = format!("{}\n", msg);
-                        for other in reference.borrow_mut().iter_mut() {
-                            if let ClientState::Ai { .. } = other.state {
-                                let _ = other.stream.write_all(broadcast.as_bytes());
-                            }
-                        }
-                        continue;
-                    }
-                    _ => "ok\n".to_string(),
-                };
-
-                let _ = client.stream.write_all(response.as_bytes());
-
-                if let ClientState::Ai { player, .. } = &client.state {
-                    send_ai_command_to_gui(
-                        scheduled.command,
-                        player,
-                        false, /* TODO implement check for incantation */
-                        *reference.borrow_mut(),
-                        &Egg::default(), /* TODO implement from fork */
-                    );
                 }
-            } else {
-                eprintln!("Client {} not found for execution", scheduled.client_id);
+                Command::Broadcast(msg) => {
+                    let _ = self.clients[idx].stream.write_all(b"ok\n");
+                    let broadcast = format!("{}\n", msg);
+                    for other in self.clients.iter_mut() {
+                        if let ClientState::Ai { .. } = other.state {
+                            let _ = other.stream.write_all(broadcast.as_bytes());
+                        }
+                    }
+                    continue;
+                }
+                _ => "ok\n".to_string(),
+            };
+
+            let _ = self.clients[idx].stream.write_all(response.as_bytes());
+
+            if let ClientState::Ai { player, .. } = &self.clients[idx].state {
+                let player = player.clone();
+                send_ai_command_to_gui(
+                    scheduled.command,
+                    &player,
+                    false, /* TODO implement check for incantation */
+                    &mut self.clients,
+                    &Egg::default(), /* TODO implement from fork */
+                );
             }
         }
     }
@@ -286,10 +289,18 @@ impl Server {
     /// Call this whenever a new egg is added to `game.eggs`, to hatch any
     /// clients that were queued waiting for one.
     pub fn try_hatch_pending(&mut self, game: &mut Game) {
-        let reference = RefCell::new(&mut self.clients);
+        let indices: Vec<usize> = self
+            .clients
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| matches!(c.state, ClientState::AwaitingEgg { .. }))
+            .map(|(i, _)| i)
+            .collect();
 
-        for client in reference.borrow_mut().iter_mut() {
-            let team = match &client.state {
+        let mut gui_notifications: Vec<String> = Vec::new();
+
+        for i in indices {
+            let team = match &self.clients[i].state {
                 ClientState::AwaitingEgg { team } => team.clone(),
                 _ => continue,
             };
@@ -307,8 +318,8 @@ impl Server {
                 .map(|(_, s)| *s)
                 .unwrap_or(0);
 
-            client.id = egg.player_id;
-            client.state = ClientState::Ai {
+            self.clients[i].id = egg.player_id;
+            self.clients[i].state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
                     x: egg.x,
@@ -335,10 +346,14 @@ impl Server {
             );
             println!(
                 "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
-                client.addr, egg.x, egg.y
+                self.clients[i].addr, egg.x, egg.y
             );
-            let _ = client.stream.write_all(response.as_bytes());
-            send_string_to_all_guis(*reference.borrow_mut(), ebo_reply(&egg));
+            let _ = self.clients[i].stream.write_all(response.as_bytes());
+            gui_notifications.push(ebo_reply(&egg));
+        }
+
+        for msg in gui_notifications {
+            send_string_to_all_guis(&mut self.clients, msg);
         }
     }
 
@@ -367,31 +382,34 @@ impl Server {
     }
 
     pub fn decrement_food(&mut self) {
-        let mut i = 0;
-        let reference = RefCell::new(&mut self.clients);
+        let mut to_remove: Vec<usize> = Vec::new();
+        let mut death_notifications: Vec<String> = Vec::new();
 
-        for client in reference.borrow_mut().iter_mut() {
-            match client.state.clone() {
-                ClientState::Ai { mut player, .. } => {
-                    player.time_left -= 1;
-                    if player.time_left == 0 {
-                        player.food -= 1;
-                        if player.food == 0 {
-                            send_string_to_all_guis(*reference.borrow_mut(), pdi_reply(&player));
-                            let _ = client.stream.shutdown(std::net::Shutdown::Both);
-                            reference.borrow_mut().remove(i);
-                            continue;
-                        }
+        for (i, client) in self.clients.iter_mut().enumerate() {
+            if let ClientState::Ai { ref mut player, .. } = client.state {
+                player.time_left = player.time_left.saturating_sub(1);
+                if player.time_left == 0 {
+                    player.food = player.food.saturating_sub(1);
+                    if player.food == 0 {
+                        death_notifications.push(pdi_reply(player));
+                        let _ = client.stream.shutdown(std::net::Shutdown::Both);
+                        to_remove.push(i);
                     }
-                    i += 1;
                 }
-                _ => continue,
             }
+        }
+
+        for msg in death_notifications {
+            send_string_to_all_guis(&mut self.clients, msg);
+        }
+
+        for i in to_remove.into_iter().rev() {
+            self.clients.remove(i);
         }
     }
 
     fn read_client(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         buffer: &mut [u8; 1024],
         team_slots: &mut [(String, u32)],
         game: &mut Game,
@@ -429,39 +447,29 @@ impl Server {
     }
 
     fn handle_line(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         line: &str,
         team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
         client_id: u32,
     ) -> bool {
-        let reference = RefCell::new(clients);
-        match &mut reference.borrow_mut()[client_id as usize].state {
-            ClientState::AwaitingTeamName => Self::handle_team_name(
-                &mut reference.borrow_mut()[client_id as usize],
-                line,
-                team_slots,
-                game,
-            ),
-            ClientState::Ai { player, .. } => Self::handle_ai_command(
-                &mut reference.borrow_mut()[client_id as usize],
-                &reference,
-                line,
-                time_manager,
-                client_id,
-                player,
-            ),
+        let state = clients[client_id as usize].state.clone();
+        match state {
+            ClientState::AwaitingTeamName => {
+                Self::handle_team_name(&mut clients[client_id as usize], line, team_slots, game)
+            }
+            ClientState::Ai { player, .. } => {
+                Self::handle_ai_command(clients, line, time_manager, client_id, &player)
+            }
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
-            ClientState::Gui => {
-                Self::handle_gui_command(&mut reference.borrow_mut(), client_id, line, game)
-            }
+            ClientState::Gui => Self::handle_gui_command(clients, client_id, line, game),
         }
     }
 
     fn handle_gui_command(
-        clients: &mut Vec<Client>,
+        clients: &mut [Client],
         client_id: u32,
         line: &str,
         game: &mut Game,
@@ -484,9 +492,9 @@ impl Server {
             "bct" => Self::bct_parse(parts, &mut clients[client_id as usize], game),
             "mct" => Self::mct_parse(parts, &mut clients[client_id as usize], game),
             "tna" => Self::tna_parse(parts, &mut clients[client_id as usize], game),
-            "ppo" => Self::ppo_parse(parts, &mut RefCell::new(clients), client_id),
-            "plv" => Self::plv_parse(parts, &mut RefCell::new(clients), client_id),
-            "pin" => Self::pin_parse(parts, &mut RefCell::new(clients), client_id),
+            "ppo" => Self::ppo_parse(parts, clients, client_id),
+            "plv" => Self::plv_parse(parts, clients, client_id),
+            "pin" => Self::pin_parse(parts, clients, client_id),
             "sgt" => Self::sgt_parse(parts, &mut clients[client_id as usize], game),
             "sst" => Self::sst_parse(parts, &mut clients[client_id as usize], game),
             _ => Self::bad_command(parts, &mut clients[client_id as usize]),
@@ -494,33 +502,37 @@ impl Server {
     }
 
     fn handle_ai_command(
-        client: &mut Client,
-        clients: &RefCell<&mut Vec<Client>>,
+        clients: &mut [Client],
         line: &str,
         time_manager: &mut TimeManager,
         client_id: u32,
         player: &Player,
     ) -> bool {
-        let mut list: Vec<&Player> = Vec::new();
-        let mut content = clients.borrow_mut();
-        for c in content.iter_mut() {
-            match &c.state {
-                ClientState::Ai { player, .. } => list.push(player),
-                _ => continue,
-            }
-        }
-        match Command::parse(line, &list, player, &mut clients.borrow_mut()) {
+        let owned_players: Vec<Player> = clients
+            .iter()
+            .filter_map(|c| match &c.state {
+                ClientState::Ai { player, .. } => Some(player.clone()),
+                _ => None,
+            })
+            .collect();
+        let list: Vec<&Player> = owned_players.iter().collect();
+        let addr = clients[client_id as usize].addr;
+
+        match Command::parse(line, &list, player, clients) {
             Ok(cmd) => {
                 let execute_at = time_manager.schedule(cmd.clone(), client_id);
                 println!(
                     "AI command from {}: {} (execute at {:?})",
-                    client.addr, cmd, execute_at
+                    addr, cmd, execute_at
                 );
                 false
             }
             Err(err) => {
-                eprintln!("Parse error from {}: {}", client.addr, err);
-                client.stream.write_all(b"ko\n").is_err()
+                eprintln!("Parse error from {}: {}", addr, err);
+                clients[client_id as usize]
+                    .stream
+                    .write_all(b"ko\n")
+                    .is_err()
             }
         }
     }
