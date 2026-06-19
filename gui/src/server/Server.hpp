@@ -13,6 +13,7 @@
 #include "../world/WorldState.hpp"
 #include <mutex>
 #include <vector>
+#include <mutex>
 
 namespace zappy {
     class Server {
@@ -50,5 +51,6 @@ namespace zappy {
         ResourceTracker          _resources;
         std::mutex               _dataMutex;
         std::vector<std::string> _logs;
+        std::mutex      _dataMutex;
     };
 }

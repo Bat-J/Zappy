@@ -29,6 +29,7 @@ namespace zappy {
             if (!line.empty())
                 wordsByLine.push_back(parser.splitWords(line));
         }
+        std::lock_guard<std::mutex> lock(_dataMutex);
         std::vector<Player>& players = _players.getPlayer();
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
             if (wordsByLine[i].empty())
@@ -114,6 +115,7 @@ namespace zappy {
     }
 
     void Server::updateResources() {
+        std::lock_guard<std::mutex> lock(_dataMutex);
         _resources.updateResources(world().getTiles());
         for (int i = 0; i < _players.getPlayer().size(); i++) {
             if (_players.getPlayer()[i].getIsAlive() == false)
