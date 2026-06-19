@@ -36,11 +36,11 @@ pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
 pub fn spawn_resources(config: &Config, map: &mut Vec<Vec<Tile>>) {
     let tiles = (config.width * config.height) as f64;
     let counts: [(f64, u8); 7] = [
-        (0.5,  0), // food
-        (0.3,  1), // linemate
+        (0.5, 0),  // food
+        (0.3, 1),  // linemate
         (0.15, 2), // deraumere
-        (0.1,  3), // sibur
-        (0.1,  4), // mendiane
+        (0.1, 3),  // sibur
+        (0.1, 4),  // mendiane
         (0.08, 5), // phiras
         (0.05, 6), // thystame
     ];
