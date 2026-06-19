@@ -1,4 +1,5 @@
 use crate::server::Game;
+use std::time::{Duration, Instant};
 
 mod args;
 mod command;
@@ -15,20 +16,41 @@ fn main() -> std::io::Result<()> {
 
     let mut server = server::start(config.clone())?;
 
+    let mut map = map::create_map(&config);
+    map::spawn_resources(&config, &mut map);
+
     let mut game = Game {
         config: config.clone(),
-        map: map::create_map(&config),
+        map,
         eggs: map::start_spawn_eggs(&config),
     };
 
+    let spawn_interval_ms = (20 * 1000) / config.frequency as u64;
+    let mut next_spawn = Instant::now() + Duration::from_millis(spawn_interval_ms);
+
     loop {
         server.execute_ready_commands();
-        let timeout_ms = server.next_poll_timeout_ms();
+
+        let ms_to_spawn = next_spawn
+            .saturating_duration_since(Instant::now())
+            .as_millis()
+            .min(i32::MAX as u128) as i32;
+        let timeout_ms = match server.next_poll_timeout_ms() {
+            -1 => ms_to_spawn,
+            t => t.min(ms_to_spawn),
+        };
+
         let ready = server.poll(timeout_ms)?;
         server.accept(&ready)?;
         server.decrement_food();
         server.try_hatch_pending(&mut game);
         let read = server.read(&ready, &mut game)?;
         server.cleanup(ready.disconnected.into_iter().chain(read.disconnected));
+
+        if Instant::now() >= next_spawn {
+            let changed = map::refill_resources(&game.config, &mut game.map);
+            server.notify_bct_updates(&changed, &game);
+            next_spawn += Duration::from_millis(spawn_interval_ms);
+        }
     }
 }

@@ -29,6 +29,15 @@ namespace zappy {
     void WorldState::setTiles(std::vector<Tile> tiles) {
         _tiles = std::move(tiles);
     }
+    void WorldState::updateTile(int x, int y, std::vector<int> resources) {
+        for (auto& tile : _tiles) {
+            if (tile.getPosition().first == x && tile.getPosition().second == y) {
+                tile.setRessources(resources);
+                return;
+            }
+        }
+    }
+
     std::optional<const Tile> WorldState::catchTile(int x, int y) const {
         for (int i = 0; i < _tiles.size(); i++) {
             if (_tiles[i].getPosition().first == x && _tiles[i].getPosition().second == y)

@@ -48,8 +48,17 @@ namespace zappy {
                 if (static_cast<std::size_t>(number) < players.size())
                     players[number].setIsAlive(false);
             }
+            if (wordsByLine[i][0] == "bct" && wordsByLine[i].size() == 10) {
+                int              x = std::stoi(wordsByLine[i][1]);
+                int              y = std::stoi(wordsByLine[i][2]);
+                std::vector<int> resources;
+                for (int r = 3; r <= 9; ++r)
+                    resources.push_back(std::stoi(wordsByLine[i][r]));
+                _world.updateTile(x, y, resources);
+            }
         }
         _players.getAllAlive();
+        _resources.updateResources(_world.getTiles());
     }
 
     void Server::updateTiles() {

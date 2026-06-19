@@ -120,8 +120,10 @@ namespace zappy {
         const Tile                      fallbackTile{};
 
         _drawnTiles.clear();
+        _tileResources.clear();
         for (int y = 0; y < mapHeight; ++y) {
             std::vector<raylib::Rectangle> line;
+            std::vector<std::vector<int>>  resLine;
             for (int x = 0; x < mapWidth; ++x) {
                 const int        rectX     = offsetX + x * tileSizeClamped;
                 const int        rectY     = offsetY + y * tileSizeClamped;
@@ -130,16 +132,38 @@ namespace zappy {
                 std::vector<int> resources = tile.getRessources();
                 resources.resize(7, 0);
                 line.emplace_back(rectX, rectY, tileSizeClamped - 1, tileSizeClamped - 1);
+                resLine.push_back(resources);
             }
             _drawnTiles.push_back(line);
+            _tileResources.push_back(resLine);
         }
     }
 
     void Renderer::drawTiles() {
-        for (const auto& line : _drawnTiles) {
-            for (const auto& rect : line) {
+        static const ::Color resourceColors[7] = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK};
+        // dot layout: 2 columns, 4 rows inside tile
+        static const float dotColRatio[7] = {0.25f, 0.75f, 0.25f, 0.75f, 0.25f, 0.75f, 0.5f};
+        static const float dotRowRatio[7] = {0.2f,  0.2f,  0.4f,  0.4f,  0.6f,  0.6f,  0.8f};
+
+        for (std::size_t y = 0; y < _drawnTiles.size(); ++y) {
+            for (std::size_t x = 0; x < _drawnTiles[y].size(); ++x) {
+                const auto& rect = _drawnTiles[y][x];
                 rect.Draw(_colors.getTileColor());
                 rect.DrawLines(_colors.getTileBorderColor());
+
+                if (y >= _tileResources.size() || x >= _tileResources[y].size())
+                    continue;
+                const auto& res    = _tileResources[y][x];
+                const int   tileW  = static_cast<int>(rect.width);
+                const int   tileH  = static_cast<int>(rect.height);
+                const int   radius = std::max(2, std::min(tileW, tileH) / 8);
+                for (int r = 0; r < 7; ++r) {
+                    if (r >= static_cast<int>(res.size()) || res[r] == 0)
+                        continue;
+                    const int cx = static_cast<int>(rect.x) + static_cast<int>(dotColRatio[r] * tileW);
+                    const int cy = static_cast<int>(rect.y) + static_cast<int>(dotRowRatio[r] * tileH);
+                    DrawCircle(cx, cy, radius, resourceColors[r]);
+                }
             }
         }
     }
