@@ -2,7 +2,7 @@ use crate::{
     map::{Egg, bct_reply, mct_reply, msz_reply, sgt_reply, tna_reply},
     server::{Client, ClientState, Game, Orientation, Player, Server},
 };
-use std::{cell::RefCell, io::Write};
+use std::io::Write;
 
 impl Server {
     fn gui_error(client: &mut Client, err: &str) -> bool {
@@ -62,111 +62,66 @@ impl Server {
             .is_err()
     }
 
-    pub fn ppo_parse(
-        parts: Vec<&str>,
-        clients: &mut RefCell<&mut Vec<Client>>,
-        client_id: u32,
-    ) -> bool {
-        if parts.len() != 2 || !parts[1].starts_with("#") {
-            return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+    pub fn ppo_parse(parts: Vec<&str>, clients: &mut [Client], client_id: u32) -> bool {
+        if parts.len() != 2 || !parts[1].starts_with('#') {
+            return Self::gui_error(&mut clients[client_id as usize], "sbp\n");
         }
-        match parts[1].chars().next().map(|c| &parts[1][c.len_utf8()..]) {
-            Some(string) => {
-                let player_id = string;
-                if player_id.parse::<u32>().is_err() {
-                    return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
-                }
-                for client in clients.borrow().iter() {
-                    match &client.state {
-                        ClientState::Ai { team: _, player } => {
-                            if player.id != player_id.parse::<u32>().unwrap() {
-                                continue;
-                            }
-                            return clients.borrow_mut()[client_id as usize]
-                                .stream
-                                .write_all(ppo_reply(player).as_bytes())
-                                .is_err();
-                        }
-                        _ => continue,
-                    }
-                }
-                Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n")
-            }
-            None => {
-                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
-            }
+        let player_id = match parts[1][1..].parse::<u32>() {
+            Ok(id) => id,
+            Err(_) => return Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
+        };
+        let reply = clients.iter().find_map(|c| match &c.state {
+            ClientState::Ai { player, .. } if player.id == player_id => Some(ppo_reply(player)),
+            _ => None,
+        });
+        match reply {
+            Some(msg) => clients[client_id as usize]
+                .stream
+                .write_all(msg.as_bytes())
+                .is_err(),
+            None => Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
         }
     }
 
-    pub fn plv_parse(
-        parts: Vec<&str>,
-        clients: &mut RefCell<&mut Vec<Client>>,
-        client_id: u32,
-    ) -> bool {
-        if parts.len() != 2 || !parts[1].starts_with("#") {
-            return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+    pub fn plv_parse(parts: Vec<&str>, clients: &mut [Client], client_id: u32) -> bool {
+        if parts.len() != 2 || !parts[1].starts_with('#') {
+            return Self::gui_error(&mut clients[client_id as usize], "sbp\n");
         }
-        match parts[1].chars().next().map(|c| &parts[1][c.len_utf8()..]) {
-            Some(string) => {
-                let player_id = string;
-                if player_id.parse::<u32>().is_err() {
-                    return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
-                }
-                for client in clients.borrow().iter() {
-                    match &client.state {
-                        ClientState::Ai { team: _, player } => {
-                            if player.id != player_id.parse::<u32>().unwrap() {
-                                continue;
-                            }
-                            return clients.borrow_mut()[client_id as usize]
-                                .stream
-                                .write_all(plv_reply(player).as_bytes())
-                                .is_err();
-                        }
-                        _ => continue,
-                    }
-                }
-                Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n")
-            }
-            None => {
-                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
-            }
+        let player_id = match parts[1][1..].parse::<u32>() {
+            Ok(id) => id,
+            Err(_) => return Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
+        };
+        let reply = clients.iter().find_map(|c| match &c.state {
+            ClientState::Ai { player, .. } if player.id == player_id => Some(plv_reply(player)),
+            _ => None,
+        });
+        match reply {
+            Some(msg) => clients[client_id as usize]
+                .stream
+                .write_all(msg.as_bytes())
+                .is_err(),
+            None => Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
         }
     }
 
-    pub fn pin_parse(
-        parts: Vec<&str>,
-        clients: &mut RefCell<&mut Vec<Client>>,
-        client_id: u32,
-    ) -> bool {
-        if parts.len() != 2 || !parts[1].starts_with("#") {
-            return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
+    pub fn pin_parse(parts: Vec<&str>, clients: &mut [Client], client_id: u32) -> bool {
+        if parts.len() != 2 || !parts[1].starts_with('#') {
+            return Self::gui_error(&mut clients[client_id as usize], "sbp\n");
         }
-        match parts[1].chars().next().map(|c| &parts[1][c.len_utf8()..]) {
-            Some(string) => {
-                let player_id = string;
-                if player_id.parse::<u32>().is_err() {
-                    return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
-                }
-                for client in clients.borrow().iter() {
-                    match &client.state {
-                        ClientState::Ai { team: _, player } => {
-                            if player.id != player_id.parse::<u32>().unwrap() {
-                                continue;
-                            }
-                            return clients.borrow_mut()[client_id as usize]
-                                .stream
-                                .write_all(pin_reply(player).as_bytes())
-                                .is_err();
-                        }
-                        _ => continue,
-                    }
-                }
-                Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n")
-            }
-            None => {
-                return Self::gui_error(&mut clients.borrow_mut()[client_id as usize], "sbp\n");
-            }
+        let player_id = match parts[1][1..].parse::<u32>() {
+            Ok(id) => id,
+            Err(_) => return Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
+        };
+        let reply = clients.iter().find_map(|c| match &c.state {
+            ClientState::Ai { player, .. } if player.id == player_id => Some(pin_reply(player)),
+            _ => None,
+        });
+        match reply {
+            Some(msg) => clients[client_id as usize]
+                .stream
+                .write_all(msg.as_bytes())
+                .is_err(),
+            None => Self::gui_error(&mut clients[client_id as usize], "sbp\n"),
         }
     }
 

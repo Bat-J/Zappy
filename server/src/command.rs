@@ -164,7 +164,7 @@ pub fn send_ai_command_to_gui(
     }
 }
 
-pub fn move_forward(client: &mut Client, config: &Config) {
+pub fn move_forward(client: &mut Client, config: &Config) -> String {
     match &mut client.state {
         ClientState::Ai { player, .. } => match player.orientation {
             Orientation::North => {
@@ -196,11 +196,12 @@ pub fn move_forward(client: &mut Client, config: &Config) {
                 }
             }
         },
-        _ => return,
+        _ => return "ko\n".to_string(),
     }
+    "ok\n".to_string()
 }
 
-pub fn turn_right(client: &mut Client) {
+pub fn turn_right(client: &mut Client) -> String {
     match &mut client.state {
         ClientState::Ai { player, .. } => {
             player.orientation = match player.orientation {
@@ -210,11 +211,12 @@ pub fn turn_right(client: &mut Client) {
                 Orientation::West => Orientation::North,
             }
         }
-        _ => return,
+        _ => return "ko\n".to_string(),
     }
+    "ok\n".to_string()
 }
 
-pub fn turn_left(client: &mut Client) {
+pub fn turn_left(client: &mut Client) -> String {
     match &mut client.state {
         ClientState::Ai { player, .. } => {
             player.orientation = match player.orientation {
@@ -224,8 +226,9 @@ pub fn turn_left(client: &mut Client) {
                 Orientation::West => Orientation::South,
             }
         }
-        _ => return,
+        _ => return "ko\n".to_string(),
     }
+    "ok\n".to_string()
 }
 
 #[cfg(test)]
