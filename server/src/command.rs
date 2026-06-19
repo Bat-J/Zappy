@@ -3,7 +3,7 @@ use std::{fmt, io::Write};
 use crate::{
     args::Config,
     gui_parser::{pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
-    map::{Egg, enw_string},
+    map::{self, Egg, enw_string},
     server::{Client, ClientState, Orientation, Player},
 };
 
@@ -217,6 +217,96 @@ pub fn turn_left(client: &mut Client) -> String {
         _ => return "ko\n".to_string(),
     }
     "ok\n".to_string()
+}
+
+const VIEW_DISTANCE: i32 = 4;
+
+fn forward(o: &Orientation) -> (i32, i32) {
+    match o {
+        Orientation::North => (0, -1),
+        Orientation::East => (1, 0),
+        Orientation::South => (0, 1),
+        Orientation::West => (-1, 0),
+    }
+}
+
+fn right(o: &Orientation) -> (i32, i32) {
+    match o {
+        Orientation::North => (1, 0),
+        Orientation::East => (0, 1),
+        Orientation::South => (-1, 0),
+        Orientation::West => (0, -1),
+    }
+}
+
+fn wrap(v: i32, max: i32) -> usize {
+    (((v % max) + max) % max) as usize
+}
+
+fn tile_content(tile: &map::Tile) -> String {
+    let mut items: Vec<&str> = Vec::new();
+
+    items.extend(std::iter::repeat_n("player", tile._ais.len()));
+    items.extend(std::iter::repeat_n("food", tile.food as usize));
+    items.extend(std::iter::repeat_n(
+        "linemate",
+        tile.resources.linemate as usize,
+    ));
+    items.extend(std::iter::repeat_n(
+        "deraumere",
+        tile.resources.deraumere as usize,
+    ));
+    items.extend(std::iter::repeat_n("sibur", tile.resources.sibur as usize));
+    items.extend(std::iter::repeat_n(
+        "mendiane",
+        tile.resources.mendiane as usize,
+    ));
+    items.extend(std::iter::repeat_n(
+        "phiras",
+        tile.resources.phiras as usize,
+    ));
+    items.extend(std::iter::repeat_n(
+        "thystame",
+        tile.resources.thystame as usize,
+    ));
+
+    items.join(" ")
+}
+
+pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
+    let player = match &client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let height = map.len() as i32;
+    let width = if height > 0 { map[0].len() as i32 } else { 0 };
+    if height == 0 || width == 0 {
+        return "ko\n".to_string();
+    }
+
+    let px = player.x as i32;
+    let py = player.y as i32;
+
+    let (fx, fy) = forward(&player.orientation);
+    let (rx, ry) = right(&player.orientation);
+
+    let mut cells: Vec<String> = Vec::new();
+    {
+        let x = wrap(px, width);
+        let y = wrap(py, height);
+        cells.push(tile_content(&map[y][x]));
+    }
+    for d in 1..VIEW_DISTANCE {
+        for offset in -(d - 1)..=d - 1 {
+            let tx = px + fx * d + rx * offset;
+            let ty = py + fy * d + ry * offset;
+            let x = wrap(tx, width);
+            let y = wrap(ty, height);
+            cells.push(tile_content(&map[y][x]));
+        }
+    }
+
+    format!("[{}]\n", cells.join(", "))
 }
 
 pub fn get_inventory(client: &Client) -> String {

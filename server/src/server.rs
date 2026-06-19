@@ -5,7 +5,7 @@ use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
 use crate::command::{
-    Command, get_inventory, move_forward, send_ai_command_to_gui, send_string_to_all_guis,
+    Command, get_inventory, look, move_forward, send_ai_command_to_gui, send_string_to_all_guis,
     turn_left, turn_right,
 };
 use crate::gui_parser::{ebo_reply, pdi_reply};
@@ -120,7 +120,7 @@ impl Server {
         self.time_manager.next_timeout_ms().unwrap_or(-1)
     }
 
-    pub fn execute_ready_commands(&mut self, config: &Config) {
+    pub fn execute_ready_commands(&mut self, config: &Config, game: &mut Game) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
             println!(
@@ -144,7 +144,7 @@ impl Server {
                 Command::Forward => move_forward(&mut self.clients[idx], config),
                 Command::Right => turn_right(&mut self.clients[idx]),
                 Command::Left => turn_left(&mut self.clients[idx]),
-                Command::Look => "[ player ]\n".to_string(),
+                Command::Look => look(&self.clients[idx], &game.map),
                 Command::Inventory => get_inventory(&self.clients[idx]),
                 Command::ConnectNbr => {
                     if let ClientState::Ai { ref team, .. } = self.clients[idx].state {

@@ -22,7 +22,7 @@ fn main() -> std::io::Result<()> {
     };
 
     loop {
-        server.execute_ready_commands(&config);
+        server.execute_ready_commands(&config, &mut game);
         let timeout_ms = server.next_poll_timeout_ms();
         let ready = server.poll(timeout_ms)?;
         server.accept(&ready)?;

@@ -3,9 +3,9 @@ use rand::RngExt;
 
 #[derive(Default, Clone)]
 pub struct Tile {
-    food: u32,
-    resources: Resources,
-    _ais: Vec<u32>,
+    pub food: u32,
+    pub resources: Resources,
+    pub _ais: Vec<u32>,
 }
 
 #[derive(Default, Clone)]
