@@ -261,7 +261,7 @@ class AI_server_interface:
             objects = tile.split()
             object_counts = {}
             for obj in objects:
-                if obj in object_counts:
+                if object_counts.get(object_type_from_string(obj)) is not None:
                     object_counts[object_type_from_string(obj)] += 1
                 else:
                     object_counts[object_type_from_string(obj)] = 1
