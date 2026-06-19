@@ -51,6 +51,6 @@ namespace zappy {
         ResourceTracker          _resources;
         std::mutex               _dataMutex;
         std::vector<std::string> _logs;
-        std::mutex      _dataMutex;
+        std::mutex               _dataMutex;
     };
 }

@@ -30,7 +30,7 @@ namespace zappy {
                 wordsByLine.push_back(parser.splitWords(line));
         }
         std::lock_guard<std::mutex> lock(_dataMutex);
-        std::vector<Player>& players = _players.getPlayer();
+        std::vector<Player>&        players = _players.getPlayer();
         for (std::size_t i = 0; i < wordsByLine.size(); ++i) {
             if (wordsByLine[i].empty())
                 continue;
