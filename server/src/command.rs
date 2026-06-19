@@ -245,9 +245,9 @@ pub fn get_inventory(client: &Client) -> String {
                 player.inventory.phiras,
                 player.inventory.thystame
             ));
-            return inventory_string;
+            inventory_string
         }
-        _ => return "ko\n".to_string(),
+        _ => "ko\n".to_string(),
     }
 }
 

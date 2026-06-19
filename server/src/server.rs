@@ -145,10 +145,7 @@ impl Server {
                 Command::Right => turn_right(&mut self.clients[idx]),
                 Command::Left => turn_left(&mut self.clients[idx]),
                 Command::Look => "[ player ]\n".to_string(),
-                Command::Inventory => {
-                    "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n"
-                        .to_string()
-                }
+                Command::Inventory => get_inventory(&self.clients[idx]),
                 Command::ConnectNbr => {
                     if let ClientState::Ai { ref team, .. } = self.clients[idx].state {
                         if let Some(slot) = self.team_slots.iter().find(|(name, _)| name == team) {
