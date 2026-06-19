@@ -6,6 +6,10 @@
 */
 
 #include "Player.hpp"
+#include <cstdio>
+#include <string>
+#include <vector>
+#include <sstream>
 
 namespace zappy {
 
@@ -56,34 +60,6 @@ namespace zappy {
         _lvl = lvl;
     }
 
-    void Player::setFood(size_t food) {
-        _totalFood = food;
-    }
-
-    void Player::setLinemate(size_t linemate) {
-        _totalLinemate = linemate;
-    }
-
-    void Player::setDeraumere(size_t deraumere) {
-        _totalDeraumere = deraumere;
-    }
-
-    void Player::setSibur(size_t sibur) {
-        _totalSibur = sibur;
-    }
-
-    void Player::setMendiane(size_t mendiane) {
-        _totalMendiane = mendiane;
-    }
-
-    void Player::setPhiras(size_t phiras) {
-        _totalPhiras = phiras;
-    }
-
-    void Player::setThystame(size_t thystame) {
-        _totalThystame = thystame;
-    }
-
     void Player::setIsAlive(bool alive) {
         _isAlive = alive;
     }
@@ -96,5 +72,31 @@ namespace zappy {
         static int id = 0;
         _id = id;
         id++;
+    }
+
+    void Player::updateResources(int i, Socket& socket) {
+        const std::string mess = "pin #" + std::to_string(i) + "\n";
+        socket.writeToSocket(mess);
+
+        std::string resp = socket.readFromSocket();
+        while (resp.empty())
+            resp = socket.readFromSocket();
+        std::stringstream ss(resp);
+        std::string word;
+        std::vector<std::string> tokens;
+        while (ss >> word) {
+            tokens.push_back(word);
+        }
+        if (tokens.size() >= 10 && tokens[0] == "pin") {
+            _totalFood      = std::stoi(tokens[4]);
+            _totalLinemate  = std::stoi(tokens[5]);
+            _totalDeraumere = std::stoi(tokens[6]);
+            _totalSibur     = std::stoi(tokens[7]);
+            _totalMendiane  = std::stoi(tokens[8]);
+            _totalPhiras    = std::stoi(tokens[9]);
+            if (tokens.size() > 10) {
+                _totalThystame = std::stoi(tokens[10]);
+            }
+        }
     }
 }

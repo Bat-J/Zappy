@@ -9,6 +9,7 @@
 
 #include "../server/Server.hpp"
 #include "Colors.hpp"
+#include <optional>
 #include <raylib-cpp.hpp>
 #include <vector>
 #include "BroadcastCircle.hpp"
@@ -34,12 +35,13 @@ namespace zappy {
         raylib::Window&                             getWindow();
         Colors&                                     getColors();
         std::vector<std::vector<raylib::Rectangle>> getDrawnTiles();
+        std::optional<int>                          getSelectedPlayerId();
         void                                        setSelectedTile(std::pair<int, int>& pair);
-        void                                        setSelectedPlayer(Player& p);
         void                                        updateBroadcasters(std::vector<int> vec, Server server);
         void                                        updateIncreasers(std::vector<int> vec, Server server);
         void                                        drawBroadcastCircles();
         void                                        drawIncreaseCircles();
+        void                                        setSelectedPlayerId(std::optional<int> i);
 
       private:
         raylib::Image                               _logo;
@@ -48,7 +50,7 @@ namespace zappy {
         raylib::Window                              _window;
         std::vector<std::vector<raylib::Rectangle>> _drawnTiles;
         std::pair<int, int>                         _selectedTile;
-        std::optional<Player>                                      _selectedPlayer;
+        std::optional<int>                          _selectedPlayerId;
         Colors                                      _colors;
         int                                         _textBeginPosX;
         const int                                   _textBeginPosY = 110;

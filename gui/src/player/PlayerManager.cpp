@@ -111,12 +111,8 @@ namespace zappy {
                 const auto words = parser.splitWords(token);
                 if (words.size() >= 5 && words[1] == "#" + std::to_string(i) && parser.parsePlayerPositionLine(words, _Players[i])) {
                     _Players[i].setIsAlive(true);
-                    if (words[3] == "1") { dir = "North"; }
-                    else if (words[3] == "2") { dir = "East"; }
-                    else if (words[3] == "3") { dir = "South"; }
-                    else if (words[3] == "4") { dir = "West"; }
-                }
             }
         }
     }
+}
 }

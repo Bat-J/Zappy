@@ -89,15 +89,14 @@ namespace zappy {
     void Renderer::displaySelectedPlayer(const Server& server) {
         int x = 1000;
         int y = 200;
-        auto p = _selectedPlayer;
-        int id = 0;
-
-        if (!p.has_value()) {
+        auto& players = server.players().getPlayer();
+        if (!_selectedPlayerId) {
             _font.DrawText("No Player selected or found.", x + 200, 400, 20, _spacing, _colors.getTextColor());
             return;
         }
-        id = _selectedPlayer->getId();
-        _font.DrawText("SELECTED Player : " + std::to_string(id + 1), x + 300, y + 200, _fontSize + 10, _spacing, _colors.getTextColor());
+        auto p = std::find_if(players.begin(), players.end(),
+            [&](const Player& p){ return p.getId() == *_selectedPlayerId; });
+        _font.DrawText("SELECTED Player : " + std::to_string(_selectedPlayerId.value() + 1), x + 300, y + 200, _fontSize + 10, _spacing, _colors.getTextColor());
         if (!p->getIsAlive()) {
             _font.DrawText("Status : DEAD", x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
         } else {
@@ -303,6 +302,7 @@ namespace zappy {
         drawIncreaseCircles();
         _window.EndDrawing();
     }
+
     void Renderer::close() {
         _cursor.Unload();
         _font.Unload();
@@ -321,11 +321,14 @@ namespace zappy {
         _selectedTile = pair;
     }
 
-    void Renderer::setSelectedPlayer(Player& p) {
-        _selectedPlayer = p;
+    void Renderer::setSelectedPlayerId(std::optional<int> i) {
+        _selectedPlayerId = i;
     }
 
     std::vector<std::vector<raylib::Rectangle>> Renderer::getDrawnTiles() {
         return _drawnTiles;
+    }
+    std::optional<int> Renderer::getSelectedPlayerId() {
+        return _selectedPlayerId;
     }
 }

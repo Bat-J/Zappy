@@ -112,8 +112,14 @@ namespace zappy {
     }
 
     void Server::updateResources() {
-        std::lock_guard<std::mutex> lock(_dataMutex);
         _resources.updateResources(world().getTiles());
+        for (int i = 0; i < _players.getPlayer().size(); i++) {
+            if (_players.getPlayer()[i].getIsAlive() == false)
+                continue;
+            else {
+                _players.getPlayer()[i].updateResources(i, _socket);
+            }
+        }
     }
 
     void Server::getInfo() {

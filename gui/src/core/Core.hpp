@@ -19,6 +19,7 @@ namespace zappy {
         int  Run(Socket& socket);
         void handleEvents(std::vector<Player> players);
         void handleSelectTile();
+        void updateSelectedPlayer(std::vector<Player>& players);
 
       private:
         bool     _isFullscreen    = true;

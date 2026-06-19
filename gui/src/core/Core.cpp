@@ -18,6 +18,18 @@
 
 namespace zappy {
 
+    void Core::updateSelectedPlayer(std::vector<Player>& players) {
+        if (!_renderer.getSelectedPlayerId())
+            return;
+        int selectedId = *_renderer.getSelectedPlayerId();
+        for (int i = 0; i < players.size(); i++) {
+             if (players[i].getId() == selectedId) {
+                 _renderer.setSelectedPlayerId(selectedId);
+                 return;
+             }
+        }
+    }
+
     void Core::handleSelectTile() {
         std::vector<std::vector<raylib::Rectangle>> Tiles = _renderer.getDrawnTiles();
         std::pair<int, int>                         newPos;
@@ -45,14 +57,13 @@ namespace zappy {
         }
         if (raylib::Keyboard::IsKeyPressed(KEY_F2))
             _isCursorDefault = !_isCursorDefault;
-        if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD) && !players.empty()) {
-            if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD) && !players.empty()) {
+        if ((raylib::Keyboard::IsKeyPressed(KEY_KP_ADD) || raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) && !players.empty()) {
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD)) {
                 indexPlayer = (indexPlayer + 1) % players.size();
-                _renderer.setSelectedPlayer(players[indexPlayer]);
+                _renderer.setSelectedPlayerId(players[indexPlayer].getId());
             }
-            if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT) && !players.empty()) {
-                indexPlayer = (indexPlayer - 1 + players.size()) % players.size();
-                _renderer.setSelectedPlayer(players[indexPlayer]);
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) {                    indexPlayer = (indexPlayer - 1 + players.size()) % players.size();
+                _renderer.setSelectedPlayerId(players[indexPlayer].getId());
             }
         }
         colors.handleEvents();
@@ -78,6 +89,7 @@ namespace zappy {
                     server.updateTiles();
                     server.updateResources();
                     server.handleServerUpdate();
+                    updateSelectedPlayer(server.players().getPlayer());
                     _renderer.updateBroadcasters(server.players().takeBroadcasters(), server);
                     _renderer.updateIncreasers(server.players().takeIncreasers(), server);
                     server.players().clearBroadcasters();
