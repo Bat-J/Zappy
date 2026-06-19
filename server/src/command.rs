@@ -174,20 +174,8 @@ pub fn move_forward(client: &mut Client, config: &Config) -> String {
                     player.y -= 1;
                 }
             }
-            Orientation::East => {
-                if player.x == config.width - 1 {
-                    player.x = 0;
-                } else {
-                    player.x += 1;
-                }
-            }
-            Orientation::South => {
-                if player.y == config.height - 1 {
-                    player.y = 0;
-                } else {
-                    player.y += 1;
-                }
-            }
+            Orientation::East => player.x = (player.x + 1) % config.width,
+            Orientation::South => player.y = (player.y + 1) % config.height,
             Orientation::West => {
                 if player.x == 0 {
                     player.x = config.width - 1;
