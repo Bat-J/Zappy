@@ -180,7 +180,7 @@ namespace zappy {
         drawTiles();
     }
 
-    void Renderer::updateBroadcasters(std::vector<int> vec, Server server) {
+    void Renderer::updateBroadcasters(std::vector<int> vec, Server& server) {
         const int                       offsetX        = 10;
         const int                       offsetY        = 110;
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
@@ -199,7 +199,7 @@ namespace zappy {
         }
     }
 
-    void Renderer::updateIncreasers(std::vector<int> vec, Server server) {
+    void Renderer::updateIncreasers(std::vector<int> vec, Server& server) {
         const int                       offsetX        = 10;
         const int                       offsetY        = 110;
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;

@@ -37,8 +37,8 @@ namespace zappy {
         std::vector<std::vector<raylib::Rectangle>> getDrawnTiles();
         std::optional<int>                          getSelectedPlayerId();
         void                                        setSelectedTile(std::pair<int, int>& pair);
-        void                                        updateBroadcasters(std::vector<int> vec, Server server);
-        void                                        updateIncreasers(std::vector<int> vec, Server server);
+        void                                        updateBroadcasters(std::vector<int> vec, Server& server);
+        void                                        updateIncreasers(std::vector<int> vec, Server& server);
         void                                        drawBroadcastCircles();
         void                                        drawIncreaseCircles();
         void                                        setSelectedPlayerId(std::optional<int> i);
