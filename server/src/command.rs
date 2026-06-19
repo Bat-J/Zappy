@@ -231,6 +231,26 @@ pub fn turn_left(client: &mut Client) -> String {
     "ok\n".to_string()
 }
 
+pub fn get_inventory(client: &Client) -> String {
+    match &client.state {
+        ClientState::Ai { player, .. } => {
+            let mut inventory_string = String::new();
+            inventory_string.push_str(&format!(
+                "[food {}, linemate {}, deraumere {}, sibur {}, mendiane {}, phiras {}, thystame {}]\n",
+                player.food,
+                player.inventory.linemate,
+                player.inventory.deraumere,
+                player.inventory.sibur,
+                player.inventory.mendiane,
+                player.inventory.phiras,
+                player.inventory.thystame
+            ));
+            return inventory_string;
+        }
+        _ => return "ko\n".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
