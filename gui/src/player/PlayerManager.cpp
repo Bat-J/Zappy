@@ -111,8 +111,8 @@ namespace zappy {
                 const auto words = parser.splitWords(token);
                 if (words.size() >= 5 && words[1] == "#" + std::to_string(i) && parser.parsePlayerPositionLine(words, _Players[i])) {
                     _Players[i].setIsAlive(true);
+                }
             }
         }
     }
-}
 }

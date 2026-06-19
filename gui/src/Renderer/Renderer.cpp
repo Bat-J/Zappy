@@ -75,8 +75,8 @@ namespace zappy {
         const auto tile = server.world().catchTile(_selectedTile.first, _selectedTile.second);
         if (!tile)
             return;
-        _font.DrawText("SELECTED TILE : (x = " + std::to_string(_selectedTile.first) + " y = " + std::to_string(_selectedTile.second) + ") :", x, y + 200, _fontSize + 10,
-                       _spacing, _colors.getTextColor());
+        _font.DrawText("SELECTED TILE : (x = " + std::to_string(_selectedTile.first) + " y = " + std::to_string(_selectedTile.second) + ") :", x, y + 200, _fontSize + 10, _spacing,
+                       _colors.getTextColor());
         _font.DrawText("Food: " + std::to_string(tile->getRessources()[0]), x + 425, y + 205, _fontSize, _spacing, _colors.getTextColor());
         _font.DrawText("Linemate: " + std::to_string(tile->getRessources()[1]), x + 525, y + 205, _fontSize, _spacing, _colors.getTextColor());
         _font.DrawText("Deraumere: " + std::to_string(tile->getRessources()[2]), x + 650, y + 205, _fontSize, _spacing, _colors.getTextColor());
@@ -87,15 +87,14 @@ namespace zappy {
     }
 
     void Renderer::displaySelectedPlayer(const Server& server) {
-        int x = 1000;
-        int y = 200;
+        int   x       = 1000;
+        int   y       = 200;
         auto& players = server.players().getPlayer();
         if (!_selectedPlayerId) {
             _font.DrawText("No Player selected or found.", x + 200, 400, 20, _spacing, _colors.getTextColor());
             return;
         }
-        auto p = std::find_if(players.begin(), players.end(),
-            [&](const Player& p){ return p.getId() == *_selectedPlayerId; });
+        auto p = std::find_if(players.begin(), players.end(), [&](const Player& p) { return p.getId() == *_selectedPlayerId; });
         _font.DrawText("SELECTED Player : " + std::to_string(_selectedPlayerId.value() + 1), x + 300, y + 200, _fontSize + 10, _spacing, _colors.getTextColor());
         if (!p->getIsAlive()) {
             _font.DrawText("Status : DEAD", x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());

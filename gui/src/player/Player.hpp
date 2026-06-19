@@ -36,7 +36,7 @@ namespace zappy {
         void                                        setIsAlive(bool alive);
         void                                        setPos(std::pair<std::pair<int, int>, Orientation> pos);
         void                                        setId();
-        void                                        updateResources(int i, Socket &socket);
+        void                                        updateResources(int i, Socket& socket);
 
       private:
         u_int8_t                                    _lvl            = 1;

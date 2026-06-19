@@ -70,7 +70,7 @@ namespace zappy {
 
     void Player::setId() {
         static int id = 0;
-        _id = id;
+        _id           = id;
         id++;
     }
 
@@ -81,8 +81,8 @@ namespace zappy {
         std::string resp = socket.readFromSocket();
         while (resp.empty())
             resp = socket.readFromSocket();
-        std::stringstream ss(resp);
-        std::string word;
+        std::stringstream        ss(resp);
+        std::string              word;
         std::vector<std::string> tokens;
         while (ss >> word) {
             tokens.push_back(word);

@@ -23,10 +23,10 @@ namespace zappy {
             return;
         int selectedId = *_renderer.getSelectedPlayerId();
         for (int i = 0; i < players.size(); i++) {
-             if (players[i].getId() == selectedId) {
-                 _renderer.setSelectedPlayerId(selectedId);
-                 return;
-             }
+            if (players[i].getId() == selectedId) {
+                _renderer.setSelectedPlayerId(selectedId);
+                return;
+            }
         }
     }
 
@@ -45,9 +45,9 @@ namespace zappy {
     }
 
     void Core::handleEvents(std::vector<Player> players) {
-        raylib::Window& window = _renderer.getWindow();
-        Colors&         colors = _renderer.getColors();
-        static int indexPlayer = 0;
+        raylib::Window& window      = _renderer.getWindow();
+        Colors&         colors      = _renderer.getColors();
+        static int      indexPlayer = 0;
 
         if (raylib::Keyboard::IsKeyPressed(KEY_F3))
             _isFpsDisplayed = !_isFpsDisplayed;
@@ -62,7 +62,8 @@ namespace zappy {
                 indexPlayer = (indexPlayer + 1) % players.size();
                 _renderer.setSelectedPlayerId(players[indexPlayer].getId());
             }
-            if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) {                    indexPlayer = (indexPlayer - 1 + players.size()) % players.size();
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) {
+                indexPlayer = (indexPlayer - 1 + players.size()) % players.size();
                 _renderer.setSelectedPlayerId(players[indexPlayer].getId());
             }
         }
