@@ -33,7 +33,7 @@ pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
     map
 }
 
-pub fn spawn_resources(config: &Config, map: &mut Vec<Vec<Tile>>) {
+pub fn spawn_resources(config: &Config, map: &mut [Vec<Tile>]) {
     let tiles = (config.width * config.height) as f64;
     let counts: [(f64, u8); 7] = [
         (0.5, 0),  // food
@@ -220,7 +220,7 @@ pub fn enw_string(egg: &Egg) -> String {
     string
 }
 
-pub fn refill_resources(config: &Config, map: &mut Vec<Vec<Tile>>) -> Vec<(u32, u32)> {
+pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32)> {
     let mut current = [0u32; 7];
     for row in map.iter() {
         for tile in row.iter() {
