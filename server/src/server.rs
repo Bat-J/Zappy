@@ -5,7 +5,7 @@ use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
 use crate::command::{Command, send_ai_command_to_gui, send_string_to_all_guis};
-use crate::gui_parser::{ebo_reply, pdi_reply};
+use crate::gui_parser::{ebo_reply, pdi_reply, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -78,6 +78,7 @@ pub struct Server {
     team_slots: Vec<(String, u32)>,
     time_manager: TimeManager,
     next_client_id: u32,
+    pub game_over: bool,
 }
 
 pub struct Ready {
@@ -109,6 +110,7 @@ pub fn start(config: Config) -> io::Result<Server> {
         team_slots,
         time_manager,
         next_client_id: 0,
+        game_over: false,
     })
 }
 
@@ -117,7 +119,7 @@ impl Server {
         self.time_manager.next_timeout_ms().unwrap_or(-1)
     }
 
-    pub fn execute_ready_commands(&mut self) {
+    pub fn execute_ready_commands(&mut self, config: &Config) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
             println!(
@@ -155,11 +157,25 @@ impl Server {
                     }
                 }
                 Command::Broadcast(msg) => {
+                    let (ex, ey, eid) = match &self.clients[idx].state {
+                        ClientState::Ai { player, .. } => (player.x, player.y, player.id),
+                        _ => continue,
+                    };
                     let _ = self.clients[idx].stream.write_all(b"ok\n");
-                    let broadcast = format!("{}\n", msg);
+                    let pbc = format!("pbc #{eid} {msg}\n");
+                    let w = config.width;
+                    let h = config.height;
                     for other in self.clients.iter_mut() {
-                        if let ClientState::Ai { .. } = other.state {
-                            let _ = other.stream.write_all(broadcast.as_bytes());
+                        let line = match &other.state {
+                            ClientState::Ai { player, .. } => {
+                                let k = broadcast_k(ex, ey, player.x, player.y, &player.orientation, w, h);
+                                Some(format!("message {k}, {msg}\n"))
+                            }
+                            ClientState::Gui => Some(pbc.clone()),
+                            _ => None,
+                        };
+                        if let Some(l) = line {
+                            let _ = other.stream.write_all(l.as_bytes());
                         }
                     }
                     continue;
@@ -180,6 +196,37 @@ impl Server {
                 );
             }
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn check_win_condition(&self) -> Option<String> {
+        use std::collections::HashMap;
+        let mut team_level8: HashMap<&str, u32> = HashMap::new();
+        for client in &self.clients {
+            if let ClientState::Ai { team, player } = &client.state {
+                if player.level >= 8 {
+                    *team_level8.entry(team.as_str()).or_insert(0) += 1;
+                }
+            }
+        }
+        team_level8
+            .into_iter()
+            .find(|(_, count)| *count >= 6)
+            .map(|(team, _)| team.to_string())
+    }
+
+    #[allow(dead_code)]
+    pub fn end_game(&mut self, winning_team: &str) {
+        let msg = seg_reply(winning_team);
+        for client in self.clients.iter_mut() {
+            let _ = client.stream.write_all(msg.as_bytes());
+        }
+        self.game_over = true;
+        println!("Game over — {winning_team} wins!");
+    }
+
+    pub fn is_game_over(&self) -> bool {
+        self.game_over
     }
 
     pub fn poll(&self, timeout_ms: c_int) -> io::Result<Ready> {
@@ -627,5 +674,45 @@ impl Server {
                 true
             }
         }
+    }
+}
+
+fn broadcast_k(
+    ex: u32, ey: u32,
+    rx: u32, ry: u32, recv_orientation: &Orientation,
+    width: u32, height: u32,
+) -> u8 {
+    let w = width as i32;
+    let h = height as i32;
+    let mut dx = (ex as i32 - rx as i32).rem_euclid(w);
+    if dx > w / 2 {
+        dx -= w;
+    }
+    let mut dy = (ey as i32 - ry as i32).rem_euclid(h);
+    if dy > h / 2 {
+        dy -= h;
+    }
+    if dx == 0 && dy == 0 {
+        return 0;
+    }
+    // (forward_x, forward_y, left_x, left_y) in screen coords (y grows down)
+    let (fx, fy, lx, ly): (i32, i32, i32, i32) = match recv_orientation {
+        Orientation::North => (0, -1, -1, 0),
+        Orientation::East  => (1,  0,  0, -1),
+        Orientation::South => (0,  1,  1,  0),
+        Orientation::West  => (-1, 0,  0,  1),
+    };
+    let f = dx * fx + dy * fy;
+    let l = dx * lx + dy * ly;
+    match (f > 0, f < 0, l > 0, l < 0) {
+        (true,  false, false, false) => 1, // front
+        (true,  false, true,  false) => 2, // front-left
+        (false, false, true,  false) => 3, // left
+        (false, true,  true,  false) => 4, // back-left
+        (false, true,  false, false) => 5, // back
+        (false, true,  false, true)  => 6, // back-right
+        (false, false, false, true)  => 7, // right
+        (true,  false, false, true)  => 8, // front-right
+        _                            => 0,
     }
 }
