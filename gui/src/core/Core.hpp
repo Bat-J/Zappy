@@ -17,8 +17,9 @@ namespace zappy {
     class Core {
       public:
         int  Run(Socket& socket);
-        void handleEvents();
+        void handleEvents(std::vector<Player> players);
         void handleSelectTile();
+        void updateSelectedPlayer(std::vector<Player>& players);
 
       private:
         bool     _isFullscreen    = true;
