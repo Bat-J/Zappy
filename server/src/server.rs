@@ -6,7 +6,7 @@ use std::os::raw::{c_int, c_short, c_ulong};
 use crate::args::Config;
 use crate::command::{
     Command, get_inventory, look, move_forward, send_ai_command_to_gui, send_string_to_all_guis,
-    take, turn_left, turn_right,
+    set, take, turn_left, turn_right,
 };
 use crate::gui_parser::{ebo_reply, pdi_reply};
 use crate::map::{Egg, Tile};
@@ -158,6 +158,7 @@ impl Server {
                     }
                 }
                 Command::Take(resource) => take(&mut self.clients[idx], game, resource),
+                Command::Set(resource) => set(&mut self.clients[idx], game, resource),
                 Command::Broadcast(msg) => {
                     let _ = self.clients[idx].stream.write_all(b"ok\n");
                     let broadcast = format!("{}\n", msg);
