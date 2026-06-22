@@ -330,6 +330,28 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
     }
 }
 
+pub fn fork(client: &mut Client, game: &mut Game, config: &Config) -> String {
+    let player = match &client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let team = match &client.state {
+        ClientState::Ai { team, .. } => team,
+        _ => return "ko\n".to_string(),
+    };
+
+    game.eggs.push(Egg {
+        x: rand::random_range(0..config.width),
+        y: rand::random_range(0..config.height),
+        id: game.next_egg_id,
+        player_id: player.id,
+        is_starting: false,
+        team: team.to_string(),
+    });
+    game.next_egg_id += 1;
+    "ok\n".to_string()
+}
+
 pub fn move_forward(client: &mut Client, config: &Config) -> String {
     match &mut client.state {
         ClientState::Ai { player, .. } => match player.orientation {

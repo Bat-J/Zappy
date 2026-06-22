@@ -16,6 +16,7 @@ fn main() -> std::io::Result<()> {
     let mut server = server::start(config.clone())?;
 
     let mut game = Game {
+        next_egg_id: config.clients_per_team * config.teams.len() as u32,
         config: config.clone(),
         map: map::create_map(&config),
         eggs: map::start_spawn_eggs(&config),
