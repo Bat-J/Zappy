@@ -411,10 +411,8 @@ impl Server {
             send_string_to_all_guis(&mut self.clients, msg);
         }
 
-        let mut offset = 0;
         for i in to_remove.into_iter().rev() {
-            self.clients.remove(i - offset);
-            offset += 1;
+            self.clients.remove(i);
         }
     }
 
