@@ -4,7 +4,7 @@ use crate::{
     args::Config,
     gui_parser::{pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
     map::{self, Egg, enw_string},
-    server::{Client, ClientState, Orientation, Player},
+    server::{Client, ClientState, Game, Orientation, Player},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -161,6 +161,101 @@ pub fn send_ai_command_to_gui(
             pgt_reply(player, convert_ressource_name_to_id(&string)),
         ),
         _ => (),
+    }
+}
+
+pub fn take(client: &mut Client, game: &mut Game, resource: &str) -> String {
+    let player = match &mut client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let resource_id = convert_ressource_name_to_id(resource);
+    match resource_id {
+        1 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .linemate
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .linemate -= 1;
+            player.inventory.linemate += 1;
+            "ok\n".to_string()
+        }
+        2 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .deraumere
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .deraumere -= 1;
+            player.inventory.deraumere += 1;
+            "ok\n".to_string()
+        }
+        3 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .sibur
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .sibur -= 1;
+            player.inventory.sibur += 1;
+            "ok\n".to_string()
+        }
+        4 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .mendiane
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .mendiane -= 1;
+            player.inventory.mendiane += 1;
+            "ok\n".to_string()
+        }
+        5 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .phiras
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .phiras -= 1;
+            player.inventory.phiras += 1;
+            "ok\n".to_string()
+        }
+        6 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .thystame
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .thystame -= 1;
+            player.inventory.thystame += 1;
+            "ok\n".to_string()
+        }
+        _ => "ko\n".to_string(),
     }
 }
 
