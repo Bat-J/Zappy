@@ -36,6 +36,6 @@ int main(int argc, char** argv) {
         std::cerr << "Failed to connect to server\n";
         return 84;
     }
-    zappy::Core core;
+    zappy::Core core{};
     return core.Run(socket);
 }
