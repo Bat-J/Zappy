@@ -30,6 +30,9 @@ fn main() -> std::io::Result<()> {
 
     loop {
         server.execute_ready_commands(&config);
+        if let Some(winner) = server.check_win_condition() {
+            server.end_game(&winner);
+        }
         if server.is_game_over() {
             break;
         }

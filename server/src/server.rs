@@ -215,12 +215,9 @@ impl Server {
             .map(|(team, _)| team.to_string())
     }
 
-    #[allow(dead_code)]
     pub fn end_game(&mut self, winning_team: &str) {
         let msg = seg_reply(winning_team);
-        for client in self.clients.iter_mut() {
-            let _ = client.stream.write_all(msg.as_bytes());
-        }
+        send_string_to_all_guis(&mut self.clients, msg);
         self.game_over = true;
         println!("Game over — {winning_team} wins!");
     }
@@ -315,13 +312,15 @@ impl Server {
                 continue;
             }
 
-            let client_id = self.clients[index as usize].id;
+            let client_idx = index as usize;
+            let client_id = self.clients[client_idx].id;
             let drop = Self::read_client(
                 &mut self.clients,
                 &mut buffer,
                 &mut self.team_slots,
                 game,
                 &mut self.time_manager,
+                client_idx,
                 client_id,
             );
 
@@ -383,7 +382,7 @@ impl Server {
                         thystame: 0,
                     },
                     food: 10,
-                    time_left: 0,
+                    time_left: 126,
                 },
             };
 
@@ -447,9 +446,12 @@ impl Server {
                 if player.time_left == 0 {
                     player.food = player.food.saturating_sub(1);
                     if player.food == 0 {
+                        println!("Client {} starved", client.addr);
                         death_notifications.push(pdi_reply(player));
                         let _ = client.stream.shutdown(std::net::Shutdown::Both);
                         to_remove.push(i);
+                    } else {
+                        player.time_left = 126;
                     }
                 }
             }
@@ -470,31 +472,32 @@ impl Server {
         team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
+        client_idx: usize,
         client_id: u32,
     ) -> bool {
-        let n = match clients[client_id as usize].stream.read(buffer) {
-            Ok(0) => return true,
+        let n = match clients[client_idx].stream.read(buffer) {
+            Ok(0) => {
+                println!("Client {} sent EOF (closed connection)", clients[client_idx].addr);
+                return true;
+            }
             Ok(n) => n,
             Err(err) => {
-                eprintln!(
-                    "Read error from {}: {err}",
-                    clients[client_id as usize].addr
-                );
+                eprintln!("Read error from {}: {err}", clients[client_idx].addr);
                 return true;
             }
         };
 
-        clients[client_id as usize]
+        clients[client_idx]
             .pending
             .push_str(&String::from_utf8_lossy(&buffer[..n]));
 
-        while let Some(pos) = clients[client_id as usize].pending.find('\n') {
-            let line = clients[client_id as usize].pending[..pos]
+        while let Some(pos) = clients[client_idx].pending.find('\n') {
+            let line = clients[client_idx].pending[..pos]
                 .trim_end_matches('\r')
                 .to_string();
-            clients[client_id as usize].pending.drain(..=pos);
+            clients[client_idx].pending.drain(..=pos);
 
-            if Self::handle_line(clients, &line, team_slots, game, time_manager, client_id) {
+            if Self::handle_line(clients, &line, team_slots, game, time_manager, client_idx, client_id) {
                 return true;
             }
         }
@@ -508,25 +511,26 @@ impl Server {
         team_slots: &mut [(String, u32)],
         game: &mut Game,
         time_manager: &mut TimeManager,
+        client_idx: usize,
         client_id: u32,
     ) -> bool {
-        let state = clients[client_id as usize].state.clone();
+        let state = clients[client_idx].state.clone();
         match state {
             ClientState::AwaitingTeamName => {
-                Self::handle_team_name(&mut clients[client_id as usize], line, team_slots, game)
+                Self::handle_team_name(&mut clients[client_idx], line, team_slots, game)
             }
             ClientState::Ai { player, .. } => {
-                Self::handle_ai_command(clients, line, time_manager, client_id, &player)
+                Self::handle_ai_command(clients, line, time_manager, client_idx, client_id, &player)
             }
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
-            ClientState::Gui => Self::handle_gui_command(clients, client_id, line, game),
+            ClientState::Gui => Self::handle_gui_command(clients, client_idx, line, game),
         }
     }
 
     fn handle_gui_command(
         clients: &mut [Client],
-        client_id: u32,
+        client_idx: usize,
         line: &str,
         game: &mut Game,
     ) -> bool {
@@ -534,26 +538,25 @@ impl Server {
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
 
         if parts.is_empty() {
-            eprintln!(
-                "Parse error from {}: empty command",
-                clients[client_id as usize].addr
-            );
-            return clients[client_id as usize]
+            eprintln!("Parse error from {}: empty command", clients[client_idx].addr);
+            return clients[client_idx]
                 .stream
                 .write_all("ko\n".as_bytes())
                 .is_err();
         }
+        // ppo/plv/pin still look up players by logical ID — pass client_idx as the GUI's index
+        let gui_id = clients[client_idx].id;
         match parts[0] {
-            "msz" => Self::msz_parse(parts, &mut clients[client_id as usize], game),
-            "bct" => Self::bct_parse(parts, &mut clients[client_id as usize], game),
-            "mct" => Self::mct_parse(parts, &mut clients[client_id as usize], game),
-            "tna" => Self::tna_parse(parts, &mut clients[client_id as usize], game),
-            "ppo" => Self::ppo_parse(parts, clients, client_id),
-            "plv" => Self::plv_parse(parts, clients, client_id),
-            "pin" => Self::pin_parse(parts, clients, client_id),
-            "sgt" => Self::sgt_parse(parts, &mut clients[client_id as usize], game),
-            "sst" => Self::sst_parse(parts, &mut clients[client_id as usize], game),
-            _ => Self::bad_command(parts, &mut clients[client_id as usize]),
+            "msz" => Self::msz_parse(parts, &mut clients[client_idx], game),
+            "bct" => Self::bct_parse(parts, &mut clients[client_idx], game),
+            "mct" => Self::mct_parse(parts, &mut clients[client_idx], game),
+            "tna" => Self::tna_parse(parts, &mut clients[client_idx], game),
+            "ppo" => Self::ppo_parse(parts, clients, gui_id),
+            "plv" => Self::plv_parse(parts, clients, gui_id),
+            "pin" => Self::pin_parse(parts, clients, gui_id),
+            "sgt" => Self::sgt_parse(parts, &mut clients[client_idx], game),
+            "sst" => Self::sst_parse(parts, &mut clients[client_idx], game),
+            _ => Self::bad_command(parts, &mut clients[client_idx]),
         }
     }
 
@@ -561,6 +564,7 @@ impl Server {
         clients: &mut [Client],
         line: &str,
         time_manager: &mut TimeManager,
+        client_idx: usize,
         client_id: u32,
         player: &Player,
     ) -> bool {
@@ -572,7 +576,7 @@ impl Server {
             })
             .collect();
         let list: Vec<&Player> = owned_players.iter().collect();
-        let addr = clients[client_id as usize].addr;
+        let addr = clients[client_idx].addr;
 
         match Command::parse(line, &list, player, clients) {
             Ok(cmd) => {
@@ -585,7 +589,7 @@ impl Server {
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", addr, err);
-                clients[client_id as usize]
+                clients[client_idx]
                     .stream
                     .write_all(b"ko\n")
                     .is_err()
@@ -641,7 +645,7 @@ impl Server {
                                 thystame: 0,
                             },
                             food: 10,
-                            time_left: 0,
+                            time_left: 126,
                         },
                     };
 
