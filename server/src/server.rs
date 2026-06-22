@@ -183,7 +183,7 @@ impl Server {
                     &player,
                     false, /* TODO implement check for incantation */
                     &mut self.clients,
-                    &Egg::default(), /* TODO implement from fork */
+                    game.eggs.last().unwrap_or(&Egg::default()),
                 );
             }
         }
