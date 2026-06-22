@@ -33,6 +33,35 @@ pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
     map
 }
 
+pub fn spawn_resources(config: &Config, map: &mut [Vec<Tile>]) {
+    let tiles = (config.width * config.height) as f64;
+    let counts: [(f64, u8); 7] = [
+        (0.5, 0),  // food
+        (0.3, 1),  // linemate
+        (0.15, 2), // deraumere
+        (0.1, 3),  // sibur
+        (0.1, 4),  // mendiane
+        (0.08, 5), // phiras
+        (0.05, 6), // thystame
+    ];
+    for (density, kind) in counts {
+        let total = (tiles * density).round() as u32;
+        for _ in 0..total {
+            let x = rand::rng().random_range(0..config.width) as usize;
+            let y = rand::rng().random_range(0..config.height) as usize;
+            match kind {
+                0 => map[y][x].food += 1,
+                1 => map[y][x].resources.linemate += 1,
+                2 => map[y][x].resources.deraumere += 1,
+                3 => map[y][x].resources.sibur += 1,
+                4 => map[y][x].resources.mendiane += 1,
+                5 => map[y][x].resources.phiras += 1,
+                _ => map[y][x].resources.thystame += 1,
+            }
+        }
+    }
+}
+
 pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
     if x >= config.width || y >= config.height || !map[y as usize][x as usize].ais.contains(&id) {
         return;
@@ -189,6 +218,57 @@ pub fn enw_string(egg: &Egg) -> String {
     string.push_str(&egg.y.to_string());
     string.push('\n');
     string
+}
+
+pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32)> {
+    let mut current = [0u32; 7];
+    for row in map.iter() {
+        for tile in row.iter() {
+            current[0] += tile.food;
+            current[1] += tile.resources.linemate;
+            current[2] += tile.resources.deraumere;
+            current[3] += tile.resources.sibur;
+            current[4] += tile.resources.mendiane;
+            current[5] += tile.resources.phiras;
+            current[6] += tile.resources.thystame;
+        }
+    }
+
+    let tiles = (config.width * config.height) as f64;
+    let targets: [u32; 7] = [
+        (tiles * 0.5).round() as u32,
+        (tiles * 0.3).round() as u32,
+        (tiles * 0.15).round() as u32,
+        (tiles * 0.1).round() as u32,
+        (tiles * 0.1).round() as u32,
+        (tiles * 0.08).round() as u32,
+        (tiles * 0.05).round() as u32,
+    ];
+
+    let mut changed = std::collections::HashSet::new();
+
+    for kind in 0..7usize {
+        if current[kind] >= targets[kind] {
+            continue;
+        }
+        let to_add = targets[kind] - current[kind];
+        for _ in 0..to_add {
+            let x = rand::rng().random_range(0..config.width);
+            let y = rand::rng().random_range(0..config.height);
+            match kind {
+                0 => map[y as usize][x as usize].food += 1,
+                1 => map[y as usize][x as usize].resources.linemate += 1,
+                2 => map[y as usize][x as usize].resources.deraumere += 1,
+                3 => map[y as usize][x as usize].resources.sibur += 1,
+                4 => map[y as usize][x as usize].resources.mendiane += 1,
+                5 => map[y as usize][x as usize].resources.phiras += 1,
+                _ => map[y as usize][x as usize].resources.thystame += 1,
+            }
+            changed.insert((x, y));
+        }
+    }
+
+    changed.into_iter().collect()
 }
 
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {

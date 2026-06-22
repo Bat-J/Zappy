@@ -6,6 +6,7 @@
 */
 
 #include "Core.hpp"
+#include <Keyboard.hpp>
 #include <Rectangle.hpp>
 #include <Window.hpp>
 #include <chrono>
@@ -13,8 +14,21 @@
 #include <mutex>
 #include <raylib.h>
 #include <utility>
+#include <vector>
 
 namespace zappy {
+
+    void Core::updateSelectedPlayer(std::vector<Player>& players) {
+        if (!_renderer.getSelectedPlayerId())
+            return;
+        int selectedId = *_renderer.getSelectedPlayerId();
+        for (int i = 0; i < players.size(); i++) {
+            if (players[i].getId() == selectedId) {
+                _renderer.setSelectedPlayerId(selectedId);
+                return;
+            }
+        }
+    }
 
     void Core::handleSelectTile() {
         std::vector<std::vector<raylib::Rectangle>> Tiles = _renderer.getDrawnTiles();
@@ -30,9 +44,10 @@ namespace zappy {
         }
     }
 
-    void Core::handleEvents() {
-        raylib::Window& window = _renderer.getWindow();
-        Colors&         colors = _renderer.getColors();
+    void Core::handleEvents(std::vector<Player> players) {
+        raylib::Window& window      = _renderer.getWindow();
+        Colors&         colors      = _renderer.getColors();
+        static int      indexPlayer = 0;
 
         if (raylib::Keyboard::IsKeyPressed(KEY_F3))
             _isFpsDisplayed = !_isFpsDisplayed;
@@ -42,6 +57,16 @@ namespace zappy {
         }
         if (raylib::Keyboard::IsKeyPressed(KEY_F2))
             _isCursorDefault = !_isCursorDefault;
+        if ((raylib::Keyboard::IsKeyPressed(KEY_KP_ADD) || raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) && !players.empty()) {
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_ADD)) {
+                indexPlayer = (indexPlayer + 1) % players.size();
+                _renderer.setSelectedPlayerId(players[indexPlayer].getId());
+            }
+            if (raylib::Keyboard::IsKeyPressed(KEY_KP_SUBTRACT)) {
+                indexPlayer = (indexPlayer - 1 + players.size()) % players.size();
+                _renderer.setSelectedPlayerId(players[indexPlayer].getId());
+            }
+        }
         colors.handleEvents();
         handleSelectTile();
     }
@@ -61,21 +86,23 @@ namespace zappy {
             const auto t          = server.world().getTimeReference();
             const auto intervalMs = (t > 0) ? static_cast<long long>(1000.0 / t) : 1000LL;
             if (elapsedMs >= intervalMs && !updateFuture.valid()) {
-                updateFuture = std::async(std::launch::async, [&server]() {
+                updateFuture = std::async(std::launch::async, [&server, this]() {
                     server.updateTiles();
                     server.updateResources();
                     server.handleServerUpdate();
+                    updateSelectedPlayer(server.players().getPlayer());
+                    _renderer.updateBroadcasters(server.players().takeBroadcasters(), server);
+                    _renderer.updateIncreasers(server.players().takeIncreasers(), server);
+                    server.players().clearBroadcasters();
+                    server.players().clearIncreasers();
                 });
                 lastUpdate   = std::chrono::steady_clock::now();
             }
             if (updateFuture.valid() && updateFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
                 updateFuture.get();
             }
-            handleEvents();
-            {
-                std::lock_guard<std::mutex> lock(server.getMutex());
-                _renderer.displayAll(server, _isFpsDisplayed, _isCursorDefault);
-            }
+            handleEvents(server.players().getPlayer());
+            _renderer.displayAll(server, _isFpsDisplayed, _isCursorDefault);
         }
         _renderer.close();
         return 0;
