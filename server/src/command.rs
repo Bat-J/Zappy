@@ -2,7 +2,7 @@ use std::{fmt, io::Write};
 
 use crate::{
     args::Config,
-    gui_parser::{pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
+    gui_parser::{edi_reply, pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
     map::{self, Egg, enw_string},
     server::{Client, ClientState, Game, Orientation, Player},
 };
@@ -352,6 +352,108 @@ pub fn fork(client: &mut Client, game: &mut Game, config: &Config) -> String {
     "ok\n".to_string()
 }
 
+pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config) -> String {
+    let (target_orientation, target_x, target_y) = {
+        let player = match &clients[idx as usize].state {
+            ClientState::Ai { player, .. } => player,
+            _ => return "ko\n".to_string(),
+        };
+
+        let orientation = player.orientation.clone();
+        let x = match orientation {
+            Orientation::West => {
+                if player.x == 0 {
+                    config.width - 1
+                } else {
+                    player.x - 1
+                }
+            }
+            Orientation::East => {
+                if player.x >= config.width - 1 {
+                    0
+                } else {
+                    player.x + 1
+                }
+            }
+            _ => player.x,
+        };
+        let y = match orientation {
+            Orientation::North => {
+                if player.y == 0 {
+                    config.height - 1
+                } else {
+                    player.y - 1
+                }
+            }
+            Orientation::South => {
+                if player.y >= config.height - 1 {
+                    0
+                } else {
+                    player.y + 1
+                }
+            }
+            _ => player.y,
+        };
+
+        (orientation, x, y)
+    };
+
+    game.map[target_y as usize][target_x as usize].ais.clear();
+    for client in clients.iter_mut() {
+        let player_to_move = match &mut client.state {
+            ClientState::Ai { player, .. } => player,
+            _ => continue,
+        };
+        if player_to_move.x == target_x && player_to_move.y == target_y {
+            match target_orientation {
+                Orientation::North => {
+                    if player_to_move.y == 0 {
+                        player_to_move.y = config.height - 1;
+                    } else {
+                        player_to_move.y -= 1;
+                    }
+                }
+                Orientation::East => {
+                    if player_to_move.x == config.width - 1 {
+                        player_to_move.x = 0;
+                    } else {
+                        player_to_move.x += 1;
+                    }
+                }
+                Orientation::West => {
+                    if player_to_move.x == 0 {
+                        player_to_move.x = config.width - 1;
+                    } else {
+                        player_to_move.x -= 1;
+                    }
+                }
+                Orientation::South => {
+                    if player_to_move.y == config.height - 1 {
+                        player_to_move.y = 0;
+                    } else {
+                        player_to_move.y += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    let mut to_remove = Vec::<u32>::new();
+
+    for (i, egg) in game.eggs.iter().enumerate() {
+        if egg.x == target_x && egg.y == target_y {
+            send_string_to_all_guis(clients, edi_reply(egg));
+            to_remove.push(i as u32);
+        }
+    }
+
+    for i in to_remove.iter().rev() {
+        game.eggs.remove(*i as usize);
+    }
+
+    "ok\n".to_string()
+}
+
 pub fn move_forward(client: &mut Client, config: &Config) -> String {
     match &mut client.state {
         ClientState::Ai { player, .. } => match player.orientation {
@@ -432,7 +534,7 @@ fn wrap(v: i32, max: i32) -> usize {
 fn tile_content(tile: &map::Tile) -> String {
     let mut items: Vec<&str> = Vec::new();
 
-    items.extend(std::iter::repeat_n("player", tile._ais.len()));
+    items.extend(std::iter::repeat_n("player", tile.ais.len()));
     items.extend(std::iter::repeat_n("food", tile.food as usize));
     items.extend(std::iter::repeat_n(
         "linemate",
