@@ -219,8 +219,6 @@ pub fn turn_left(client: &mut Client) -> String {
     "ok\n".to_string()
 }
 
-const VIEW_DISTANCE: i32 = 4;
-
 fn forward(o: &Orientation) -> (i32, i32) {
     match o {
         Orientation::North => (0, -1),
@@ -284,6 +282,8 @@ pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
         return "ko\n".to_string();
     }
 
+    let view_distance = player.level as i32;
+
     let px = player.x as i32;
     let py = player.y as i32;
 
@@ -296,7 +296,7 @@ pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
         let y = wrap(py, height);
         cells.push(tile_content(&map[y][x]));
     }
-    for d in 1..VIEW_DISTANCE {
+    for d in 1..view_distance {
         for offset in -(d - 1)..=d - 1 {
             let tx = px + fx * d + rx * offset;
             let ty = py + fy * d + ry * offset;
