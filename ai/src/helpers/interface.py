@@ -453,32 +453,24 @@ class AI_server_interface:
             self.send_forward_action_and_block_until_response()
         elif direction == direction.northwest:
             self.orient_to_direction(cardinal_direction.north)
-            self.send_forward_action()
-            self.orient_to_direction(cardinal_direction.west)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.west:
             self.orient_to_direction(cardinal_direction.west)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.southwest:
             self.orient_to_direction(cardinal_direction.south)
-            self.send_forward_action()
-            self.orient_to_direction(cardinal_direction.west)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.south:
             self.orient_to_direction(cardinal_direction.south)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.southeast:
             self.orient_to_direction(cardinal_direction.south)
-            self.send_forward_action()
-            self.orient_to_direction(cardinal_direction.east)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.east:
             self.orient_to_direction(cardinal_direction.east)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.northeast:
             self.orient_to_direction(cardinal_direction.north)
-            self.send_forward_action()
-            self.orient_to_direction(cardinal_direction.east)
             self.send_forward_action_and_block_until_response()
 
     def collect_tile_ressources(self):
