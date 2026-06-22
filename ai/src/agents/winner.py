@@ -34,8 +34,7 @@ class WinnerAgent:
                 ):
                     self.elevation_broadcast_direction = message[
                         "direction"
-                    ]  # TODO fix direction calc
-                    # print(f"Received elevation broadcast from direction {message['direction']}, moving towards {self.elevation_broadcast_direction}")
+                    ]
                 self.ai_interface.message_history.remove(message)
 
             if self.state == WinnerAgent.State.none:
@@ -106,8 +105,8 @@ class WinnerAgent:
                     self.state = WinnerAgent.State.none
                 elif not self.ai_interface.has_enough_ressources_for_next_level():
                     self.state = WinnerAgent.State.none
-                else:
-                    if self.ai_interface.level == 1:
+                else: # try to level up
+                    if self.ai_interface.level == 1: # level 1 is special because it only requires 1 player
                         for (
                             type,
                             count,
@@ -117,7 +116,7 @@ class WinnerAgent:
                                     type
                                 )
                         self.ai_interface.send_start_incantation_action_and_block_until_response()
-                    else:
+                    else: # for higher levels, check if we can already level up or if we need to wait for more players and ressources
                         self.ai_interface.send_look_action_and_block_until_response()
                         if (
                             self.ai_interface.completed_actions
@@ -131,7 +130,7 @@ class WinnerAgent:
                             >= interface.PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP.get(
                                 self.ai_interface.level, 0
                             )
-                        ):
+                        ): # if there are enough players, check if we have enough ressources to level up
                             if (
                                 self.ai_interface.completed_actions
                                 and self.ai_interface.completed_actions[-1][
@@ -143,9 +142,7 @@ class WinnerAgent:
                                     0
                                 ]
                                 and self.ai_interface.are_ressources_sufficient_for_level_up(
-                                    self.ai_interface.completed_actions[-1]["response"][
-                                        0
-                                    ],
+                                    self.ai_interface.last_known_inventory,
                                     interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(
                                         self.ai_interface.level, {}
                                     ),
