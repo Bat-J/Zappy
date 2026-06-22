@@ -77,10 +77,19 @@ namespace zappy {
                 _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + wordsByLine[i][2]);
                 _players.addBroadcaster(number);
             }
+            if (wordsByLine[i][0] == "bct" && wordsByLine[i].size() == 10) {
+                int              x = std::stoi(wordsByLine[i][1]);
+                int              y = std::stoi(wordsByLine[i][2]);
+                std::vector<int> resources;
+                for (int r = 3; r <= 9; ++r)
+                    resources.push_back(std::stoi(wordsByLine[i][r]));
+                _world.updateTile(x, y, resources);
+            }
         }
         for (int i = 0; i < players.size(); i++)
             _players.checkAlive(i, _socket, _logs);
         _players.getAllAlive();
+        _resources.updateResources(_world.getTiles());
         _players.updatePlayerpos(_socket, _logs);
     }
 

@@ -381,6 +381,15 @@ impl Server {
         }
     }
 
+    pub fn notify_bct_updates(&mut self, tiles: &[(u32, u32)], game: &Game) {
+        use crate::map::bct_reply;
+        for &(x, y) in tiles {
+            if let Some(msg) = bct_reply(x, y, &game.map, &game.config) {
+                send_string_to_all_guis(&mut self.clients, msg);
+            }
+        }
+    }
+
     pub fn decrement_food(&mut self) {
         let mut to_remove: Vec<usize> = Vec::new();
         let mut death_notifications: Vec<String> = Vec::new();

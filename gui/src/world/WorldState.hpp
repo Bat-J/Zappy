@@ -24,6 +24,7 @@ namespace zappy {
         void                      setMapSize(int x, int y);
         void                      setTimeReference(int i);
         void                      setTiles(std::vector<Tile> tiles);
+        void                      updateTile(int x, int y, std::vector<int> resources);
 
       private:
         std::pair<size_t, size_t> _mapSize;

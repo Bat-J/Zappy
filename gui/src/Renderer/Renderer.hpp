@@ -48,7 +48,8 @@ namespace zappy {
         raylib::Font                                _font;
         raylib::Texture                             _cursor;
         raylib::Window                              _window;
-        std::vector<std::vector<raylib::Rectangle>> _drawnTiles;
+        std::vector<std::vector<raylib::Rectangle>>    _drawnTiles;
+        std::vector<std::vector<std::vector<int>>>     _tileResources;
         std::pair<int, int>                         _selectedTile;
         std::optional<int>                          _selectedPlayerId;
         Colors                                      _colors;
