@@ -397,6 +397,7 @@ impl Server {
                     player.food = player.food.saturating_sub(1);
                     if player.food == 0 {
                         death_notifications.push(pdi_reply(player));
+                        let _ = client.stream.write_all("dead\n".as_bytes());
                         let _ = client.stream.shutdown(std::net::Shutdown::Both);
                         to_remove.push(i);
                     }
@@ -408,8 +409,10 @@ impl Server {
             send_string_to_all_guis(&mut self.clients, msg);
         }
 
+        let mut offset = 0;
         for i in to_remove.into_iter().rev() {
-            self.clients.remove(i);
+            self.clients.remove(i - offset);
+            offset += 1;
         }
     }
 
