@@ -26,11 +26,11 @@ fn main() -> std::io::Result<()> {
         eggs: map::start_spawn_eggs(&config),
     };
 
-    let spawn_interval_ms = (20 * 1000) / config.frequency as u64;
-    let mut next_spawn = Instant::now() + Duration::from_millis(spawn_interval_ms);
-
-    let food_tick_interval_ms = (1000 / config.frequency as u64).max(1);
-    let mut next_food_tick = Instant::now() + Duration::from_millis(food_tick_interval_ms);
+    let mut current_frequency = config.frequency;
+    let mut next_spawn = Instant::now()
+        + Duration::from_millis((20 * 1000) / current_frequency as u64);
+    let mut next_food_tick = Instant::now()
+        + Duration::from_millis((1000 / current_frequency as u64).max(1));
 
     loop {
         server.execute_ready_commands(&config, &mut game);
@@ -40,6 +40,17 @@ fn main() -> std::io::Result<()> {
         if server.is_game_over() {
             break;
         }
+
+        let new_frequency = game.config.frequency;
+        if new_frequency != current_frequency {
+            let now = Instant::now();
+            next_food_tick = now + Duration::from_millis((1000 / new_frequency as u64).max(1));
+            next_spawn = now + Duration::from_millis((20 * 1000) / new_frequency as u64);
+            current_frequency = new_frequency;
+        }
+
+        let spawn_interval_ms = (20 * 1000) / current_frequency as u64;
+        let food_tick_interval_ms = (1000 / current_frequency as u64).max(1);
 
         let now = Instant::now();
         let ms_to_spawn = next_spawn
