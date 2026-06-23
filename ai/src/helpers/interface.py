@@ -493,8 +493,9 @@ class AI_server_interface:
         self.send_look_action_and_block_until_response()
         if (
             self.completed_actions[-1]["action_type"] != action_type.look
-            or not self.completed_actions[-1]["success"]
+            or not self.completed_actions[-1]["success"] == True
             or not self.completed_actions[-1]["response"]
+            or not isinstance(self.completed_actions[-1]["response"], list)
         ):
             return
         for obj, count in self.completed_actions[-1]["response"][0].items():

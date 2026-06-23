@@ -32,9 +32,7 @@ class WinnerAgent:
                     and can_cast(str, int, message["text"][5:])
                     and int(message["text"][5:]) == self.ai_interface.level
                 ):
-                    self.elevation_broadcast_direction = message[
-                        "direction"
-                    ]
+                    self.elevation_broadcast_direction = message["direction"]
                 self.ai_interface.message_history.remove(message)
 
             if self.state == WinnerAgent.State.none:
@@ -105,8 +103,10 @@ class WinnerAgent:
                     self.state = WinnerAgent.State.none
                 elif not self.ai_interface.has_enough_ressources_for_next_level():
                     self.state = WinnerAgent.State.none
-                else: # try to level up
-                    if self.ai_interface.level == 1: # level 1 is special because it only requires 1 player
+                else:  # try to level up
+                    if (
+                        self.ai_interface.level == 1
+                    ):  # level 1 is special because it only requires 1 player
                         for (
                             type,
                             count,
@@ -116,21 +116,21 @@ class WinnerAgent:
                                     type
                                 )
                         self.ai_interface.send_start_incantation_action_and_block_until_response()
-                    else: # for higher levels, check if we can already level up or if we need to wait for more players and ressources
+                    else:  # for higher levels, check if we can already level up or if we need to wait for more players and ressources
                         self.ai_interface.send_look_action_and_block_until_response()
                         if (
                             self.ai_interface.completed_actions
                             and self.ai_interface.completed_actions[-1]["action_type"]
                             == interface.action_type.look
                             and self.ai_interface.completed_actions[-1]["response"]
-                            and self.ai_interface.completed_actions[-1]["response"][0]
+                            and isinstance(self.ai_interface.completed_actions[-1]["response"], list)
                             and self.ai_interface.completed_actions[-1]["response"][0][
                                 interface.object_type.player
                             ]
                             >= interface.PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP.get(
                                 self.ai_interface.level, 0
                             )
-                        ): # if there are enough players, check if we have enough ressources to level up
+                        ):  # if there are enough players, check if we have enough ressources to level up
                             if (
                                 self.ai_interface.completed_actions
                                 and self.ai_interface.completed_actions[-1][
@@ -142,7 +142,9 @@ class WinnerAgent:
                                     0
                                 ]
                                 and self.ai_interface.are_ressources_sufficient_for_level_up(
-                                    self.ai_interface.last_known_inventory,
+                                    self.ai_interface.completed_actions[-1]["response"][
+                                        0
+                                    ],
                                     interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(
                                         self.ai_interface.level, {}
                                     ),
@@ -173,9 +175,9 @@ class WinnerAgent:
                                         ][0]
                                         else 0
                                     )
-                                    if current_amount > required_amount:
+                                    if required_amount > current_amount:
                                         for _ in range(
-                                            current_amount - required_amount
+                                            required_amount - current_amount
                                         ):
                                             self.ai_interface.send_set_object_down_action_and_block_until_response(
                                                 resource
@@ -199,7 +201,6 @@ class WinnerAgent:
                     self.ai_interface.completed_actions
                     and self.ai_interface.completed_actions[-1]["action_type"]
                     == interface.action_type.start_incantation
-                    and self.ai_interface.completed_actions[-1]["response"]
-                    and self.ai_interface.completed_actions[-1]["response"] != "ko"
+                    and self.ai_interface.completed_actions[-1]["success"] == True
                 ):
                     self.state = WinnerAgent.State.none
