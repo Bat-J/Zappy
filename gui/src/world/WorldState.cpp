@@ -38,6 +38,14 @@ namespace zappy {
         }
     }
 
+    void WorldState::setWinner(const std::string& team) {
+        _winner = team;
+    }
+
+    const std::optional<std::string>& WorldState::getWinner() const {
+        return _winner;
+    }
+
     std::optional<const Tile> WorldState::catchTile(int x, int y) const {
         for (int i = 0; i < _tiles.size(); i++) {
             if (_tiles[i].getPosition().first == x && _tiles[i].getPosition().second == y)

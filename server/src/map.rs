@@ -273,16 +273,19 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32
 
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
     let mut eggs = Vec::new();
-    for id in 0..config.clients_per_team * config.teams.len() as u32 {
-        let egg = Egg {
-            x: rand::rng().random_range(0..config.width),
-            y: rand::rng().random_range(0..config.height),
-            id,
-            player_id: 0,
-            is_starting: true,
-            team: String::new(),
-        };
-        eggs.push(egg);
+    let mut id = 0u32;
+    for team in &config.teams {
+        for _ in 0..config.clients_per_team {
+            eggs.push(Egg {
+                x: rand::rng().random_range(0..config.width),
+                y: rand::rng().random_range(0..config.height),
+                id,
+                player_id: id,
+                is_starting: true,
+                team: team.clone(),
+            });
+            id += 1;
+        }
     }
     eggs
 }

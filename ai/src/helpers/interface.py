@@ -237,7 +237,10 @@ class AI_server_interface:
                 )
             pass
         elif message.startswith("["):
-            if message.count(",") >= 3:
+            if (
+                self.pending_response_actions
+                and self.pending_response_actions[0] == action_type.look
+            ):
                 completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {

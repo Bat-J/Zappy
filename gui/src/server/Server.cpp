@@ -77,6 +77,10 @@ namespace zappy {
                 _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + wordsByLine[i][2]);
                 _players.addBroadcaster(number);
             }
+            if (wordsByLine[i][0] == "seg" && wordsByLine[i].size() == 2) {
+                _world.setWinner(wordsByLine[i][1]);
+                _logs.push_back("Team " + wordsByLine[i][1] + " wins!");
+            }
             if (wordsByLine[i][0] == "bct" && wordsByLine[i].size() == 10) {
                 int              x = std::stoi(wordsByLine[i][1]);
                 int              y = std::stoi(wordsByLine[i][2]);
