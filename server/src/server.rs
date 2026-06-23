@@ -8,7 +8,7 @@ use crate::command::{
     Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
     send_string_to_all_guis, set, take, turn_left, turn_right,
 };
-use crate::gui_parser::{ebo_reply, pdi_reply, seg_reply};
+use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, pnw_reply, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -397,10 +397,20 @@ impl Server {
                         phiras: 0,
                         thystame: 0,
                     },
-                    food: 10,
+                    food: 9,
                     time_left: 126,
                 },
             };
+
+            let player = {
+                match &self.clients[i].state {
+                    ClientState::Ai { player, .. } => player.clone(),
+                    _ => Player::default(),
+                }
+            };
+            gui_notifications.push(pnw_reply(&player, &team));
+            gui_notifications.push(pin_reply(&player));
+            gui_notifications.push(ebo_reply(&egg));
 
             let response = format!(
                 "{remaining}\n{} {}\n",
@@ -545,7 +555,7 @@ impl Server {
         let state = clients[client_idx].state.clone();
         match state {
             ClientState::AwaitingTeamName => {
-                Self::handle_team_name(&mut clients[client_idx], line, team_slots, game)
+                Self::handle_team_name(clients, client_idx, line, team_slots, game)
             }
             ClientState::Ai { player, .. } => {
                 Self::handle_ai_command(clients, line, time_manager, client_idx, client_id, &player)
@@ -626,17 +636,21 @@ impl Server {
     }
 
     fn handle_team_name(
-        client: &mut Client,
+        clients: &mut [Client],
+        idx: usize,
         name: &str,
         team_slots: &mut [(String, u32)],
         game: &mut Game,
     ) -> bool {
         if name == "GRAPHIC" {
-            client.state = ClientState::Gui;
-            println!("{} identified as GUI", client.addr);
+            clients[idx].state = ClientState::Gui;
+            println!("{} identified as GUI", clients[idx].addr);
             match create_gui_connection_string(&game.config, &game.map, &game.eggs) {
                 Some(message) => {
-                    return client.stream.write_all(message.as_bytes()).is_err();
+                    return clients[idx]
+                        .stream
+                        .write_all(message.as_bytes())
+                        .is_err();
                 }
                 None => return false,
             }
@@ -655,8 +669,8 @@ impl Server {
                     // An egg is available: hatch it immediately
                     let egg = game.eggs.swap_remove(egg_idx);
 
-                    client.id = egg.player_id;
-                    client.state = ClientState::Ai {
+                    clients[idx].id = egg.player_id;
+                    clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
                             x: egg.x,
@@ -672,23 +686,32 @@ impl Server {
                                 phiras: 0,
                                 thystame: 0,
                             },
-                            food: 10,
+                            food: 9,
                             time_left: 126,
                         },
                     };
 
                     println!(
                         "{} hatched egg at ({}, {}) for team {name} ({remaining} slots left)",
-                        client.addr, egg.x, egg.y
+                        clients[idx].addr, egg.x, egg.y
                     );
+                    let (player, team) = {
+                        match &clients[idx].state {
+                            ClientState::Ai { team, player } => (player.clone(), team.clone()),
+                            _ => (Player::default(), "".to_string()),
+                        }
+                    };
+                    send_string_to_all_guis(clients, pnw_reply(&player, &team));
+                    send_string_to_all_guis(clients, pin_reply(&player));
+                    send_string_to_all_guis(clients, ebo_reply(&egg));
                 } else {
                     // No egg yet: park the client until one is laid
-                    client.state = ClientState::AwaitingEgg {
+                    clients[idx].state = ClientState::AwaitingEgg {
                         team: name.to_string(),
                     };
                     println!(
                         "{} waiting for an egg for team {name} ({remaining} slots left)",
-                        client.addr
+                        clients[idx].addr
                     );
                 }
 
@@ -696,12 +719,15 @@ impl Server {
                     "{remaining}\n{} {}\n",
                     game.config.width, game.config.height
                 );
-                client.stream.write_all(response.as_bytes()).is_err()
+                clients[idx]
+                    .stream
+                    .write_all(response.as_bytes())
+                    .is_err()
             }
             None => {
                 eprintln!(
                     "{} refused: unknown team or no slots for '{name}'",
-                    client.addr
+                    clients[idx].addr
                 );
                 true
             }
