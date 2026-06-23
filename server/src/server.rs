@@ -176,7 +176,15 @@ impl Server {
                     for other in self.clients.iter_mut() {
                         let line = match &other.state {
                             ClientState::Ai { player, .. } => {
-                                let k = broadcast_k(ex, ey, player.x, player.y, &player.orientation, w, h);
+                                let k = broadcast_k(
+                                    ex,
+                                    ey,
+                                    player.x,
+                                    player.y,
+                                    &player.orientation,
+                                    w,
+                                    h,
+                                );
                                 Some(format!("message {k}, {msg}\n"))
                             }
                             ClientState::Gui => Some(pbc.clone()),
@@ -486,7 +494,10 @@ impl Server {
     ) -> bool {
         let n = match clients[client_idx].stream.read(buffer) {
             Ok(0) => {
-                println!("Client {} sent EOF (closed connection)", clients[client_idx].addr);
+                println!(
+                    "Client {} sent EOF (closed connection)",
+                    clients[client_idx].addr
+                );
                 return true;
             }
             Ok(n) => n,
@@ -506,7 +517,15 @@ impl Server {
                 .to_string();
             clients[client_idx].pending.drain(..=pos);
 
-            if Self::handle_line(clients, &line, team_slots, game, time_manager, client_idx, client_id) {
+            if Self::handle_line(
+                clients,
+                &line,
+                team_slots,
+                game,
+                time_manager,
+                client_idx,
+                client_id,
+            ) {
                 return true;
             }
         }
@@ -547,7 +566,10 @@ impl Server {
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
 
         if parts.is_empty() {
-            eprintln!("Parse error from {}: empty command", clients[client_idx].addr);
+            eprintln!(
+                "Parse error from {}: empty command",
+                clients[client_idx].addr
+            );
             return clients[client_idx]
                 .stream
                 .write_all("ko\n".as_bytes())
@@ -598,10 +620,7 @@ impl Server {
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", addr, err);
-                clients[client_idx]
-                    .stream
-                    .write_all(b"ko\n")
-                    .is_err()
+                clients[client_idx].stream.write_all(b"ko\n").is_err()
             }
         }
     }
@@ -691,9 +710,13 @@ impl Server {
 }
 
 fn broadcast_k(
-    ex: u32, ey: u32,
-    rx: u32, ry: u32, recv_orientation: &Orientation,
-    width: u32, height: u32,
+    ex: u32,
+    ey: u32,
+    rx: u32,
+    ry: u32,
+    recv_orientation: &Orientation,
+    width: u32,
+    height: u32,
 ) -> u8 {
     let w = width as i32;
     let h = height as i32;
@@ -711,21 +734,21 @@ fn broadcast_k(
     // (forward_x, forward_y, left_x, left_y) in screen coords (y grows down)
     let (fx, fy, lx, ly): (i32, i32, i32, i32) = match recv_orientation {
         Orientation::North => (0, -1, -1, 0),
-        Orientation::East  => (1,  0,  0, -1),
-        Orientation::South => (0,  1,  1,  0),
-        Orientation::West  => (-1, 0,  0,  1),
+        Orientation::East => (1, 0, 0, -1),
+        Orientation::South => (0, 1, 1, 0),
+        Orientation::West => (-1, 0, 0, 1),
     };
     let f = dx * fx + dy * fy;
     let l = dx * lx + dy * ly;
     match (f > 0, f < 0, l > 0, l < 0) {
-        (true,  false, false, false) => 1, // front
-        (true,  false, true,  false) => 2, // front-left
-        (false, false, true,  false) => 3, // left
-        (false, true,  true,  false) => 4, // back-left
-        (false, true,  false, false) => 5, // back
-        (false, true,  false, true)  => 6, // back-right
-        (false, false, false, true)  => 7, // right
-        (true,  false, false, true)  => 8, // front-right
-        _                            => 0,
+        (true, false, false, false) => 1, // front
+        (true, false, true, false) => 2,  // front-left
+        (false, false, true, false) => 3, // left
+        (false, true, true, false) => 4,  // back-left
+        (false, true, false, false) => 5, // back
+        (false, true, false, true) => 6,  // back-right
+        (false, false, false, true) => 7, // right
+        (true, false, false, true) => 8,  // front-right
+        _ => 0,
     }
 }
