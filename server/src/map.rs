@@ -62,20 +62,6 @@ pub fn spawn_resources(config: &Config, map: &mut [Vec<Tile>]) {
     }
 }
 
-pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
-    if x >= config.width || y >= config.height || !map[y as usize][x as usize].ais.contains(&id) {
-        return;
-    }
-    map[y as usize][x as usize].ais.retain(|&x| x != id);
-}
-
-pub fn _add_ai_to_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
-    if x >= config.width || y >= config.height || map[x as usize][y as usize].ais.contains(&id) {
-        return;
-    }
-    map[y as usize][x as usize].ais.push(id);
-}
-
 pub fn msz_reply(config: &Config) -> String {
     let mut string =
         String::with_capacity(8 + config.width.ilog10() as usize + config.height.ilog10() as usize);

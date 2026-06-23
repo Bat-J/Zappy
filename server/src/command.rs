@@ -412,6 +412,9 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
         {
             player_to_move.x = dest_x;
             player_to_move.y = dest_y;
+            game.map[dest_y as usize][dest_x as usize]
+                .ais
+                .push(player_to_move.id);
         }
     }
 
