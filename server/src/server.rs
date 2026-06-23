@@ -647,10 +647,7 @@ impl Server {
             println!("{} identified as GUI", clients[idx].addr);
             match create_gui_connection_string(&game.config, &game.map, &game.eggs) {
                 Some(message) => {
-                    return clients[idx]
-                        .stream
-                        .write_all(message.as_bytes())
-                        .is_err();
+                    return clients[idx].stream.write_all(message.as_bytes()).is_err();
                 }
                 None => return false,
             }
@@ -719,10 +716,7 @@ impl Server {
                     "{remaining}\n{} {}\n",
                     game.config.width, game.config.height
                 );
-                clients[idx]
-                    .stream
-                    .write_all(response.as_bytes())
-                    .is_err()
+                clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
             None => {
                 eprintln!(
