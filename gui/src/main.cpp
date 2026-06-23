@@ -16,12 +16,12 @@
 #include "core/Core.hpp"
 
 static void chdirToAssets() {
-    char exe[PATH_MAX];
+    char    exe[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
     if (len == -1)
         return;
-    exe[len] = '\0';
-    char *slash = strrchr(exe, '/');
+    exe[len]    = '\0';
+    char* slash = strrchr(exe, '/');
     if (slash)
         *slash = '\0';
     // Deployed: binary at repo root, assets at <exe_dir>/gui/assets/
