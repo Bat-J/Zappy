@@ -123,9 +123,7 @@ class AI_server_interface:
         if received_message is None or received_message.strip() == "ko":
             return False
         try:
-            self.world_x_size, self.world_y_size = map(
-                int, received_message.strip().split()
-            )
+            self.world_x_size, self.world_y_size = map(int, received_message.strip().split())
         except Exception:
             return False
 
@@ -208,17 +206,11 @@ class AI_server_interface:
         elif message == "ok":
             if self.pending_response_actions:
                 completed_action = self.pending_response_actions.pop(0)
-                self.completed_actions.append(
-                    {"action_type": completed_action, "success": True}
-                )
+                self.completed_actions.append({"action_type": completed_action, "success": True})
                 if completed_action == action_type.turn_right:
-                    self.relative_direction = cardinal_direction(
-                        (self.relative_direction.value % 4) + 1
-                    )
+                    self.relative_direction = cardinal_direction((self.relative_direction.value % 4) + 1)
                 elif completed_action == action_type.turn_left:
-                    self.relative_direction = cardinal_direction(
-                        (self.relative_direction.value - 2) % 4 + 1
-                    )
+                    self.relative_direction = cardinal_direction((self.relative_direction.value - 2) % 4 + 1)
                 elif completed_action == action_type.forward:
                     if self.relative_direction == cardinal_direction.north:
                         self.relative_x_position += 1
@@ -232,9 +224,7 @@ class AI_server_interface:
         elif message == "ko":
             if self.pending_response_actions:
                 completed_action = self.pending_response_actions.pop(0)
-                self.completed_actions.append(
-                    {"action_type": completed_action, "success": False}
-                )
+                self.completed_actions.append({"action_type": completed_action, "success": False})
             pass
         elif message.startswith("["):
             if message.count(",") >= 3:
@@ -283,16 +273,12 @@ class AI_server_interface:
             self.message_history.append(
                 {
                     "text": message[11:],
-                    "direction": parse_direction(
-                        int(message[8:9])
-                    ).add_cardinal_direction(self.relative_direction),
+                    "direction": parse_direction(int(message[8:9])).add_cardinal_direction(self.relative_direction),
                 }
             )
             pass
         elif message.startswith("eject: "):
-            direction = parse_direction(int(message[7:])).add_cardinal_direction(
-                self.relative_direction
-            )
+            direction = parse_direction(int(message[7:])).add_cardinal_direction(self.relative_direction)
             if direction == direction.north:
                 self.relative_x_position -= 1
             elif direction == direction.northwest:
@@ -339,11 +325,7 @@ class AI_server_interface:
 
     def block_until_all_responses_received(self):
         """Blocks until all pending response actions have received a response from the server."""
-        while (
-            self.pending_response_actions
-            and self.connection.is_connected()
-            and self.is_alive()
-        ):
+        while self.pending_response_actions and self.connection.is_connected() and self.is_alive():
             self.handle_server_messages_blocking()
 
     def send_forward_action(self):
@@ -398,9 +380,7 @@ class AI_server_interface:
 
     def send_set_object_down_action(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object."""
-        self.connection.send_message(
-            f"{action_type.set_object_down.value} {object_type.value}\n"
-        )
+        self.connection.send_message(f"{action_type.set_object_down.value} {object_type.value}\n")
         self.pending_response_actions.append(action_type.set_object_down)
 
     def send_start_incantation_action(self):
@@ -468,9 +448,7 @@ class AI_server_interface:
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
 
-    def send_set_object_down_action_and_block_until_response(
-        self, object_type: object_type
-    ):
+    def send_set_object_down_action_and_block_until_response(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object and blocks until a response is received."""
         self.send_set_object_down_action(object_type)
         self.block_until_all_responses_received()
@@ -540,18 +518,14 @@ class AI_server_interface:
             vowels = "aeiouyAEIOUY"
             consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
             for vowel in vowels:
-                message = message.replace(
-                    vowel, consonants[randint(0, len(consonants) - 1)]
-                )
+                message = message.replace(vowel, consonants[randint(0, len(consonants) - 1)])
             return message
         elif random_action == 9:
             # replace consonants with vowels and vice versa
             vowels = "aeiouyAEIOUY"
             consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
             for consonant in consonants:
-                message = message.replace(
-                    consonant, vowels[randint(0, len(vowels) - 1)]
-                )
+                message = message.replace(consonant, vowels[randint(0, len(vowels) - 1)])
             return message
         return message
 

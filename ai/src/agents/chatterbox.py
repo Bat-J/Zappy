@@ -2,6 +2,7 @@ import helpers.interface as interface
 from enum import Enum
 from random import randint
 
+
 class state(Enum):
     collection_looking = 1
     collection_picking = 2
@@ -30,9 +31,7 @@ class ChatterboxAgent:
                 self.state = state.collection_picking
             elif self.state == state.collection_picking:
                 if awaiting_pickup_list == []:
-                    for obj, count in self.ai_interface.completed_actions[-1][
-                        "response"
-                    ][0].items():
+                    for obj, count in self.ai_interface.completed_actions[-1]["response"][0].items():
                         if obj != "player" and obj != "egg" and count > 0:
                             for _ in range(count):
                                 awaiting_pickup_list.append(obj)
@@ -41,7 +40,9 @@ class ChatterboxAgent:
                             if random_action == 0:
                                 message = self.ai_interface.generate_fake_broadcast_message("")
                             elif random_action == 1:
-                                message = self.ai_interface.generate_fake_broadcast_message("Incantation ritual over here!")
+                                message = self.ai_interface.generate_fake_broadcast_message(
+                                    "Incantation ritual over here!"
+                                )
                             elif random_action == 2:
                                 message = self.ai_interface.generate_fake_broadcast_message("Need help to go level 3!")
                             self.ai_interface.send_broadcast_action_and_block_until_response(message)
@@ -55,44 +56,24 @@ class ChatterboxAgent:
             elif self.state == state.collection_moving:
                 if (
                     self.ai_interface.relative_y_position
-                    == max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
+                    == max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2
                     and self.ai_interface.relative_x_position
-                    == max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.south
+                    == max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.south
                 ):  # pyright: ignore[reportArgumentType]
                     invert_direction = not invert_direction
                 elif (
                     self.ai_interface.relative_y_position
-                    == -max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    + 1
+                    == -max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2 + 1
                     and self.ai_interface.relative_x_position
-                    == -max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    + 1
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.north
+                    == -max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2 + 1
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.north
                 ):  # pyright: ignore[reportArgumentType]
                     invert_direction = not invert_direction
                 if (
                     self.ai_interface.relative_x_position
-                    == max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.north
+                    == max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.north
                 ):  # pyright: ignore[reportArgumentType]
                     if invert_direction:
                         self.ai_interface.send_turn_left_action()
@@ -104,13 +85,8 @@ class ChatterboxAgent:
                         self.ai_interface.send_turn_right_action_and_block_until_response()
                 elif (
                     self.ai_interface.relative_x_position
-                    == -max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    + 1
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.south
+                    == -max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2 + 1
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.south
                 ):  # pyright: ignore[reportArgumentType]
                     if invert_direction:
                         self.ai_interface.send_turn_right_action()
