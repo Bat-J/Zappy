@@ -31,6 +31,7 @@ namespace zappy {
         void                                        displaySelectedPlayer(const Server& server);
         void                                        displayTotalResources(const Server& server);
         void                                        displayAll(Server& server, bool isFpsDisplayed, bool isCursorDefault);
+        void                                        displayWinner(const std::string& team);
         void                                        close(void);
         raylib::Window&                             getWindow();
         Colors&                                     getColors();

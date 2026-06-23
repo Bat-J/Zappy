@@ -323,7 +323,22 @@ namespace zappy {
         displayBasicGui(isFpsDisplayed, isCursorDefault);
         drawBroadcastCircles();
         drawIncreaseCircles();
+        const auto& winner = server.world().getWinner();
+        if (winner.has_value())
+            displayWinner(winner.value());
         _window.EndDrawing();
+    }
+
+    void Renderer::displayWinner(const std::string& team) {
+        const int w = _window.GetWidth();
+        const int h = _window.GetHeight();
+        DrawRectangle(0, 0, w, h, Color{0, 0, 0, 200});
+        const std::string line1 = "TEAM " + team;
+        const std::string line2 = "WINS!";
+        Vector2           s1    = MeasureTextEx(_font, line1.c_str(), 80, _spacing);
+        Vector2           s2    = MeasureTextEx(_font, line2.c_str(), 100, _spacing);
+        _font.DrawText(line1, (int)((w - s1.x) / 2), (int)(h / 2.0f - s1.y - 10), 80, _spacing, GOLD);
+        _font.DrawText(line2, (int)((w - s2.x) / 2), (int)(h / 2.0f) + 10, 100, _spacing, GOLD);
     }
 
     void Renderer::close() {
