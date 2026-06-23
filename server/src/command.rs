@@ -1,9 +1,10 @@
 use std::{fmt, io::Write};
 
 use crate::{
-    gui_parser::{pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
-    map::{Egg, enw_string},
-    server::{Client, ClientState, Player},
+    args::Config,
+    gui_parser::{edi_reply, pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
+    map::{self, Egg, Resources, enw_string},
+    server::{Client, ClientState, Game, Orientation, Player},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,7 +118,7 @@ impl fmt::Display for Command {
 fn convert_ressource_name_to_id(string: &str) -> u8 {
     match string {
         "linemate" => 1,
-        "dismate" => 2,
+        "deraumere" => 2,
         "sibur" => 3,
         "mendiane" => 4,
         "phiras" => 5,
@@ -160,6 +161,615 @@ pub fn send_ai_command_to_gui(
             pgt_reply(player, convert_ressource_name_to_id(&string)),
         ),
         _ => (),
+    }
+}
+
+pub fn take(client: &mut Client, game: &mut Game, resource: &str) -> String {
+    let player = match &mut client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let resource_id = convert_ressource_name_to_id(resource);
+    match resource_id {
+        1 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .linemate
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .linemate -= 1;
+            player.inventory.linemate += 1;
+            "ok\n".to_string()
+        }
+        2 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .deraumere
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .deraumere -= 1;
+            player.inventory.deraumere += 1;
+            "ok\n".to_string()
+        }
+        3 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .sibur
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .sibur -= 1;
+            player.inventory.sibur += 1;
+            "ok\n".to_string()
+        }
+        4 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .mendiane
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .mendiane -= 1;
+            player.inventory.mendiane += 1;
+            "ok\n".to_string()
+        }
+        5 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .phiras
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .phiras -= 1;
+            player.inventory.phiras += 1;
+            "ok\n".to_string()
+        }
+        6 => {
+            if game.map[player.y as usize][player.x as usize]
+                .resources
+                .thystame
+                == 0
+            {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .thystame -= 1;
+            player.inventory.thystame += 1;
+            "ok\n".to_string()
+        }
+        _ => "ko\n".to_string(),
+    }
+}
+
+pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
+    let player = match &mut client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let resource_id = convert_ressource_name_to_id(resource);
+    match resource_id {
+        1 => {
+            if player.inventory.linemate == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .linemate += 1;
+            player.inventory.linemate -= 1;
+            "ok\n".to_string()
+        }
+        2 => {
+            if player.inventory.deraumere == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .deraumere += 1;
+            player.inventory.deraumere -= 1;
+            "ok\n".to_string()
+        }
+        3 => {
+            if player.inventory.sibur == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .sibur += 1;
+            player.inventory.sibur -= 1;
+            "ok\n".to_string()
+        }
+        4 => {
+            if player.inventory.mendiane == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .mendiane += 1;
+            player.inventory.mendiane -= 1;
+            "ok\n".to_string()
+        }
+        5 => {
+            if player.inventory.phiras == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .phiras += 1;
+            player.inventory.phiras -= 1;
+            "ok\n".to_string()
+        }
+        6 => {
+            if player.inventory.thystame == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize]
+                .resources
+                .thystame += 1;
+            player.inventory.thystame -= 1;
+            "ok\n".to_string()
+        }
+        _ => "ko\n".to_string(),
+    }
+}
+
+pub fn fork(client: &mut Client, game: &mut Game) -> String {
+    let player = match &client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let team = match &client.state {
+        ClientState::Ai { team, .. } => team,
+        _ => return "ko\n".to_string(),
+    };
+
+    game.eggs.push(Egg {
+        x: player.x,
+        y: player.y,
+        id: game.next_egg_id,
+        player_id: player.id,
+        is_starting: false,
+        team: team.to_string(),
+    });
+    game.next_egg_id += 1;
+    "ok\n".to_string()
+}
+
+pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config) -> String {
+    let (ejector_id, ejector_x, ejector_y, dest_x, dest_y) = {
+        let player = match &clients[idx as usize].state {
+            ClientState::Ai { player, .. } => player,
+            _ => return "ko\n".to_string(),
+        };
+
+        let orientation = &player.orientation;
+        let dx = match orientation {
+            Orientation::West => {
+                if player.x == 0 {
+                    config.width - 1
+                } else {
+                    player.x - 1
+                }
+            }
+            Orientation::East => {
+                if player.x >= config.width - 1 {
+                    0
+                } else {
+                    player.x + 1
+                }
+            }
+            _ => player.x,
+        };
+        let dy = match orientation {
+            Orientation::North => {
+                if player.y == 0 {
+                    config.height - 1
+                } else {
+                    player.y - 1
+                }
+            }
+            Orientation::South => {
+                if player.y >= config.height - 1 {
+                    0
+                } else {
+                    player.y + 1
+                }
+            }
+            _ => player.y,
+        };
+
+        (player.id, player.x, player.y, dx, dy)
+    };
+
+    game.map[ejector_y as usize][ejector_x as usize]
+        .ais
+        .retain(|&id| id == ejector_id);
+    for client in clients.iter_mut() {
+        let player_to_move = match &mut client.state {
+            ClientState::Ai { player, .. } => player,
+            _ => continue,
+        };
+        if player_to_move.id != ejector_id
+            && player_to_move.x == ejector_x
+            && player_to_move.y == ejector_y
+        {
+            player_to_move.x = dest_x;
+            player_to_move.y = dest_y;
+            game.map[dest_y as usize][dest_x as usize]
+                .ais
+                .push(player_to_move.id);
+        }
+    }
+
+    let mut to_remove = Vec::<u32>::new();
+
+    for (i, egg) in game.eggs.iter().enumerate() {
+        if egg.x == ejector_x && egg.y == ejector_y {
+            send_string_to_all_guis(clients, edi_reply(egg));
+            to_remove.push(i as u32);
+        }
+    }
+
+    for i in to_remove.iter().rev() {
+        game.eggs.remove(*i as usize);
+    }
+
+    "ok\n".to_string()
+}
+
+struct ElevationRequirement {
+    nb_players: usize,
+    resources: Resources,
+}
+
+const ELEVATION_REQUIREMENTS: [ElevationRequirement; 7] = [
+    ElevationRequirement {
+        nb_players: 1,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 0,
+            sibur: 0,
+            mendiane: 0,
+            phiras: 0,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 2,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 1,
+            sibur: 1,
+            mendiane: 0,
+            phiras: 0,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 2,
+        resources: Resources {
+            linemate: 2,
+            deraumere: 0,
+            sibur: 1,
+            mendiane: 0,
+            phiras: 2,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 4,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 1,
+            sibur: 2,
+            mendiane: 0,
+            phiras: 1,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 4,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 2,
+            sibur: 1,
+            mendiane: 3,
+            phiras: 0,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 6,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 2,
+            sibur: 3,
+            mendiane: 0,
+            phiras: 1,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 6,
+        resources: Resources {
+            linemate: 2,
+            deraumere: 2,
+            sibur: 2,
+            mendiane: 2,
+            phiras: 2,
+            thystame: 1,
+        },
+    },
+];
+
+fn requirements_for(level: u8) -> Option<&'static ElevationRequirement> {
+    if level == 0 || level as usize > ELEVATION_REQUIREMENTS.len() {
+        return None;
+    }
+    Some(&ELEVATION_REQUIREMENTS[(level - 1) as usize])
+}
+
+fn players_of_level_on_tile(clients: &[Client], tile: &map::Tile, level: u8) -> Vec<u32> {
+    tile.ais
+        .iter()
+        .copied()
+        .filter(|id| {
+            clients.iter().any(|c| match &c.state {
+                ClientState::Ai { player, .. } => player.id == *id && player.level == level,
+                _ => false,
+            })
+        })
+        .collect()
+}
+
+fn meets_requirements(clients: &[Client], tile: &map::Tile, level: u8) -> bool {
+    let Some(req) = requirements_for(level) else {
+        return false;
+    };
+
+    let present = players_of_level_on_tile(clients, tile, level).len();
+
+    present >= req.nb_players
+        && tile.resources.linemate >= req.resources.linemate
+        && tile.resources.deraumere >= req.resources.deraumere
+        && tile.resources.sibur >= req.resources.sibur
+        && tile.resources.mendiane >= req.resources.mendiane
+        && tile.resources.phiras >= req.resources.phiras
+        && tile.resources.thystame >= req.resources.thystame
+}
+
+fn consume_resources(tile: &mut map::Tile, level: u8) {
+    if let Some(req) = requirements_for(level) {
+        tile.resources.linemate -= req.resources.linemate;
+        tile.resources.deraumere -= req.resources.deraumere;
+        tile.resources.sibur -= req.resources.sibur;
+        tile.resources.mendiane -= req.resources.mendiane;
+        tile.resources.phiras -= req.resources.phiras;
+        tile.resources.thystame -= req.resources.thystame;
+    }
+}
+
+pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>]) -> String {
+    let (x, y, level, initiator_id) = match &clients[idx].state {
+        ClientState::Ai { player, .. } => (
+            player.x as usize,
+            player.y as usize,
+            player.level,
+            player.id,
+        ),
+        _ => return "ko\n".to_string(),
+    };
+
+    if requirements_for(level).is_none() {
+        // Already at max level (8), or invalid level.
+        return "ko\n".to_string();
+    }
+
+    let participant_ids = players_of_level_on_tile(clients, &map[y][x], level);
+
+    if !meets_requirements(clients, &map[y][x], level) {
+        return "ko\n".to_string();
+    }
+
+    consume_resources(&mut map[y][x], level);
+
+    let new_level = level + 1;
+    let msg = format!("Current level: {new_level}\n");
+    for id in &participant_ids {
+        if let Some(c) = clients.iter_mut().find(|c| match &c.state {
+            ClientState::Ai { player, .. } => player.id == *id,
+            _ => false,
+        }) {
+            if let ClientState::Ai { player, .. } = &mut c.state {
+                player.level += 1;
+            }
+            if *id != initiator_id {
+                let _ = c.stream.write_all(msg.as_bytes());
+            }
+        }
+    }
+    msg
+}
+
+pub fn move_forward(client: &mut Client, config: &Config) -> String {
+    match &mut client.state {
+        ClientState::Ai { player, .. } => match player.orientation {
+            Orientation::North => {
+                if player.y == 0 {
+                    player.y = config.height - 1;
+                } else {
+                    player.y -= 1;
+                }
+            }
+            Orientation::East => player.x = (player.x + 1) % config.width,
+            Orientation::South => player.y = (player.y + 1) % config.height,
+            Orientation::West => {
+                if player.x == 0 {
+                    player.x = config.width - 1;
+                } else {
+                    player.x -= 1;
+                }
+            }
+        },
+        _ => return "ko\n".to_string(),
+    }
+    "ok\n".to_string()
+}
+
+pub fn turn_right(client: &mut Client) -> String {
+    match &mut client.state {
+        ClientState::Ai { player, .. } => {
+            player.orientation = match player.orientation {
+                Orientation::East => Orientation::South,
+                Orientation::North => Orientation::East,
+                Orientation::South => Orientation::West,
+                Orientation::West => Orientation::North,
+            }
+        }
+        _ => return "ko\n".to_string(),
+    }
+    "ok\n".to_string()
+}
+
+pub fn turn_left(client: &mut Client) -> String {
+    match &mut client.state {
+        ClientState::Ai { player, .. } => {
+            player.orientation = match player.orientation {
+                Orientation::East => Orientation::North,
+                Orientation::North => Orientation::West,
+                Orientation::South => Orientation::East,
+                Orientation::West => Orientation::South,
+            }
+        }
+        _ => return "ko\n".to_string(),
+    }
+    "ok\n".to_string()
+}
+
+fn forward(o: &Orientation) -> (i32, i32) {
+    match o {
+        Orientation::North => (0, -1),
+        Orientation::East => (1, 0),
+        Orientation::South => (0, 1),
+        Orientation::West => (-1, 0),
+    }
+}
+
+fn right(o: &Orientation) -> (i32, i32) {
+    match o {
+        Orientation::North => (1, 0),
+        Orientation::East => (0, 1),
+        Orientation::South => (-1, 0),
+        Orientation::West => (0, -1),
+    }
+}
+
+fn wrap(v: i32, max: i32) -> usize {
+    (((v % max) + max) % max) as usize
+}
+
+fn tile_content(tile: &map::Tile) -> String {
+    let mut items: Vec<&str> = Vec::new();
+
+    items.extend(std::iter::repeat_n("player", tile.ais.len()));
+    items.extend(std::iter::repeat_n("food", tile.food as usize));
+    items.extend(std::iter::repeat_n(
+        "linemate",
+        tile.resources.linemate as usize,
+    ));
+    items.extend(std::iter::repeat_n(
+        "deraumere",
+        tile.resources.deraumere as usize,
+    ));
+    items.extend(std::iter::repeat_n("sibur", tile.resources.sibur as usize));
+    items.extend(std::iter::repeat_n(
+        "mendiane",
+        tile.resources.mendiane as usize,
+    ));
+    items.extend(std::iter::repeat_n(
+        "phiras",
+        tile.resources.phiras as usize,
+    ));
+    items.extend(std::iter::repeat_n(
+        "thystame",
+        tile.resources.thystame as usize,
+    ));
+
+    items.join(" ")
+}
+
+pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
+    let player = match &client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let height = map.len() as i32;
+    let width = if height > 0 { map[0].len() as i32 } else { 0 };
+    if height == 0 || width == 0 {
+        return "ko\n".to_string();
+    }
+
+    let view_distance = player.level as i32;
+
+    let px = player.x as i32;
+    let py = player.y as i32;
+
+    let (fx, fy) = forward(&player.orientation);
+    let (rx, ry) = right(&player.orientation);
+
+    let mut cells: Vec<String> = Vec::new();
+    {
+        let x = wrap(px, width);
+        let y = wrap(py, height);
+        cells.push(tile_content(&map[y][x]));
+    }
+    for d in 1..=view_distance {
+        for offset in -d..=d {
+            let tx = px + fx * d + rx * offset;
+            let ty = py + fy * d + ry * offset;
+            let x = wrap(tx, width);
+            let y = wrap(ty, height);
+            cells.push(tile_content(&map[y][x]));
+        }
+    }
+
+    format!("[{}]\n", cells.join(", "))
+}
+
+pub fn get_inventory(client: &Client) -> String {
+    match &client.state {
+        ClientState::Ai { player, .. } => {
+            let mut inventory_string = String::new();
+            inventory_string.push_str(&format!(
+                "[food {}, linemate {}, deraumere {}, sibur {}, mendiane {}, phiras {}, thystame {}]\n",
+                player.food,
+                player.inventory.linemate,
+                player.inventory.deraumere,
+                player.inventory.sibur,
+                player.inventory.mendiane,
+                player.inventory.phiras,
+                player.inventory.thystame
+            ));
+            inventory_string
+        }
+        _ => "ko\n".to_string(),
     }
 }
 

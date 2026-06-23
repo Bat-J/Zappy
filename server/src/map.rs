@@ -3,9 +3,9 @@ use rand::RngExt;
 
 #[derive(Default, Clone)]
 pub struct Tile {
-    food: u32,
-    resources: Resources,
-    _ais: Vec<u32>,
+    pub food: u32,
+    pub resources: Resources,
+    pub ais: Vec<u32>,
 }
 
 #[derive(Default, Clone)]
@@ -60,20 +60,6 @@ pub fn spawn_resources(config: &Config, map: &mut [Vec<Tile>]) {
             }
         }
     }
-}
-
-pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
-    if x >= config.width || y >= config.height || !map[y as usize][x as usize]._ais.contains(&id) {
-        return;
-    }
-    map[y as usize][x as usize]._ais.retain(|&x| x != id);
-}
-
-pub fn _add_ai_to_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: u32) {
-    if x >= config.width || y >= config.height || map[x as usize][y as usize]._ais.contains(&id) {
-        return;
-    }
-    map[y as usize][x as usize]._ais.push(id);
 }
 
 pub fn msz_reply(config: &Config) -> String {

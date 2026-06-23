@@ -4,7 +4,10 @@ use std::os::fd::AsRawFd;
 use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
-use crate::command::{Command, send_ai_command_to_gui, send_string_to_all_guis};
+use crate::command::{
+    Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
+    send_string_to_all_guis, set, take, turn_left, turn_right,
+};
 use crate::gui_parser::{ebo_reply, pdi_reply, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
@@ -70,6 +73,7 @@ pub struct Game {
     pub map: Vec<Vec<Tile>>,
     pub config: Config,
     pub eggs: Vec<Egg>,
+    pub next_egg_id: u32,
 }
 
 pub struct Server {
@@ -119,7 +123,7 @@ impl Server {
         self.time_manager.next_timeout_ms().unwrap_or(-1)
     }
 
-    pub fn execute_ready_commands(&mut self, config: &Config) {
+    pub fn execute_ready_commands(&mut self, config: &Config, game: &mut Game) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
             println!(
@@ -140,11 +144,11 @@ impl Server {
             };
 
             let response = match &scheduled.command {
-                Command::Look => "[ player ]\n".to_string(),
-                Command::Inventory => {
-                    "[food 0, linemate 0, deraumere 0, sibur 0, mendiane 0, phiras 0, thystame 0]\n"
-                        .to_string()
-                }
+                Command::Forward => move_forward(&mut self.clients[idx], config),
+                Command::Right => turn_right(&mut self.clients[idx]),
+                Command::Left => turn_left(&mut self.clients[idx]),
+                Command::Look => look(&self.clients[idx], &game.map),
+                Command::Inventory => get_inventory(&self.clients[idx]),
                 Command::ConnectNbr => {
                     if let ClientState::Ai { ref team, .. } = self.clients[idx].state {
                         if let Some(slot) = self.team_slots.iter().find(|(name, _)| name == team) {
@@ -156,6 +160,10 @@ impl Server {
                         "0\n".to_string()
                     }
                 }
+                Command::Take(resource) => take(&mut self.clients[idx], game, resource),
+                Command::Set(resource) => set(&mut self.clients[idx], game, resource),
+                Command::Fork => fork(&mut self.clients[idx], game),
+                Command::Eject => eject(&mut self.clients, idx as u32, game, config),
                 Command::Broadcast(msg) => {
                     let (ex, ey, eid) = match &self.clients[idx].state {
                         ClientState::Ai { player, .. } => (player.x, player.y, player.id),
@@ -168,7 +176,15 @@ impl Server {
                     for other in self.clients.iter_mut() {
                         let line = match &other.state {
                             ClientState::Ai { player, .. } => {
-                                let k = broadcast_k(ex, ey, player.x, player.y, &player.orientation, w, h);
+                                let k = broadcast_k(
+                                    ex,
+                                    ey,
+                                    player.x,
+                                    player.y,
+                                    &player.orientation,
+                                    w,
+                                    h,
+                                );
                                 Some(format!("message {k}, {msg}\n"))
                             }
                             ClientState::Gui => Some(pbc.clone()),
@@ -180,7 +196,7 @@ impl Server {
                     }
                     continue;
                 }
-                _ => "ok\n".to_string(),
+                Command::Incantation => incantation(&mut self.clients, idx, &mut game.map),
             };
 
             let _ = self.clients[idx].stream.write_all(response.as_bytes());
@@ -192,7 +208,7 @@ impl Server {
                     &player,
                     false, /* TODO implement check for incantation */
                     &mut self.clients,
-                    &Egg::default(), /* TODO implement from fork */
+                    game.eggs.last().unwrap_or(&Egg::default()),
                 );
             }
         }
@@ -203,10 +219,10 @@ impl Server {
         use std::collections::HashMap;
         let mut team_level8: HashMap<&str, u32> = HashMap::new();
         for client in &self.clients {
-            if let ClientState::Ai { team, player } = &client.state {
-                if player.level >= 8 {
-                    *team_level8.entry(team.as_str()).or_insert(0) += 1;
-                }
+            if let ClientState::Ai { team, player } = &client.state
+                && player.level >= 8
+            {
+                *team_level8.entry(team.as_str()).or_insert(0) += 1;
             }
         }
         team_level8
@@ -448,6 +464,7 @@ impl Server {
                     if player.food == 0 {
                         println!("Client {} starved", client.addr);
                         death_notifications.push(pdi_reply(player));
+                        let _ = client.stream.write_all("dead\n".as_bytes());
                         let _ = client.stream.shutdown(std::net::Shutdown::Both);
                         to_remove.push(i);
                     } else {
@@ -477,7 +494,10 @@ impl Server {
     ) -> bool {
         let n = match clients[client_idx].stream.read(buffer) {
             Ok(0) => {
-                println!("Client {} sent EOF (closed connection)", clients[client_idx].addr);
+                println!(
+                    "Client {} sent EOF (closed connection)",
+                    clients[client_idx].addr
+                );
                 return true;
             }
             Ok(n) => n,
@@ -497,7 +517,15 @@ impl Server {
                 .to_string();
             clients[client_idx].pending.drain(..=pos);
 
-            if Self::handle_line(clients, &line, team_slots, game, time_manager, client_idx, client_id) {
+            if Self::handle_line(
+                clients,
+                &line,
+                team_slots,
+                game,
+                time_manager,
+                client_idx,
+                client_id,
+            ) {
                 return true;
             }
         }
@@ -538,7 +566,10 @@ impl Server {
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
 
         if parts.is_empty() {
-            eprintln!("Parse error from {}: empty command", clients[client_idx].addr);
+            eprintln!(
+                "Parse error from {}: empty command",
+                clients[client_idx].addr
+            );
             return clients[client_idx]
                 .stream
                 .write_all("ko\n".as_bytes())
@@ -589,10 +620,7 @@ impl Server {
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", addr, err);
-                clients[client_idx]
-                    .stream
-                    .write_all(b"ko\n")
-                    .is_err()
+                clients[client_idx].stream.write_all(b"ko\n").is_err()
             }
         }
     }
@@ -682,9 +710,13 @@ impl Server {
 }
 
 fn broadcast_k(
-    ex: u32, ey: u32,
-    rx: u32, ry: u32, recv_orientation: &Orientation,
-    width: u32, height: u32,
+    ex: u32,
+    ey: u32,
+    rx: u32,
+    ry: u32,
+    recv_orientation: &Orientation,
+    width: u32,
+    height: u32,
 ) -> u8 {
     let w = width as i32;
     let h = height as i32;
@@ -702,21 +734,21 @@ fn broadcast_k(
     // (forward_x, forward_y, left_x, left_y) in screen coords (y grows down)
     let (fx, fy, lx, ly): (i32, i32, i32, i32) = match recv_orientation {
         Orientation::North => (0, -1, -1, 0),
-        Orientation::East  => (1,  0,  0, -1),
-        Orientation::South => (0,  1,  1,  0),
-        Orientation::West  => (-1, 0,  0,  1),
+        Orientation::East => (1, 0, 0, -1),
+        Orientation::South => (0, 1, 1, 0),
+        Orientation::West => (-1, 0, 0, 1),
     };
     let f = dx * fx + dy * fy;
     let l = dx * lx + dy * ly;
     match (f > 0, f < 0, l > 0, l < 0) {
-        (true,  false, false, false) => 1, // front
-        (true,  false, true,  false) => 2, // front-left
-        (false, false, true,  false) => 3, // left
-        (false, true,  true,  false) => 4, // back-left
-        (false, true,  false, false) => 5, // back
-        (false, true,  false, true)  => 6, // back-right
-        (false, false, false, true)  => 7, // right
-        (true,  false, false, true)  => 8, // front-right
-        _                            => 0,
+        (true, false, false, false) => 1, // front
+        (true, false, true, false) => 2,  // front-left
+        (false, false, true, false) => 3, // left
+        (false, true, true, false) => 4,  // back-left
+        (false, true, false, false) => 5, // back
+        (false, true, false, true) => 6,  // back-right
+        (false, false, false, true) => 7, // right
+        (true, false, false, true) => 8,  // front-right
+        _ => 0,
     }
 }

@@ -20,6 +20,7 @@ fn main() -> std::io::Result<()> {
     map::spawn_resources(&config, &mut map);
 
     let mut game = Game {
+        next_egg_id: config.clients_per_team * config.teams.len() as u32,
         config: config.clone(),
         map,
         eggs: map::start_spawn_eggs(&config),
@@ -29,7 +30,7 @@ fn main() -> std::io::Result<()> {
     let mut next_spawn = Instant::now() + Duration::from_millis(spawn_interval_ms);
 
     loop {
-        server.execute_ready_commands(&config);
+        server.execute_ready_commands(&config, &mut game);
         if let Some(winner) = server.check_win_condition() {
             server.end_game(&winner);
         }
