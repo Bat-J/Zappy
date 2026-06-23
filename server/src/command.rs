@@ -565,9 +565,12 @@ fn consume_resources(tile: &mut map::Tile, level: u8) {
 
 pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>]) -> String {
     let (x, y, level, initiator_id) = match &clients[idx].state {
-        ClientState::Ai { player, .. } => {
-            (player.x as usize, player.y as usize, player.level, player.id)
-        }
+        ClientState::Ai { player, .. } => (
+            player.x as usize,
+            player.y as usize,
+            player.level,
+            player.id,
+        ),
         _ => return "ko\n".to_string(),
     };
 
