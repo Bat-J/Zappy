@@ -219,10 +219,10 @@ impl Server {
         use std::collections::HashMap;
         let mut team_level8: HashMap<&str, u32> = HashMap::new();
         for client in &self.clients {
-            if let ClientState::Ai { team, player } = &client.state {
-                if player.level >= 8 {
-                    *team_level8.entry(team.as_str()).or_insert(0) += 1;
-                }
+            if let ClientState::Ai { team, player } = &client.state
+                && player.level >= 8
+            {
+                *team_level8.entry(team.as_str()).or_insert(0) += 1;
             }
         }
         team_level8
