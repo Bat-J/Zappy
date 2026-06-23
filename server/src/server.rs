@@ -5,7 +5,7 @@ use std::os::raw::{c_int, c_short, c_ulong};
 
 use crate::args::Config;
 use crate::command::{
-    Command, eject, fork, get_inventory, look, move_forward, send_ai_command_to_gui,
+    Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
     send_string_to_all_guis, set, take, turn_left, turn_right,
 };
 use crate::gui_parser::{ebo_reply, pdi_reply};
@@ -172,7 +172,7 @@ impl Server {
                     }
                     continue;
                 }
-                _ => "ok\n".to_string(),
+                Command::Incantation => incantation(&mut self.clients, idx, &mut game.map),
             };
 
             let _ = self.clients[idx].stream.write_all(response.as_bytes());

@@ -3,7 +3,7 @@ use std::{fmt, io::Write};
 use crate::{
     args::Config,
     gui_parser::{edi_reply, pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
-    map::{self, Egg, enw_string},
+    map::{self, Egg, Resources, enw_string},
     server::{Client, ClientState, Game, Orientation, Player},
 };
 
@@ -452,6 +452,171 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
     }
 
     "ok\n".to_string()
+}
+
+struct ElevationRequirement {
+    nb_players: usize,
+    resources: Resources,
+}
+
+const ELEVATION_REQUIREMENTS: [ElevationRequirement; 7] = [
+    ElevationRequirement {
+        nb_players: 1,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 0,
+            sibur: 0,
+            mendiane: 0,
+            phiras: 0,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 2,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 1,
+            sibur: 1,
+            mendiane: 0,
+            phiras: 0,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 2,
+        resources: Resources {
+            linemate: 2,
+            deraumere: 0,
+            sibur: 1,
+            mendiane: 0,
+            phiras: 2,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 4,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 1,
+            sibur: 2,
+            mendiane: 0,
+            phiras: 1,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 4,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 2,
+            sibur: 1,
+            mendiane: 3,
+            phiras: 0,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 6,
+        resources: Resources {
+            linemate: 1,
+            deraumere: 2,
+            sibur: 3,
+            mendiane: 0,
+            phiras: 1,
+            thystame: 0,
+        },
+    },
+    ElevationRequirement {
+        nb_players: 6,
+        resources: Resources {
+            linemate: 2,
+            deraumere: 2,
+            sibur: 2,
+            mendiane: 2,
+            phiras: 2,
+            thystame: 1,
+        },
+    },
+];
+
+fn requirements_for(level: u8) -> Option<&'static ElevationRequirement> {
+    if level == 0 || level as usize > ELEVATION_REQUIREMENTS.len() {
+        return None;
+    }
+    Some(&ELEVATION_REQUIREMENTS[(level - 1) as usize])
+}
+
+fn players_of_level_on_tile(clients: &[Client], tile: &map::Tile, level: u8) -> Vec<u32> {
+    tile.ais
+        .iter()
+        .copied()
+        .filter(|id| {
+            clients.iter().any(|c| match &c.state {
+                ClientState::Ai { player, .. } => player.id == *id && player.level == level,
+                _ => false,
+            })
+        })
+        .collect()
+}
+
+fn meets_requirements(clients: &[Client], tile: &map::Tile, level: u8) -> bool {
+    let Some(req) = requirements_for(level) else {
+        return false;
+    };
+
+    let present = players_of_level_on_tile(clients, tile, level).len();
+
+    present >= req.nb_players
+        && tile.resources.linemate >= req.resources.linemate
+        && tile.resources.deraumere >= req.resources.deraumere
+        && tile.resources.sibur >= req.resources.sibur
+        && tile.resources.mendiane >= req.resources.mendiane
+        && tile.resources.phiras >= req.resources.phiras
+        && tile.resources.thystame >= req.resources.thystame
+}
+
+fn consume_resources(tile: &mut map::Tile, level: u8) {
+    if let Some(req) = requirements_for(level) {
+        tile.resources.linemate -= req.resources.linemate;
+        tile.resources.deraumere -= req.resources.deraumere;
+        tile.resources.sibur -= req.resources.sibur;
+        tile.resources.mendiane -= req.resources.mendiane;
+        tile.resources.phiras -= req.resources.phiras;
+        tile.resources.thystame -= req.resources.thystame;
+    }
+}
+
+pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>]) -> String {
+    let (x, y, level) = match &clients[idx].state {
+        ClientState::Ai { player, .. } => (player.x as usize, player.y as usize, player.level),
+        _ => return "ko\n".to_string(),
+    };
+
+    if requirements_for(level).is_none() {
+        // Already at max level (8), or invalid level.
+        return "ko\n".to_string();
+    }
+
+    let participant_ids = players_of_level_on_tile(clients, &map[y][x], level);
+
+    if !meets_requirements(clients, &map[y][x], level) {
+        return "ko\n".to_string();
+    }
+
+    consume_resources(&mut map[y][x], level);
+
+    for id in &participant_ids {
+        if let Some(c) = clients.iter_mut().find(|c| match &c.state {
+            ClientState::Ai { player, .. } => player.id == *id,
+            _ => false,
+        }) && let ClientState::Ai { player, .. } = &mut c.state
+        {
+            player.level += 1;
+        }
+    }
+
+    let new_level = level + 1;
+    format!("Current level: {new_level}\n")
 }
 
 pub fn move_forward(client: &mut Client, config: &Config) -> String {
