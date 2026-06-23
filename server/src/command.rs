@@ -118,7 +118,7 @@ impl fmt::Display for Command {
 fn convert_ressource_name_to_id(string: &str) -> u8 {
     match string {
         "linemate" => 1,
-        "dismate" => 2,
+        "deraumere" => 2,
         "sibur" => 3,
         "mendiane" => 4,
         "phiras" => 5,
@@ -330,7 +330,7 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
     }
 }
 
-pub fn fork(client: &mut Client, game: &mut Game, config: &Config) -> String {
+pub fn fork(client: &mut Client, game: &mut Game) -> String {
     let player = match &client.state {
         ClientState::Ai { player, .. } => player,
         _ => return "ko\n".to_string(),
@@ -341,8 +341,8 @@ pub fn fork(client: &mut Client, game: &mut Game, config: &Config) -> String {
     };
 
     game.eggs.push(Egg {
-        x: rand::random_range(0..config.width),
-        y: rand::random_range(0..config.height),
+        x: player.x,
+        y: player.y,
         id: game.next_egg_id,
         player_id: player.id,
         is_starting: false,
@@ -353,14 +353,14 @@ pub fn fork(client: &mut Client, game: &mut Game, config: &Config) -> String {
 }
 
 pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config) -> String {
-    let (target_orientation, target_x, target_y) = {
+    let (ejector_id, ejector_x, ejector_y, dest_x, dest_y) = {
         let player = match &clients[idx as usize].state {
             ClientState::Ai { player, .. } => player,
             _ => return "ko\n".to_string(),
         };
 
-        let orientation = player.orientation.clone();
-        let x = match orientation {
+        let orientation = &player.orientation;
+        let dx = match orientation {
             Orientation::West => {
                 if player.x == 0 {
                     config.width - 1
@@ -377,7 +377,7 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
             }
             _ => player.x,
         };
-        let y = match orientation {
+        let dy = match orientation {
             Orientation::North => {
                 if player.y == 0 {
                     config.height - 1
@@ -395,53 +395,30 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
             _ => player.y,
         };
 
-        (orientation, x, y)
+        (player.id, player.x, player.y, dx, dy)
     };
 
-    game.map[target_y as usize][target_x as usize].ais.clear();
+    game.map[ejector_y as usize][ejector_x as usize]
+        .ais
+        .retain(|&id| id == ejector_id);
     for client in clients.iter_mut() {
         let player_to_move = match &mut client.state {
             ClientState::Ai { player, .. } => player,
             _ => continue,
         };
-        if player_to_move.x == target_x && player_to_move.y == target_y {
-            match target_orientation {
-                Orientation::North => {
-                    if player_to_move.y == 0 {
-                        player_to_move.y = config.height - 1;
-                    } else {
-                        player_to_move.y -= 1;
-                    }
-                }
-                Orientation::East => {
-                    if player_to_move.x == config.width - 1 {
-                        player_to_move.x = 0;
-                    } else {
-                        player_to_move.x += 1;
-                    }
-                }
-                Orientation::West => {
-                    if player_to_move.x == 0 {
-                        player_to_move.x = config.width - 1;
-                    } else {
-                        player_to_move.x -= 1;
-                    }
-                }
-                Orientation::South => {
-                    if player_to_move.y == config.height - 1 {
-                        player_to_move.y = 0;
-                    } else {
-                        player_to_move.y += 1;
-                    }
-                }
-            }
+        if player_to_move.id != ejector_id
+            && player_to_move.x == ejector_x
+            && player_to_move.y == ejector_y
+        {
+            player_to_move.x = dest_x;
+            player_to_move.y = dest_y;
         }
     }
 
     let mut to_remove = Vec::<u32>::new();
 
     for (i, egg) in game.eggs.iter().enumerate() {
-        if egg.x == target_x && egg.y == target_y {
+        if egg.x == ejector_x && egg.y == ejector_y {
             send_string_to_all_guis(clients, edi_reply(egg));
             to_remove.push(i as u32);
         }
@@ -587,8 +564,10 @@ fn consume_resources(tile: &mut map::Tile, level: u8) {
 }
 
 pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>]) -> String {
-    let (x, y, level) = match &clients[idx].state {
-        ClientState::Ai { player, .. } => (player.x as usize, player.y as usize, player.level),
+    let (x, y, level, initiator_id) = match &clients[idx].state {
+        ClientState::Ai { player, .. } => {
+            (player.x as usize, player.y as usize, player.level, player.id)
+        }
         _ => return "ko\n".to_string(),
     };
 
@@ -605,18 +584,22 @@ pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>
 
     consume_resources(&mut map[y][x], level);
 
+    let new_level = level + 1;
+    let msg = format!("Current level: {new_level}\n");
     for id in &participant_ids {
         if let Some(c) = clients.iter_mut().find(|c| match &c.state {
             ClientState::Ai { player, .. } => player.id == *id,
             _ => false,
-        }) && let ClientState::Ai { player, .. } = &mut c.state
-        {
-            player.level += 1;
+        }) {
+            if let ClientState::Ai { player, .. } = &mut c.state {
+                player.level += 1;
+            }
+            if *id != initiator_id {
+                let _ = c.stream.write_all(msg.as_bytes());
+            }
         }
     }
-
-    let new_level = level + 1;
-    format!("Current level: {new_level}\n")
+    msg
 }
 
 pub fn move_forward(client: &mut Client, config: &Config) -> String {
@@ -751,8 +734,8 @@ pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
         let y = wrap(py, height);
         cells.push(tile_content(&map[y][x]));
     }
-    for d in 1..view_distance {
-        for offset in -(d - 1)..=d - 1 {
+    for d in 1..=view_distance {
+        for offset in -d..=d {
             let tx = px + fx * d + rx * offset;
             let ty = py + fy * d + ry * offset;
             let x = wrap(tx, width);
