@@ -437,17 +437,9 @@ impl Server {
         for index in disconnected.into_iter().rev() {
             if index < self.clients.len() as u32 {
                 let client = self.clients.swap_remove(index as usize);
-                // Restore the slot for both active AI players and queued clients
-                let team = match &client.state {
-                    ClientState::Ai { team, .. } => Some(team.as_str()),
-                    ClientState::AwaitingEgg { team } => Some(team.as_str()),
-                    _ => None,
+                if let ClientState::Ai { player, .. } = &client.state {
+                    send_string_to_all_guis(&mut self.clients, pdi_reply(player))
                 };
-                if let Some(team) = team
-                    && let Some(slot) = self.team_slots.iter_mut().find(|(name, _)| name == team)
-                {
-                    slot.1 += 1;
-                }
                 println!("Client disconnected: {}", client.addr);
             }
         }
