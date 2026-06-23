@@ -3,6 +3,7 @@ from helpers.print_help import print_help
 import helpers.interface as interface
 import agents.simple_lawn_mower
 import agents.mover
+import agents.chatterbox
 
 for arg in sys.argv:
     if arg == "--help":
@@ -59,6 +60,8 @@ elif agent_name == "simple_lawn_mower":
     agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
 elif agent_name == "mover":
     agent = agents.mover.MoverAgent(ai_interface)
+elif agent_name == "chatterbox":
+    agent = agents.chatterbox.ChatterboxAgent(ai_interface)
 else:
     print(f"Error: Unknown agent '{agent_name}'.")
     sys.exit(84)

@@ -553,7 +553,7 @@ class AI_server_interface:
                     consonant, vowels[randint(0, len(vowels) - 1)]
                 )
             return message
-        return ""
+        return message
 
     def generate_fake_broadcast_message(self, message: str = "") -> str:
         """Generates a broadcast message meant to confuse other agents. Message parameter is optional"""
