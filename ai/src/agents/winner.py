@@ -123,7 +123,10 @@ class WinnerAgent:
                             and self.ai_interface.completed_actions[-1]["action_type"]
                             == interface.action_type.look
                             and self.ai_interface.completed_actions[-1]["response"]
-                            and isinstance(self.ai_interface.completed_actions[-1]["response"], list)
+                            and isinstance(
+                                self.ai_interface.completed_actions[-1]["response"],
+                                list,
+                            )
                             and self.ai_interface.completed_actions[-1]["response"][0][
                                 interface.object_type.player
                             ]
