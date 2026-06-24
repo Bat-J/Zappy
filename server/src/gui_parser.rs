@@ -376,6 +376,7 @@ mod tests {
                 x: 1,
                 y: 2,
                 id: 1,
+                player_id: 0,
                 is_starting: false,
                 team: "Zapfrites".to_string()
             }),
@@ -390,6 +391,7 @@ mod tests {
                 x: 1,
                 y: 2,
                 id: 1,
+                player_id: 0,
                 is_starting: false,
                 team: "Zapfrites".to_string()
             }),

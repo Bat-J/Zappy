@@ -4,7 +4,7 @@ use crate::{
     args::Config,
     gui_parser::{
         edi_reply, pbc_reply, pdr_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply,
-        pin_reply,
+        pin_reply, ppo_reply,
     },
     map::{self, Egg, Resources, bct_reply, enw_string},
     server::{Client, ClientState, Game, Orientation, Player},
@@ -150,6 +150,9 @@ pub fn send_ai_command_to_gui(
     game: &mut Game,
 ) {
     match cmd {
+        Command::Forward | Command::Left | Command::Right => {
+            send_string_to_all_guis(clients, ppo_reply(player))
+        }
         Command::Eject => send_string_to_all_guis(clients, pex_reply(player)),
         Command::Broadcast(string) => send_string_to_all_guis(clients, pbc_reply(player, &string)),
         Command::Incantation => {
@@ -368,6 +371,7 @@ pub fn fork(client: &mut Client, game: &mut Game) -> String {
         x: player.x,
         y: player.y,
         id: game.next_egg_id,
+        player_id: player.id,
         is_starting: false,
         team: team.to_string(),
     });

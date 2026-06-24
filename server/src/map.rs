@@ -24,6 +24,7 @@ pub struct Egg {
     pub y: u32,
     pub id: u32,
     pub is_starting: bool,
+    pub player_id: u32,
     pub team: String,
 }
 
@@ -195,7 +196,7 @@ pub fn enw_string(egg: &Egg) -> String {
     if egg.is_starting {
         string.push_str("-1");
     } else {
-        string.push_str(&egg.id.to_string());
+        string.push_str(&egg.player_id.to_string());
     }
     string.push(' ');
     string.push_str(&egg.x.to_string());
@@ -260,6 +261,7 @@ pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
                 x: rand::rng().random_range(0..config.width),
                 y: rand::rng().random_range(0..config.height),
                 id,
+                player_id: 0,
                 is_starting: true,
                 team: team.clone(),
             });
@@ -280,6 +282,7 @@ mod test {
                 x: 5,
                 y: 6,
                 id: 0,
+                player_id: 0,
                 is_starting: false,
                 team: String::new(),
             }),
@@ -295,6 +298,7 @@ mod test {
                 y: 6,
                 id: 0,
                 is_starting: true,
+                player_id: 0,
                 team: String::new(),
             }),
             "enw #0 #-1 5 6\n"

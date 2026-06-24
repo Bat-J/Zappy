@@ -390,13 +390,12 @@ impl Server {
                 .unwrap_or(0);
 
             self.clients[i].id = game.next_player_id;
-            game.next_player_id += 1;
             self.clients[i].state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
                     x: egg.x,
                     y: egg.y,
-                    id: egg.id,
+                    id: game.next_player_id,
                     orientation: Orientation::North,
                     level: 1,
                     inventory: Resources {
@@ -411,6 +410,7 @@ impl Server {
                     time_left: 126,
                 },
             };
+            game.next_player_id += 1;
 
             let player = {
                 match &self.clients[i].state {
@@ -660,13 +660,12 @@ impl Server {
                     let egg = game.eggs.swap_remove(egg_idx);
 
                     clients[idx].id = game.next_player_id;
-                    game.next_player_id += 1;
                     clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
                             x: egg.x,
                             y: egg.y,
-                            id: egg.id,
+                            id: game.next_player_id,
                             orientation: Orientation::North,
                             level: 1,
                             inventory: Resources {
@@ -681,6 +680,7 @@ impl Server {
                             time_left: 126,
                         },
                     };
+                    game.next_player_id += 1;
 
                     println!(
                         "{} hatched egg at ({}, {}) for team {name} ({remaining} slots left)",
