@@ -160,10 +160,16 @@ pub fn send_ai_command_to_gui(
         }
         Command::Fork => {
             send_string_to_all_guis(clients, pfk_reply(player));
-            send_string_to_all_guis(
-                clients,
-                enw_string(game.eggs.last().unwrap_or(&Egg::default())),
-            );
+            // Notify the GUI of the egg this fork just laid (highest id among this
+            // player's eggs) rather than assuming it is the last egg pushed.
+            if let Some(egg) = game
+                .eggs
+                .iter()
+                .filter(|e| e.player_id == player.id)
+                .max_by_key(|e| e.id)
+            {
+                send_string_to_all_guis(clients, enw_string(egg));
+            }
         }
         Command::Take(string) => {
             send_string_to_all_guis(

@@ -31,21 +31,23 @@ class ChatterboxAgent:
                 self.state = state.collection_picking
             elif self.state == state.collection_picking:
                 if awaiting_pickup_list == []:
-                    for obj, count in self.ai_interface.completed_actions[-1]["response"][0].items():
+                    last_response = self.ai_interface.completed_actions[-1]["response"]
+                    # A Look that returned `ko` won't carry a tile dict at [0] — guard it.
+                    tile_contents = last_response[0] if last_response and isinstance(last_response[0], dict) else {}
+                    for obj, count in tile_contents.items():
                         if obj != "player" and obj != "egg" and count > 0:
                             for _ in range(count):
                                 awaiting_pickup_list.append(obj)
+                    if awaiting_pickup_list == []:
+                        # Nothing worth picking up here — emit a single fake broadcast.
+                        random_action = randint(0, 2)
+                        if random_action == 0:
+                            message = self.ai_interface.generate_fake_broadcast_message("")
+                        elif random_action == 1:
+                            message = self.ai_interface.generate_fake_broadcast_message("Incantation ritual over here!")
                         else:
-                            random_action = randint(0, 2)
-                            if random_action == 0:
-                                message = self.ai_interface.generate_fake_broadcast_message("")
-                            elif random_action == 1:
-                                message = self.ai_interface.generate_fake_broadcast_message(
-                                    "Incantation ritual over here!"
-                                )
-                            elif random_action == 2:
-                                message = self.ai_interface.generate_fake_broadcast_message("Need help to go level 3!")
-                            self.ai_interface.send_broadcast_action_and_block_until_response(message)
+                            message = self.ai_interface.generate_fake_broadcast_message("Need help to go level 3!")
+                        self.ai_interface.send_broadcast_action_and_block_until_response(message)
                 if awaiting_pickup_list != []:
                     self.ai_interface.send_take_action_and_block_until_response(
                         interface.str_to_object_type(awaiting_pickup_list[0])
