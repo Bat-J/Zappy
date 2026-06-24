@@ -80,7 +80,8 @@ fn main() -> std::io::Result<()> {
         }
 
         if now >= next_spawn {
-            map::refill_resources(&game.config, &mut game.map);
+            let changed = map::refill_resources(&game.config, &mut game.map);
+            server.notify_bct_updates(&changed, &game);
             next_spawn += Duration::from_millis(spawn_interval_ms);
         }
     }

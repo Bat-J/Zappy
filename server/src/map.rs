@@ -206,7 +206,7 @@ pub fn enw_string(egg: &Egg) -> String {
     string
 }
 
-pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) {
+pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32)> {
     let mut current = [0u32; 7];
     for row in map.iter() {
         for tile in row.iter() {
@@ -231,6 +231,8 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) {
         (tiles * 0.05).round() as u32,
     ];
 
+    let mut changed = std::collections::HashSet::new();
+
     for kind in 0..7usize {
         if current[kind] >= targets[kind] {
             continue;
@@ -248,8 +250,11 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) {
                 5 => map[y as usize][x as usize].resources.phiras += 1,
                 _ => map[y as usize][x as usize].resources.thystame += 1,
             }
+            changed.insert((x, y));
         }
     }
+
+    changed.into_iter().collect()
 }
 
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
@@ -303,6 +308,31 @@ mod test {
             }),
             "enw #0 #-1 5 6\n"
         );
+    }
+
+    #[test]
+    fn refill_reports_changed_tiles() {
+        let config = Config {
+            port: 0,
+            width: 4,
+            height: 4,
+            teams: vec![],
+            clients_per_team: 0,
+            frequency: 0,
+        };
+        let mut map = create_map(&config);
+
+        // Empty map: refill adds resources and reports every touched tile.
+        let changed = refill_resources(&config, &mut map);
+        assert!(!changed.is_empty());
+        for &(x, y) in &changed {
+            assert!((x as usize) < config.width as usize);
+            assert!((y as usize) < config.height as usize);
+        }
+
+        // Already at target densities: nothing added, no tiles reported.
+        let changed_again = refill_resources(&config, &mut map);
+        assert!(changed_again.is_empty());
     }
 
     #[test]
