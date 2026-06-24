@@ -363,7 +363,8 @@ class AI_server_interface:
         elif message == "Elevation underway":
             pass
         elif message.startswith("Current level: "):
-            self.pending_response_actions.pop(0)
+            if self.pending_response_actions and self.pending_response_actions[0] == action_type.start_incantation:
+                self.pending_response_actions.pop(0)
             self.level = int(message.split(":")[1].strip())
             self.completed_actions.append(
                 {
