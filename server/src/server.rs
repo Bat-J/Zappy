@@ -210,7 +210,9 @@ impl Server {
 
             let _ = self.clients[idx].stream.write_all(response.as_bytes());
 
-            if let ClientState::Ai { player, .. } = &self.clients[idx].state {
+            if let ClientState::Ai { player, .. } = &self.clients[idx].state
+                && (response != "ko\n" || scheduled.command == Command::Incantation)
+            {
                 let player = player.clone();
                 send_ai_command_to_gui(
                     scheduled.command,
