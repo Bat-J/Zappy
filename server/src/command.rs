@@ -3,7 +3,8 @@ use std::{fmt, io::Write};
 use crate::{
     args::Config,
     gui_parser::{
-        edi_reply, pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply, pin_reply,
+        edi_reply, pbc_reply, pdr_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply,
+        pin_reply,
     },
     map::{self, Egg, Resources, bct_reply, enw_string},
     server::{Client, ClientState, Game, Orientation, Player},
@@ -165,6 +166,17 @@ pub fn send_ai_command_to_gui(
             send_string_to_all_guis(
                 clients,
                 pgt_reply(player, convert_ressource_name_to_id(&string)),
+            );
+            send_string_to_all_guis(clients, pin_reply(player));
+            let string = bct_reply(player.x, player.y, &game.map, &game.config);
+            if let Some(content) = string {
+                send_string_to_all_guis(clients, content);
+            }
+        }
+        Command::Set(string) => {
+            send_string_to_all_guis(
+                clients,
+                pdr_reply(player, convert_ressource_name_to_id(&string)),
             );
             send_string_to_all_guis(clients, pin_reply(player));
             let string = bct_reply(player.x, player.y, &game.map, &game.config);
