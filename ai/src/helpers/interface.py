@@ -527,13 +527,13 @@ class AI_server_interface:
             for consonant in consonants:
                 message = message.replace(consonant, vowels[randint(0, len(vowels) - 1)])
             return message
-        return ""
+        return message
 
     def generate_fake_broadcast_message(self, message: str = "") -> str:
         """Generates a broadcast message meant to confuse other agents. Message parameter is optional"""
         output = ""
         if message is not None and message.strip() != "":
-            # 2/3 responce, 1/3 random
+            # 2/3 response, 1/3 random
             if randint(0, 2) != 0:
                 output = self.generate_fake_broadcast_response_message(message)
             else:
