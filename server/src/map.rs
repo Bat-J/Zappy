@@ -206,7 +206,7 @@ pub fn enw_string(egg: &Egg) -> String {
     string
 }
 
-pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32)> {
+pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) {
     let mut current = [0u32; 7];
     for row in map.iter() {
         for tile in row.iter() {
@@ -231,8 +231,6 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32
         (tiles * 0.05).round() as u32,
     ];
 
-    let mut changed = std::collections::HashSet::new();
-
     for kind in 0..7usize {
         if current[kind] >= targets[kind] {
             continue;
@@ -250,11 +248,8 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32
                 5 => map[y as usize][x as usize].resources.phiras += 1,
                 _ => map[y as usize][x as usize].resources.thystame += 1,
             }
-            changed.insert((x, y));
         }
     }
-
-    changed.into_iter().collect()
 }
 
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {

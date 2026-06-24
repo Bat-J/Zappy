@@ -55,8 +55,7 @@ fn main() -> std::io::Result<()> {
         server.cleanup(ready.disconnected.into_iter().chain(read.disconnected));
 
         if Instant::now() >= next_spawn {
-            let changed = map::refill_resources(&game.config, &mut game.map);
-            server.notify_bct_updates(&changed, &game);
+            map::refill_resources(&game.config, &mut game.map);
             next_spawn += Duration::from_millis(spawn_interval_ms);
         }
     }
