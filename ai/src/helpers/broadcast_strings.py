@@ -1,4 +1,4 @@
-SUBJECT_BUZZWORDS_COMPILATION = (
+SUBJECT_KEYWORDS_COMPILATION = (
     "zappy zapfrites server gui ai network team tile map resource "
     "winner mover simple lawn mower winning player maximum elevation 0 1 2 3 4 5 6 7 8 9 environment geography "
     "game world inhabitant trantor board up down left right planet food stone linemate deraumere sibur mendiane "
@@ -28,7 +28,7 @@ RANDOM_MESSAGES = [
     "9",
     "0",
     "wawa",
-    SUBJECT_BUZZWORDS_COMPILATION,
+    SUBJECT_KEYWORDS_COMPILATION,
     "-",
     "🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀",
 ]
