@@ -17,16 +17,16 @@
 namespace zappy {
     class WorldState {
       public:
-        std::pair<size_t, size_t> getMapSize() const;
-        const std::vector<Tile>&  getTiles() const;
-        std::optional<const Tile> catchTile(int x, int y) const;
-        int                       getTimeReference() const;
+        std::pair<size_t, size_t>         getMapSize() const;
+        const std::vector<Tile>&          getTiles() const;
+        std::optional<const Tile>         catchTile(int x, int y) const;
+        int                               getTimeReference() const;
 
-        void                      setMapSize(int x, int y);
-        void                      setTimeReference(int i);
-        void                      setTiles(std::vector<Tile> tiles);
-        void                      updateTile(int x, int y, std::vector<int> resources);
-        void                      setWinner(const std::string& team);
+        void                              setMapSize(int x, int y);
+        void                              setTimeReference(int i);
+        void                              setTiles(std::vector<Tile> tiles);
+        void                              updateTile(int x, int y, std::vector<int> resources);
+        void                              setWinner(const std::string& team);
         const std::optional<std::string>& getWinner() const;
 
       private:

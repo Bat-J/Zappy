@@ -30,9 +30,7 @@ class MoverAgent:
                 self.state = state.collection_picking
             elif self.state == state.collection_picking:
                 if awaiting_pickup_list == []:
-                    for obj, count in self.ai_interface.completed_actions[-1][
-                        "response"
-                    ][0].items():
+                    for obj, count in self.ai_interface.completed_actions[-1]["response"][0].items():
                         if obj != "player" and obj != "egg" and count > 0:
                             for _ in range(count):
                                 awaiting_pickup_list.append(obj)
@@ -50,44 +48,24 @@ class MoverAgent:
             elif self.state == state.collection_moving:
                 if (
                     self.ai_interface.relative_y_position
-                    == max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
+                    == max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2
                     and self.ai_interface.relative_x_position
-                    == max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.south
+                    == max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.south
                 ):  # pyright: ignore[reportArgumentType]
                     invert_direction = not invert_direction
                 elif (
                     self.ai_interface.relative_y_position
-                    == -max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    + 1
+                    == -max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2 + 1
                     and self.ai_interface.relative_x_position
-                    == -max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    + 1
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.north
+                    == -max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2 + 1
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.north
                 ):  # pyright: ignore[reportArgumentType]
                     invert_direction = not invert_direction
                 if (
                     self.ai_interface.relative_x_position
-                    == max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.north
+                    == max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.north
                 ):  # pyright: ignore[reportArgumentType]
                     if invert_direction:
                         self.ai_interface.send_turn_left_action()
@@ -99,13 +77,8 @@ class MoverAgent:
                         self.ai_interface.send_turn_right_action_and_block_until_response()
                 elif (
                     self.ai_interface.relative_x_position
-                    == -max(
-                        self.ai_interface.world_x_size, self.ai_interface.world_y_size
-                    )
-                    // 2
-                    + 1
-                    and self.ai_interface.relative_direction
-                    == interface.cardinal_direction.south
+                    == -max(self.ai_interface.world_x_size, self.ai_interface.world_y_size) // 2 + 1
+                    and self.ai_interface.relative_direction == interface.cardinal_direction.south
                 ):  # pyright: ignore[reportArgumentType]
                     if invert_direction:
                         self.ai_interface.send_turn_right_action()

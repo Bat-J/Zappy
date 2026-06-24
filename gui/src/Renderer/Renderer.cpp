@@ -174,7 +174,7 @@ namespace zappy {
         static const ::Color resourceColors[7] = {RED, GREEN, BLUE, YELLOW, PURPLE, ORANGE, PINK};
         // dot layout: 2 columns, 4 rows inside tile
         static const float dotColRatio[7] = {0.25f, 0.75f, 0.25f, 0.75f, 0.25f, 0.75f, 0.5f};
-        static const float dotRowRatio[7] = {0.2f,  0.2f,  0.4f,  0.4f,  0.6f,  0.6f,  0.8f};
+        static const float dotRowRatio[7] = {0.2f, 0.2f, 0.4f, 0.4f, 0.6f, 0.6f, 0.8f};
 
         for (std::size_t y = 0; y < _drawnTiles.size(); ++y) {
             for (std::size_t x = 0; x < _drawnTiles[y].size(); ++x) {

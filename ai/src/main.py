@@ -47,9 +47,7 @@ if not ai_interface.connect():
 else:
     print("connected to the server")
     print(f"number of unused slots: {ai_interface.last_known_number_of_unused_slots}")
-    print(
-        f"world dimensions: {ai_interface.world_x_size} x {ai_interface.world_y_size}"
-    )
+    print(f"world dimensions: {ai_interface.world_x_size} x {ai_interface.world_y_size}")
 
 # creating the agent
 
