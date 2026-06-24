@@ -389,7 +389,6 @@ impl Server {
                 .map(|(_, s)| *s)
                 .unwrap_or(0);
 
-            self.clients[i].id = game.next_player_id;
             self.clients[i].state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
@@ -665,7 +664,6 @@ impl Server {
                     // An egg is available: hatch it immediately
                     let egg = game.eggs.swap_remove(egg_idx);
 
-                    clients[idx].id = game.next_player_id;
                     clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
