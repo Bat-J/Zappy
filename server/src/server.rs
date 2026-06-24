@@ -208,7 +208,7 @@ impl Server {
                     &player,
                     false, /* TODO implement check for incantation */
                     &mut self.clients,
-                    game.eggs.last().unwrap_or(&Egg::default()),
+                    game,
                 );
             }
         }
