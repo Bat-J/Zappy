@@ -14,7 +14,7 @@ class WinnerAgent:
     def __init__(self, ai_interface: interface.AI_server_interface):
         self.ai_interface = ai_interface
         self.state = WinnerAgent.State.none
-        self.elevation_broadcast_direction = interface.direction.none
+        self.elevation_broadcast_direction = None
 
     def run(self):
         while True:
@@ -32,7 +32,8 @@ class WinnerAgent:
                     and can_cast(str, int, message["text"][5:])
                     and int(message["text"][5:]) == self.ai_interface.level
                 ):
-                    self.elevation_broadcast_direction = message["direction"]
+                    if self.elevation_broadcast_direction != interface.direction.none: #message from the same tile already received, avoiding moving out
+                        self.elevation_broadcast_direction = message["direction"]
                 self.ai_interface.message_history.remove(message)
 
             if self.state == WinnerAgent.State.none:
@@ -193,9 +194,7 @@ class WinnerAgent:
                                 self.ai_interface.move_towards_direction(
                                     self.elevation_broadcast_direction
                                 )
-                                self.elevation_broadcast_direction = (
-                                    interface.direction.none
-                                )
+                            self.elevation_broadcast_direction = None
                             self.ai_interface.send_broadcast_action_and_block_until_response(
                                 f"wawa_{self.ai_interface.level}"
                             )
