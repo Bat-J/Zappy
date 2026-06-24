@@ -28,10 +28,10 @@ fn main() -> std::io::Result<()> {
     };
 
     let mut current_frequency = config.frequency;
-    let mut next_spawn = Instant::now()
-        + Duration::from_millis((20 * 1000) / current_frequency as u64);
-    let mut next_food_tick = Instant::now()
-        + Duration::from_millis((1000 / current_frequency as u64).max(1));
+    let mut next_spawn =
+        Instant::now() + Duration::from_millis((20 * 1000) / current_frequency as u64);
+    let mut next_food_tick =
+        Instant::now() + Duration::from_millis((1000 / current_frequency as u64).max(1));
 
     loop {
         server.execute_ready_commands(&config, &mut game);
