@@ -457,6 +457,7 @@ impl Server {
 
     pub fn decrement_food(&mut self) {
         let mut to_remove: Vec<usize> = Vec::new();
+        let mut pin_notification: Vec<String> = Vec::new();
         let mut death_notifications: Vec<String> = Vec::new();
 
         for (i, client) in self.clients.iter_mut().enumerate() {
@@ -464,6 +465,7 @@ impl Server {
                 player.time_left = player.time_left.saturating_sub(1);
                 if player.time_left == 0 {
                     player.food = player.food.saturating_sub(1);
+                    pin_notification.push(pin_reply(player));
                     if player.food == 0 {
                         println!("Client {} starved", client.addr);
                         death_notifications.push(pdi_reply(player));
@@ -475,6 +477,10 @@ impl Server {
                     }
                 }
             }
+        }
+
+        for msg in pin_notification {
+            send_string_to_all_guis(&mut self.clients, msg);
         }
 
         for msg in death_notifications {
