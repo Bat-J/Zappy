@@ -147,7 +147,7 @@ pub fn send_ai_command_to_gui(
     player: &Player,
     incantation_success: bool,
     clients: &mut [Client],
-    game: &mut Game,
+    game: &Game,
 ) {
     match cmd {
         Command::Forward | Command::Left | Command::Right => {
