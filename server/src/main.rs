@@ -24,13 +24,14 @@ fn main() -> std::io::Result<()> {
         config: config.clone(),
         map,
         eggs: map::start_spawn_eggs(&config),
+        next_player_id: 0,
     };
 
     let mut current_frequency = config.frequency;
-    let mut next_spawn = Instant::now()
-        + Duration::from_millis((20 * 1000) / current_frequency as u64);
-    let mut next_food_tick = Instant::now()
-        + Duration::from_millis((1000 / current_frequency as u64).max(1));
+    let mut next_spawn =
+        Instant::now() + Duration::from_millis((20 * 1000) / current_frequency as u64);
+    let mut next_food_tick =
+        Instant::now() + Duration::from_millis((1000 / current_frequency as u64).max(1));
 
     loop {
         server.execute_ready_commands(&config, &mut game);
@@ -79,8 +80,7 @@ fn main() -> std::io::Result<()> {
         }
 
         if now >= next_spawn {
-            let changed = map::refill_resources(&game.config, &mut game.map);
-            server.notify_bct_updates(&changed, &game);
+            map::refill_resources(&game.config, &mut game.map);
             next_spawn += Duration::from_millis(spawn_interval_ms);
         }
     }

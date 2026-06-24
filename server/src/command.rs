@@ -2,8 +2,11 @@ use std::{fmt, io::Write};
 
 use crate::{
     args::Config,
-    gui_parser::{edi_reply, pbc_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply},
-    map::{self, Egg, Resources, enw_string},
+    gui_parser::{
+        edi_reply, pbc_reply, pdr_reply, pex_reply, pfk_reply, pgt_reply, pic_reply, pie_reply,
+        pin_reply, ppo_reply,
+    },
+    map::{self, Egg, Resources, bct_reply, enw_string},
     server::{Client, ClientState, Game, Orientation, Player},
 };
 
@@ -144,9 +147,12 @@ pub fn send_ai_command_to_gui(
     player: &Player,
     incantation_success: bool,
     clients: &mut [Client],
-    new_egg: &Egg,
+    game: &mut Game,
 ) {
     match cmd {
+        Command::Forward | Command::Left | Command::Right => {
+            send_string_to_all_guis(clients, ppo_reply(player))
+        }
         Command::Eject => send_string_to_all_guis(clients, pex_reply(player)),
         Command::Broadcast(string) => send_string_to_all_guis(clients, pbc_reply(player, &string)),
         Command::Incantation => {
@@ -154,12 +160,33 @@ pub fn send_ai_command_to_gui(
         }
         Command::Fork => {
             send_string_to_all_guis(clients, pfk_reply(player));
-            send_string_to_all_guis(clients, enw_string(new_egg));
+            send_string_to_all_guis(
+                clients,
+                enw_string(game.eggs.last().unwrap_or(&Egg::default())),
+            );
         }
-        Command::Take(string) => send_string_to_all_guis(
-            clients,
-            pgt_reply(player, convert_ressource_name_to_id(&string)),
-        ),
+        Command::Take(string) => {
+            send_string_to_all_guis(
+                clients,
+                pgt_reply(player, convert_ressource_name_to_id(&string)),
+            );
+            send_string_to_all_guis(clients, pin_reply(player));
+            let string = bct_reply(player.x, player.y, &game.map, &game.config);
+            if let Some(content) = string {
+                send_string_to_all_guis(clients, content);
+            }
+        }
+        Command::Set(string) => {
+            send_string_to_all_guis(
+                clients,
+                pdr_reply(player, convert_ressource_name_to_id(&string)),
+            );
+            send_string_to_all_guis(clients, pin_reply(player));
+            let string = bct_reply(player.x, player.y, &game.map, &game.config);
+            if let Some(content) = string {
+                send_string_to_all_guis(clients, content);
+            }
+        }
         _ => (),
     }
 }
