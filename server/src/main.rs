@@ -27,8 +27,11 @@ fn main() -> std::io::Result<()> {
         next_player_id: 0,
     };
 
-    let spawn_interval_ms = (20 * 1000) / config.frequency as u64;
-    let mut next_spawn = Instant::now() + Duration::from_millis(spawn_interval_ms);
+    let mut current_frequency = config.frequency;
+    let mut next_spawn = Instant::now()
+        + Duration::from_millis((20 * 1000) / current_frequency as u64);
+    let mut next_food_tick = Instant::now()
+        + Duration::from_millis((1000 / current_frequency as u64).max(1));
 
     loop {
         server.execute_ready_commands(&config, &mut game);
@@ -39,23 +42,44 @@ fn main() -> std::io::Result<()> {
             break;
         }
 
+        let new_frequency = game.config.frequency;
+        if new_frequency != current_frequency {
+            let now = Instant::now();
+            next_food_tick = now + Duration::from_millis((1000 / new_frequency as u64).max(1));
+            next_spawn = now + Duration::from_millis((20 * 1000) / new_frequency as u64);
+            current_frequency = new_frequency;
+        }
+
+        let spawn_interval_ms = (20 * 1000) / current_frequency as u64;
+        let food_tick_interval_ms = (1000 / current_frequency as u64).max(1);
+
+        let now = Instant::now();
         let ms_to_spawn = next_spawn
-            .saturating_duration_since(Instant::now())
+            .saturating_duration_since(now)
+            .as_millis()
+            .min(i32::MAX as u128) as i32;
+        let ms_to_food = next_food_tick
+            .saturating_duration_since(now)
             .as_millis()
             .min(i32::MAX as u128) as i32;
         let timeout_ms = match server.next_poll_timeout_ms() {
-            -1 => ms_to_spawn,
-            t => t.min(ms_to_spawn),
+            -1 => ms_to_spawn.min(ms_to_food),
+            t => t.min(ms_to_spawn).min(ms_to_food),
         };
 
         let ready = server.poll(timeout_ms)?;
         server.accept(&ready)?;
-        server.decrement_food();
         server.try_hatch_pending(&mut game);
         let read = server.read(&ready, &mut game)?;
         server.cleanup(ready.disconnected.into_iter().chain(read.disconnected));
 
-        if Instant::now() >= next_spawn {
+        let now = Instant::now();
+        if now >= next_food_tick {
+            server.decrement_food();
+            next_food_tick += Duration::from_millis(food_tick_interval_ms);
+        }
+
+        if now >= next_spawn {
             map::refill_resources(&game.config, &mut game.map);
             next_spawn += Duration::from_millis(spawn_interval_ms);
         }
