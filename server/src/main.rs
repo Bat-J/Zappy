@@ -24,6 +24,7 @@ fn main() -> std::io::Result<()> {
         config: config.clone(),
         map,
         eggs: map::start_spawn_eggs(&config),
+        next_player_id: 0,
     };
 
     let spawn_interval_ms = (20 * 1000) / config.frequency as u64;

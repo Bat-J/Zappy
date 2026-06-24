@@ -368,7 +368,6 @@ pub fn fork(client: &mut Client, game: &mut Game) -> String {
         x: player.x,
         y: player.y,
         id: game.next_egg_id,
-        player_id: player.id,
         is_starting: false,
         team: team.to_string(),
     });

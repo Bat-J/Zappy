@@ -74,6 +74,7 @@ pub struct Game {
     pub config: Config,
     pub eggs: Vec<Egg>,
     pub next_egg_id: u32,
+    pub next_player_id: u32,
 }
 
 pub struct Server {
@@ -143,6 +144,8 @@ impl Server {
                 }
             };
 
+            let mut incantation_result = false;
+
             let response = match &scheduled.command {
                 Command::Forward => move_forward(&mut self.clients[idx], config),
                 Command::Right => turn_right(&mut self.clients[idx]),
@@ -196,7 +199,13 @@ impl Server {
                     }
                     continue;
                 }
-                Command::Incantation => incantation(&mut self.clients, idx, &mut game.map),
+                Command::Incantation => {
+                    let string = incantation(&mut self.clients, idx, &mut game.map);
+                    if string != "ko\n" {
+                        incantation_result = true;
+                    }
+                    string
+                }
             };
 
             let _ = self.clients[idx].stream.write_all(response.as_bytes());
@@ -206,7 +215,7 @@ impl Server {
                 send_ai_command_to_gui(
                     scheduled.command,
                     &player,
-                    false, /* TODO implement check for incantation */
+                    incantation_result,
                     &mut self.clients,
                     game,
                 );
@@ -380,7 +389,8 @@ impl Server {
                 .map(|(_, s)| *s)
                 .unwrap_or(0);
 
-            self.clients[i].id = egg.player_id;
+            self.clients[i].id = game.next_player_id;
+            game.next_player_id += 1;
             self.clients[i].state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
@@ -649,7 +659,8 @@ impl Server {
                     // An egg is available: hatch it immediately
                     let egg = game.eggs.swap_remove(egg_idx);
 
-                    clients[idx].id = egg.player_id;
+                    clients[idx].id = game.next_player_id;
+                    game.next_player_id += 1;
                     clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
