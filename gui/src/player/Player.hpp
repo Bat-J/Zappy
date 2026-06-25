@@ -52,11 +52,7 @@ namespace zappy {
         size_t                                      _totalPhiras    = 0;
         size_t                                      _totalThystame  = 0;
         bool                                        _isAlive        = true;
-<<<<<<< HEAD
         std::string                                 _team           = "unk";
-=======
-        std::string _team = "unk";
->>>>>>> bca5460 (feat: Player Teams added when they connect else unknown)
         std::pair<std::pair<int, int>, Orientation> _pos;
     };
 
