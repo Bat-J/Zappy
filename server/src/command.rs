@@ -838,9 +838,9 @@ mod tests {
         assert_eq!(convert_ressource_name_to_id("food"), 0);
         assert_eq!(convert_ressource_name_to_id("linemate"), 1);
         assert_eq!(convert_ressource_name_to_id("thystame"), 6);
-        // An invalid name must not collapse onto food's id, otherwise
-        // `Take <garbage>` would pick food up off the tile.
-        assert_ne!(convert_ressource_name_to_id("banana"), 0);
+        // An invalid name must map to the sentinel u8::MAX, not collapse onto
+        // food's id, otherwise `Take <garbage>` would pick food up off the tile.
+        assert_eq!(convert_ressource_name_to_id("banana"), u8::MAX);
     }
 
     #[test]
