@@ -11,7 +11,6 @@
 #include <Window.hpp>
 #include <chrono>
 #include <future>
-#include <mutex>
 #include <raylib.h>
 #include <utility>
 #include <vector>
@@ -87,9 +86,9 @@ namespace zappy {
             const auto intervalMs = (t > 0) ? static_cast<long long>(1000.0 / t) : 1000LL;
             if (elapsedMs >= intervalMs && !updateFuture.valid()) {
                 updateFuture = std::async(std::launch::async, [&server, this]() {
+                    server.handleServerUpdate();
                     server.updateTiles();
                     server.updateResources();
-                    server.handleServerUpdate();
                     updateSelectedPlayer(server.players().getPlayer());
                     _renderer.updateBroadcasters(server.players().takeBroadcasters(), server);
                     _renderer.updateIncreasers(server.players().takeIncreasers(), server);

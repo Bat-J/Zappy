@@ -74,6 +74,14 @@ namespace zappy {
         id++;
     }
 
+    std::string Player::getTeam() const {
+        return _team;
+    }
+
+    void Player::setTeam(std::string &name) {
+        _team = name;
+    }
+
     void Player::updateResources(int i, Socket& socket) {
         const std::string mess = "pin #" + std::to_string(i) + "\n";
         socket.writeToSocket(mess);
