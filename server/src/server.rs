@@ -407,7 +407,7 @@ impl Server {
                         phiras: 0,
                         thystame: 0,
                     },
-                    food: 10,
+                    food: 9,
                     time_left: 126,
                 },
             };
@@ -464,15 +464,6 @@ impl Server {
                     _ => {}
                 }
                 println!("Client disconnected: {}", client.addr);
-            }
-        }
-    }
-
-    pub fn notify_bct_updates(&mut self, tiles: &[(u32, u32)], game: &Game) {
-        use crate::map::bct_reply;
-        for &(x, y) in tiles {
-            if let Some(msg) = bct_reply(x, y, &game.map, &game.config) {
-                send_string_to_all_guis(&mut self.clients, msg);
             }
         }
     }
@@ -704,7 +695,7 @@ impl Server {
                                 phiras: 0,
                                 thystame: 0,
                             },
-                            food: 10,
+                            food: 9,
                             time_left: 126,
                         },
                     };

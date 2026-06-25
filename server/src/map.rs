@@ -206,7 +206,7 @@ pub fn enw_string(egg: &Egg) -> String {
     string
 }
 
-pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32)> {
+pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) {
     let mut current = [0u32; 7];
     for row in map.iter() {
         for tile in row.iter() {
@@ -231,8 +231,6 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32
         (tiles * 0.05).round() as u32,
     ];
 
-    let mut changed = std::collections::HashSet::new();
-
     for kind in 0..7usize {
         if current[kind] >= targets[kind] {
             continue;
@@ -250,11 +248,8 @@ pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) -> Vec<(u32, u32
                 5 => map[y as usize][x as usize].resources.phiras += 1,
                 _ => map[y as usize][x as usize].resources.thystame += 1,
             }
-            changed.insert((x, y));
         }
     }
-
-    changed.into_iter().collect()
 }
 
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
@@ -311,7 +306,7 @@ mod test {
     }
 
     #[test]
-    fn refill_reports_changed_tiles() {
+    fn refill_tops_up_to_target_densities() {
         let config = Config {
             port: 0,
             width: 4,
@@ -322,17 +317,30 @@ mod test {
         };
         let mut map = create_map(&config);
 
-        // Empty map: refill adds resources and reports every touched tile.
-        let changed = refill_resources(&config, &mut map);
-        assert!(!changed.is_empty());
-        for &(x, y) in &changed {
-            assert!((x as usize) < config.width as usize);
-            assert!((y as usize) < config.height as usize);
-        }
+        let total = |map: &[Vec<Tile>]| {
+            let mut sum = 0u32;
+            for row in map {
+                for t in row {
+                    sum += t.food
+                        + t.resources.linemate
+                        + t.resources.deraumere
+                        + t.resources.sibur
+                        + t.resources.mendiane
+                        + t.resources.phiras
+                        + t.resources.thystame;
+                }
+            }
+            sum
+        };
 
-        // Already at target densities: nothing added, no tiles reported.
-        let changed_again = refill_resources(&config, &mut map);
-        assert!(changed_again.is_empty());
+        // Empty map: refill adds resources up to the target densities.
+        refill_resources(&config, &mut map);
+        let after_first = total(&map);
+        assert!(after_first > 0);
+
+        // Already at target densities: a second refill adds nothing.
+        refill_resources(&config, &mut map);
+        assert_eq!(total(&map), after_first);
     }
 
     #[test]
