@@ -172,6 +172,8 @@ class AI_server_interface:
     def __init__(self, host: str, port: int, team_name: str):
         self.connection = networking.AI_server_connection(host, port)
         self.team_name = team_name
+        self.port = port
+        self.host = host
         self.world_x_size = None
         self.world_y_size = None
         self.alive = None
@@ -301,6 +303,8 @@ class AI_server_interface:
             pass
         elif message == "ok":
             if self.pending_response_actions:
+                if len(self.pending_response_actions) == 0:
+                    return
                 completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {"action_type": completed_action, "success": True}
@@ -321,6 +325,8 @@ class AI_server_interface:
             pass
         elif message == "ko":
             if self.pending_response_actions:
+                if len(self.pending_response_actions) == 0:
+                    return
                 completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {"action_type": completed_action, "success": False}
@@ -328,6 +334,8 @@ class AI_server_interface:
             pass
         elif message.startswith("["):
             if message.startswith("[ player"):
+                if len(self.pending_response_actions) == 0:
+                    return
                 completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {
@@ -337,6 +345,8 @@ class AI_server_interface:
                     }
                 )
             else:
+                if len(self.pending_response_actions) == 0:
+                    return
                 completed_action = self.pending_response_actions.pop(0)
                 inventory = self.__parse_inventory_response(message)
                 self.completed_actions.append(
@@ -349,6 +359,8 @@ class AI_server_interface:
                 self.last_known_inventory = inventory
             pass
         elif can_cast(str, int, message) and int(message) >= 0:
+            if len(self.pending_response_actions) == 0:
+                return
             completed_action = self.pending_response_actions.pop(0)
             self.completed_actions.append(
                 {
@@ -363,7 +375,12 @@ class AI_server_interface:
         elif message == "Elevation underway":
             pass
         elif message.startswith("Current level: "):
-            if self.pending_response_actions and self.pending_response_actions[0] == action_type.start_incantation:
+            if len(self.pending_response_actions) == 0:
+                return
+            if (
+                self.pending_response_actions
+                and self.pending_response_actions[0] == action_type.start_incantation
+            ):
                 self.pending_response_actions.pop(0)
             self.level = int(message.split(":")[1].strip())
             self.completed_actions.append(
@@ -381,6 +398,7 @@ class AI_server_interface:
                     "direction": parse_direction(
                         int(message[8:9])
                     ).add_cardinal_direction(self.relative_direction),
+                    "raw_direction": parse_direction(int(message[8:9])),
                 }
             )
             pass
@@ -447,7 +465,7 @@ class AI_server_interface:
             for _ in range(self.relative_y_position - y_target):
                 self.send_forward_action_and_block_until_response()
 
-    def move_towards_direction(self, direction: direction):
+    def move_towards_absolute_direction(self, direction: direction):
         """Moves the Trantorian one tile in the specified direction (relative to its starting orientation)."""
         if direction == direction.north:
             self.orient_to_direction(cardinal_direction.north)
@@ -455,11 +473,15 @@ class AI_server_interface:
         elif direction == direction.northwest:
             self.orient_to_direction(cardinal_direction.north)
             self.send_forward_action_and_block_until_response()
+            self.orient_to_direction(cardinal_direction.west)
+            self.send_forward_action_and_block_until_response()
         elif direction == direction.west:
             self.orient_to_direction(cardinal_direction.west)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.southwest:
             self.orient_to_direction(cardinal_direction.south)
+            self.send_forward_action_and_block_until_response()
+            self.orient_to_direction(cardinal_direction.west)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.south:
             self.orient_to_direction(cardinal_direction.south)
@@ -467,11 +489,15 @@ class AI_server_interface:
         elif direction == direction.southeast:
             self.orient_to_direction(cardinal_direction.south)
             self.send_forward_action_and_block_until_response()
+            self.orient_to_direction(cardinal_direction.east)
+            self.send_forward_action_and_block_until_response()
         elif direction == direction.east:
             self.orient_to_direction(cardinal_direction.east)
             self.send_forward_action_and_block_until_response()
         elif direction == direction.northeast:
             self.orient_to_direction(cardinal_direction.north)
+            self.send_forward_action_and_block_until_response()
+            self.orient_to_direction(cardinal_direction.east)
             self.send_forward_action_and_block_until_response()
 
     def collect_tile_ressources(self):

@@ -2,6 +2,11 @@ import helpers.interface as interface
 from enum import Enum
 import random
 from helpers.can_cast import can_cast
+from subprocess import Popen
+import os
+
+
+cwd = os.getcwd()
 
 
 class WinnerAgent:
@@ -15,6 +20,7 @@ class WinnerAgent:
         self.ai_interface = ai_interface
         self.state = WinnerAgent.State.none
         self.elevation_broadcast_direction = None
+        self.need_for_more_players = 0
 
     def run(self):
         while True:
@@ -26,13 +32,34 @@ class WinnerAgent:
                 print("Trantorian is no longer alive.")
                 break
 
+            if self.need_for_more_players >= self.ai_interface.level:
+                print("Spawning a new player to help with elevation...")
+                Popen(
+                    [
+                        "/bin/bash",
+                        f"{cwd}/zappy_ai",
+                        "-h",
+                        self.ai_interface.host,
+                        "-p",
+                        str(self.ai_interface.port),
+                        "-n",
+                        self.ai_interface.team_name,
+                        "-a",
+                        "winner",
+                    ],
+                    start_new_session=False,
+                )
+                self.need_for_more_players = 0
+
             for message in self.ai_interface.message_history:
                 if (
                     message["text"].startswith("wawa_")
                     and can_cast(str, int, message["text"][5:])
                     and int(message["text"][5:]) == self.ai_interface.level
                 ):
-                    if self.elevation_broadcast_direction != interface.direction.none: #message from the same tile already received, avoiding moving out
+                    if (
+                        self.elevation_broadcast_direction != interface.direction.none
+                    ):  # message from the same tile already received, avoiding moving out
                         self.elevation_broadcast_direction = message["direction"]
                 self.ai_interface.message_history.remove(message)
 
@@ -48,7 +75,7 @@ class WinnerAgent:
                 ) or not self.ai_interface.has_enough_ressources_for_next_level():
                     self.state = WinnerAgent.State.collecting_ressources
                 elif (
-                    self.ai_interface.last_known_number_of_unused_slots
+                    self.ai_interface.last_known_number_of_unused_slots is not None
                     and self.ai_interface.last_known_number_of_unused_slots == 0
                 ):
                     self.state = WinnerAgent.State.egg_laying
@@ -100,8 +127,9 @@ class WinnerAgent:
                         interface.object_type.food
                     ]
                     < 5
-                ):  # critically low on food abort
+                ):  # critically low on food abort, also means the elavation did not succeed
                     self.state = WinnerAgent.State.none
+                    self.need_for_more_players += 1
                 elif not self.ai_interface.has_enough_ressources_for_next_level():
                     self.state = WinnerAgent.State.none
                 else:  # try to level up
@@ -155,6 +183,7 @@ class WinnerAgent:
                                 )
                             ):
                                 self.ai_interface.send_start_incantation_action_and_block_until_response()
+                                self.need_for_more_players = 0
                             else:
                                 for (
                                     resource,
@@ -188,16 +217,27 @@ class WinnerAgent:
                                             )
                         else:
                             if (
-                                self.elevation_broadcast_direction
+                                self.elevation_broadcast_direction is not None
                                 and random.random() < 0.5
                             ):
-                                self.ai_interface.move_towards_direction(
+                                self.ai_interface.move_towards_absolute_direction(
                                     self.elevation_broadcast_direction
                                 )
+                            if (
+                                self.elevation_broadcast_direction is not None
+                                or self.elevation_broadcast_direction
+                                != interface.direction.none
+                            ):
+                                self.ai_interface.send_broadcast_action_and_block_until_response(
+                                    f"wawa_{self.ai_interface.level}"
+                                )
+                                self.ai_interface.send_broadcast_action_and_block_until_response(
+                                    f"wawa_{self.ai_interface.level}"
+                                )
+                                self.ai_interface.send_broadcast_action_and_block_until_response(
+                                    f"wawa_{self.ai_interface.level}"
+                                )
                             self.elevation_broadcast_direction = None
-                            self.ai_interface.send_broadcast_action_and_block_until_response(
-                                f"wawa_{self.ai_interface.level}"
-                            )
 
                 if (
                     self.ai_interface.completed_actions
@@ -206,3 +246,4 @@ class WinnerAgent:
                     and self.ai_interface.completed_actions[-1]["success"] == True
                 ):
                     self.state = WinnerAgent.State.none
+                    self.need_for_more_players = 0
