@@ -509,7 +509,7 @@ class AI_server_interface:
                     encrypted_message += encrypted_char
                 else:
                     encrypted_message += char
-                return encrypted_message
+            return encrypted_message
         elif random_action == 7:
             # reverse message
             return message[::-1]

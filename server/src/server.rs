@@ -448,9 +448,21 @@ impl Server {
         for index in disconnected.into_iter().rev() {
             if index < self.clients.len() as u32 {
                 let client = self.clients.swap_remove(index as usize);
-                if let ClientState::Ai { player, .. } = &client.state {
-                    send_string_to_all_guis(&mut self.clients, pdi_reply(player))
-                };
+                match &client.state {
+                    ClientState::Ai { player, .. } => {
+                        // Active/dead AI keeps its slot consumed (a player existed).
+                        send_string_to_all_guis(&mut self.clients, pdi_reply(player));
+                    }
+                    ClientState::AwaitingEgg { team } => {
+                        // Reserved a slot but never hatched — return it to the team.
+                        if let Some(slot) =
+                            self.team_slots.iter_mut().find(|(name, _)| name == team)
+                        {
+                            slot.1 += 1;
+                        }
+                    }
+                    _ => {}
+                }
                 println!("Client disconnected: {}", client.addr);
             }
         }
@@ -585,16 +597,17 @@ impl Server {
                 .write_all("ko\n".as_bytes())
                 .is_err();
         }
-        // ppo/plv/pin still look up players by logical ID — pass client_idx as the GUI's index
-        let gui_id = clients[client_idx].id;
+        // ppo/plv/pin look up the target player by logical ID, then reply to the
+        // requesting GUI by its current vec index (ids are not vec indices after disconnects).
+        let gui_idx = client_idx as u32;
         match parts[0] {
             "msz" => Self::msz_parse(parts, &mut clients[client_idx], game),
             "bct" => Self::bct_parse(parts, &mut clients[client_idx], game),
             "mct" => Self::mct_parse(parts, &mut clients[client_idx], game),
             "tna" => Self::tna_parse(parts, &mut clients[client_idx], game),
-            "ppo" => Self::ppo_parse(parts, clients, gui_id),
-            "plv" => Self::plv_parse(parts, clients, gui_id),
-            "pin" => Self::pin_parse(parts, clients, gui_id),
+            "ppo" => Self::ppo_parse(parts, clients, gui_idx),
+            "plv" => Self::plv_parse(parts, clients, gui_idx),
+            "pin" => Self::pin_parse(parts, clients, gui_idx),
             "sgt" => Self::sgt_parse(parts, &mut clients[client_idx], game),
             "sst" => Self::sst_parse(parts, &mut clients[client_idx], game),
             _ => Self::bad_command(parts, &mut clients[client_idx]),

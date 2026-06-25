@@ -306,6 +306,44 @@ mod test {
     }
 
     #[test]
+    fn refill_tops_up_to_target_densities() {
+        let config = Config {
+            port: 0,
+            width: 4,
+            height: 4,
+            teams: vec![],
+            clients_per_team: 0,
+            frequency: 0,
+        };
+        let mut map = create_map(&config);
+
+        let total = |map: &[Vec<Tile>]| {
+            let mut sum = 0u32;
+            for row in map {
+                for t in row {
+                    sum += t.food
+                        + t.resources.linemate
+                        + t.resources.deraumere
+                        + t.resources.sibur
+                        + t.resources.mendiane
+                        + t.resources.phiras
+                        + t.resources.thystame;
+                }
+            }
+            sum
+        };
+
+        // Empty map: refill adds resources up to the target densities.
+        refill_resources(&config, &mut map);
+        let after_first = total(&map);
+        assert!(after_first > 0);
+
+        // Already at target densities: a second refill adds nothing.
+        refill_resources(&config, &mut map);
+        assert_eq!(total(&map), after_first);
+    }
+
+    #[test]
     fn tna_basic() {
         assert_eq!(
             tna_reply(&Config {

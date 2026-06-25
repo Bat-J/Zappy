@@ -80,6 +80,9 @@ fn main() -> std::io::Result<()> {
         }
 
         if now >= next_spawn {
+            // The reference server tops the map back up to its target densities
+            // but does not push tile updates to the GUI on refill, so we don't
+            // either — the GUI stays in sync through action-driven bct/pgt/pdr.
             map::refill_resources(&game.config, &mut game.map);
             next_spawn += Duration::from_millis(spawn_interval_ms);
         }

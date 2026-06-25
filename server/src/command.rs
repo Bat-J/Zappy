@@ -120,13 +120,16 @@ impl fmt::Display for Command {
 
 fn convert_ressource_name_to_id(string: &str) -> u8 {
     match string {
+        "food" => 0,
         "linemate" => 1,
         "deraumere" => 2,
         "sibur" => 3,
         "mendiane" => 4,
         "phiras" => 5,
         "thystame" => 6,
-        _ => 0,
+        // Any other (invalid) object name — kept distinct from food so that
+        // `Take <garbage>` / `Set <garbage>` fall through to `ko`.
+        _ => u8::MAX,
     }
 }
 
@@ -160,10 +163,16 @@ pub fn send_ai_command_to_gui(
         }
         Command::Fork => {
             send_string_to_all_guis(clients, pfk_reply(player));
-            send_string_to_all_guis(
-                clients,
-                enw_string(game.eggs.last().unwrap_or(&Egg::default())),
-            );
+            // Notify the GUI of the egg this fork just laid (highest id among this
+            // player's eggs) rather than assuming it is the last egg pushed.
+            if let Some(egg) = game
+                .eggs
+                .iter()
+                .filter(|e| e.player_id == player.id)
+                .max_by_key(|e| e.id)
+            {
+                send_string_to_all_guis(clients, enw_string(egg));
+            }
         }
         Command::Take(string) => {
             send_string_to_all_guis(
@@ -282,6 +291,16 @@ pub fn take(client: &mut Client, game: &mut Game, resource: &str) -> String {
             player.inventory.thystame += 1;
             "ok\n".to_string()
         }
+        0 => {
+            // Food is collectable too: move one unit from the tile into the
+            // player's food reserve (extends survival).
+            if game.map[player.y as usize][player.x as usize].food == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize].food -= 1;
+            player.food += 1;
+            "ok\n".to_string()
+        }
         _ => "ko\n".to_string(),
     }
 }
@@ -351,6 +370,15 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
                 .resources
                 .thystame += 1;
             player.inventory.thystame -= 1;
+            "ok\n".to_string()
+        }
+        0 => {
+            // Drop one unit of food from the player's reserve onto the tile.
+            if player.food == 0 {
+                return "ko\n".to_string();
+            }
+            game.map[player.y as usize][player.x as usize].food += 1;
+            player.food -= 1;
             "ok\n".to_string()
         }
         _ => "ko\n".to_string(),
@@ -803,6 +831,17 @@ pub fn get_inventory(client: &Client) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn resource_id_mapping_food_vs_invalid() {
+        // food is object id 0; the six stones are 1..=6.
+        assert_eq!(convert_ressource_name_to_id("food"), 0);
+        assert_eq!(convert_ressource_name_to_id("linemate"), 1);
+        assert_eq!(convert_ressource_name_to_id("thystame"), 6);
+        // An invalid name must map to the sentinel u8::MAX, not collapse onto
+        // food's id, otherwise `Take <garbage>` would pick food up off the tile.
+        assert_eq!(convert_ressource_name_to_id("banana"), u8::MAX);
+    }
 
     #[test]
     fn parse_simple_commands() {
