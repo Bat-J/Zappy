@@ -108,11 +108,7 @@ namespace zappy {
             _font.DrawText("Mendiane : " + std::to_string(p->getMendiane()), x + 300, y + 430, _fontSize, _spacing, _colors.getTextColor());
             _font.DrawText("Phiras : " + std::to_string(p->getPhiras()), x + 300, y + 460, _fontSize, _spacing, _colors.getTextColor());
             _font.DrawText("Thystame : " + std::to_string(p->getThystame()), x + 300, y + 490, _fontSize, _spacing, _colors.getTextColor());
-<<<<<<< HEAD
             _font.DrawText("Team : " + p->getTeam(), x + 300, y + 520, _fontSize, _spacing, _colors.getTextColor());
-=======
-            _font.DrawText("Team : " + p->getTeam(), x + 300, y + 490, _fontSize, _spacing, _colors.getTextColor());
->>>>>>> bca5460 (feat: Player Teams added when they connect else unknown)
         }
     }
 
