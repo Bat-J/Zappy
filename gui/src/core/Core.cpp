@@ -11,7 +11,6 @@
 #include <Window.hpp>
 #include <chrono>
 #include <future>
-#include <mutex>
 #include <raylib.h>
 #include <utility>
 #include <vector>
