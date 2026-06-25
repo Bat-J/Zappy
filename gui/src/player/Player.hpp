@@ -38,11 +38,7 @@ namespace zappy {
         void                                        setIsAlive(bool alive);
         void                                        setPos(std::pair<std::pair<int, int>, Orientation> pos);
         void                                        setId();
-<<<<<<< HEAD
         void                                        setTeam(std::string& name);
-=======
-        void        setTeam(std::string& name);
->>>>>>> bca5460 (feat: Player Teams added when they connect else unknown)
         void                                        updateResources(int i, Socket& socket);
 
       private:

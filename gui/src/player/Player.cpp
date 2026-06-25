@@ -78,11 +78,7 @@ namespace zappy {
         return _team;
     }
 
-<<<<<<< HEAD
     void Player::setTeam(std::string& name) {
-=======
-    void Player::setTeam(std::string& name) {
->>>>>>> bca5460 (feat: Player Teams added when they connect else unknown)
         _team = name;
     }
 
