@@ -9,7 +9,7 @@ all: server ai gui
 
 server: $(SERVER_BIN)
 
-$(SERVER_BIN):
+$(SERVER_BIN): clean_serv
 	@echo "Building server..."
 	@cargo build --release --manifest-path ./server/Cargo.toml
 	@cp ./server/target/release/$(SERVER_BIN) ./
