@@ -78,7 +78,7 @@ namespace zappy {
         return _team;
     }
 
-    void Player::setTeam(std::string &name) {
+    void Player::setTeam(std::string& name) {
         _team = name;
     }
 

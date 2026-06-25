@@ -38,7 +38,7 @@ namespace zappy {
         void                                        setIsAlive(bool alive);
         void                                        setPos(std::pair<std::pair<int, int>, Orientation> pos);
         void                                        setId();
-        void                                        setTeam(std::string &name);
+        void                                        setTeam(std::string& name);
         void                                        updateResources(int i, Socket& socket);
 
       private:
@@ -52,7 +52,7 @@ namespace zappy {
         size_t                                      _totalPhiras    = 0;
         size_t                                      _totalThystame  = 0;
         bool                                        _isAlive        = true;
-        std::string                                 _team = "unk";
+        std::string                                 _team           = "unk";
         std::pair<std::pair<int, int>, Orientation> _pos;
     };
 
