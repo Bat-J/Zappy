@@ -210,7 +210,9 @@ impl Server {
 
             let _ = self.clients[idx].stream.write_all(response.as_bytes());
 
-            if let ClientState::Ai { player, .. } = &self.clients[idx].state {
+            if let ClientState::Ai { player, .. } = &self.clients[idx].state
+                && (response != "ko\n" || scheduled.command == Command::Incantation)
+            {
                 let player = player.clone();
                 send_ai_command_to_gui(
                     scheduled.command,
@@ -389,7 +391,6 @@ impl Server {
                 .map(|(_, s)| *s)
                 .unwrap_or(0);
 
-            self.clients[i].id = game.next_player_id;
             self.clients[i].state = ClientState::Ai {
                 team: team.clone(),
                 player: Player {
@@ -665,7 +666,6 @@ impl Server {
                     // An egg is available: hatch it immediately
                     let egg = game.eggs.swap_remove(egg_idx);
 
-                    clients[idx].id = game.next_player_id;
                     clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
