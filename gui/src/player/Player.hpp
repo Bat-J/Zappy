@@ -41,7 +41,7 @@ namespace zappy {
 <<<<<<< HEAD
         void                                        setTeam(std::string& name);
 =======
-        void                                        setTeam(std::string &name);
+        void        setTeam(std::string& name);
 >>>>>>> bca5460 (feat: Player Teams added when they connect else unknown)
         void                                        updateResources(int i, Socket& socket);
 
@@ -59,7 +59,7 @@ namespace zappy {
 <<<<<<< HEAD
         std::string                                 _team           = "unk";
 =======
-        std::string                                 _team = "unk";
+        std::string _team = "unk";
 >>>>>>> bca5460 (feat: Player Teams added when they connect else unknown)
         std::pair<std::pair<int, int>, Orientation> _pos;
     };
