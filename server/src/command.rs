@@ -697,7 +697,9 @@ pub fn move_forward(client: &mut Client, config: &Config, game: &mut Game) -> St
         }
         _ => return "ko\n".to_string(),
     }
-    game.map[old_y as usize][old_x as usize].ais.retain(|x| *x != player_id);
+    game.map[old_y as usize][old_x as usize]
+        .ais
+        .retain(|x| *x != player_id);
     game.map[new_y as usize][new_x as usize].ais.push(player_id);
     "ok\n".to_string()
 }
