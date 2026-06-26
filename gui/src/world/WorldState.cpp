@@ -36,6 +36,12 @@ namespace zappy {
                 return;
             }
         }
+        // First time we hear about this tile (e.g. the initial mct dump streamed
+        // in line by line): create it so the map fills in instead of staying empty.
+        Tile tile;
+        tile.setPosition(x, y);
+        tile.setRessources(resources);
+        _tiles.push_back(tile);
     }
 
     void WorldState::setWinner(const std::string& team) {

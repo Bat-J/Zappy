@@ -87,7 +87,6 @@ namespace zappy {
             if (elapsedMs >= intervalMs && !updateFuture.valid()) {
                 updateFuture = std::async(std::launch::async, [&server, this]() {
                     server.handleServerUpdate();
-                    server.updateTiles();
                     server.updateResources();
                     updateSelectedPlayer(server.players().getPlayer());
                     _renderer.updateBroadcasters(server.players().takeBroadcasters(), server);

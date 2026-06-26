@@ -10,6 +10,7 @@
 #include <string>
 #include <sys/types.h>
 #include <utility>
+#include <vector>
 #include "../network/Socket.hpp"
 
 namespace zappy {
@@ -39,7 +40,9 @@ namespace zappy {
         void                                        setPos(std::pair<std::pair<int, int>, Orientation> pos);
         void                                        setId();
         void                                        setTeam(std::string& name);
-        void                                        updateResources(int i, Socket& socket);
+        // Sets food + the six craftable resources from a parsed `pin` payload.
+        // res = {food, linemate, deraumere, sibur, mendiane, phiras, thystame}.
+        void setInventory(const std::vector<int>& res);
 
       private:
         u_int8_t                                    _lvl            = 1;

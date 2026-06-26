@@ -15,6 +15,7 @@ namespace zappy {
     class ServerParser {
       public:
         static std::vector<std::string> splitWords(const std::string& input);
+        static Orientation              parseOrientation(const std::string& token);
         static bool                     parsePlayerPositionLine(const std::vector<std::string>& words, Player& player);
     };
 }
