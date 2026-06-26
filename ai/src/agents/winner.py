@@ -1,12 +1,12 @@
 import helpers.interface as interface
 from enum import Enum
-import random
+from random import random
 from helpers.can_cast import can_cast
 from subprocess import Popen
-import os
+from os import getcwd
 
 
-cwd = os.getcwd()
+cwd = getcwd()
 
 
 class WinnerAgent:
@@ -110,7 +110,7 @@ class WinnerAgent:
 
             if self.state == WinnerAgent.State.collecting_ressources:
                 if (
-                    random.random()
+                    random()
                     < 1
                     / min(
                         self.ai_interface.world_x_size,  # pyright: ignore[reportArgumentType]
@@ -118,7 +118,7 @@ class WinnerAgent:
                     )
                     * 2
                 ):
-                    if random.random() < 0.5:
+                    if random() < 0.5:
                         self.ai_interface.send_turn_left_action()
                     else:
                         self.ai_interface.send_turn_right_action()
@@ -225,8 +225,5 @@ class WinnerAgent:
                     self.need_for_more_players = 0
                 else:
                     self.ai_interface.send_look_action_and_block_until_response()  # waiting
-                    # self.ai_interface.send_broadcast_action_and_block_until_response(
-                    #    f"wawa_{self.ai_interface.level}"
-                    # )
 
             self.elevation_broadcast_direction = None
