@@ -24,6 +24,13 @@ impl TimeManager {
         }
     }
 
+    /// Update the frequency used to scale command durations. Only commands
+    /// scheduled after this call use the new value; already queued commands keep
+    /// their absolute execution time.
+    pub fn set_frequency(&mut self, frequency: u32) {
+        self.frequency = frequency;
+    }
+
     /// Schedule a command for execution
     /// Returns when the command will execute
     pub fn schedule(&mut self, command: Command, client_id: u32) -> Instant {
@@ -104,6 +111,17 @@ mod tests {
         thread::sleep(Duration::from_millis(20));
         let ready = manager.tick();
         assert_eq!(ready.len(), 3);
+    }
+
+    #[test]
+    fn set_frequency_changes_future_scheduling() {
+        let mut manager = TimeManager::new(100);
+        let slow = manager.schedule(Command::Forward, 0); // 70ms at freq 100
+        manager.set_frequency(400);
+        let fast = manager.schedule(Command::Forward, 1); // ~17ms at freq 400
+        // Raising the frequency makes the same command schedule sooner; the
+        // ~53ms gap dwarfs the few microseconds between the two now() calls.
+        assert!(fast < slow);
     }
 
     #[test]

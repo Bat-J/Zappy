@@ -47,6 +47,7 @@ fn main() -> std::io::Result<()> {
             let now = Instant::now();
             next_food_tick = now + Duration::from_millis((1000 / new_frequency as u64).max(1));
             next_spawn = now + Duration::from_millis((20 * 1000) / new_frequency as u64);
+            server.set_frequency(new_frequency);
             current_frequency = new_frequency;
         }
 

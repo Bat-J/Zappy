@@ -124,6 +124,12 @@ impl Server {
         self.time_manager.next_timeout_ms().unwrap_or(-1)
     }
 
+    /// Propagate a runtime frequency change (e.g. from a GUI `sst`) to command
+    /// scheduling, keeping execution speed in sync with the food/spawn cadence.
+    pub fn set_frequency(&mut self, frequency: u32) {
+        self.time_manager.set_frequency(frequency);
+    }
+
     pub fn execute_ready_commands(&mut self, config: &Config, game: &mut Game) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
@@ -416,16 +422,15 @@ impl Server {
             gui_notifications.push(player_spawn(&mut self.clients[i]));
             gui_notifications.push(ebo_reply(&egg));
 
-            let response = format!(
-                "{remaining}\n{} {}\n",
-                game.config.width, game.config.height
-            );
+            // CLIENT-NUM + dimensions were already sent when this client was
+            // parked as AwaitingEgg (see handle_team_name); the AI consumed them
+            // during its handshake. Re-sending here would inject a stray slot
+            // count + "W H" line into the live command stream and desync the
+            // client's response matching, so we only log and notify the GUIs.
             println!(
                 "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
                 self.clients[i].addr, egg.x, egg.y
             );
-            let _ = self.clients[i].stream.write_all(response.as_bytes());
-            gui_notifications.push(ebo_reply(&egg));
         }
 
         for msg in gui_notifications {

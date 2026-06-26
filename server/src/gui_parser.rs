@@ -136,10 +136,17 @@ impl Server {
     }
 
     pub fn sst_parse(parts: Vec<&str>, client: &mut Client, game: &mut Game) -> bool {
-        if parts.len() != 2 || parts[1].parse::<u32>().is_err() {
+        // Frequency must be a strictly positive integer: the main loop and the
+        // time manager divide tick/command durations by it, so 0 would panic the
+        // whole server. Reject bad arity, non-numeric, or zero with `sbp`.
+        if parts.len() != 2 {
             return Self::gui_error(client, "sbp\n");
         }
-        game.config.frequency = parts[1].parse::<u32>().unwrap();
+        let frequency = match parts[1].parse::<u32>() {
+            Ok(freq) if freq > 0 => freq,
+            _ => return Self::gui_error(client, "sbp\n"),
+        };
+        game.config.frequency = frequency;
         client
             .stream
             .write_all(("sst ".to_string() + &game.config.frequency.to_string() + "\n").as_bytes())

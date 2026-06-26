@@ -47,6 +47,19 @@ pub fn parse() -> Result<Config, String> {
         i += 1;
     }
 
+    // Reject degenerate values up front: width/height of 0 make an empty map
+    // (and panic msz_reply's ilog10(0)), while a frequency of 0 divides by zero
+    // in the time manager and main loop. A team with 0 slots can never be joined.
+    if width == 0 || height == 0 {
+        return Err(format!("map dimensions must be positive (-x, -y)\n{USAGE}"));
+    }
+    if freq == 0 {
+        return Err(format!("frequency must be positive (-f)\n{USAGE}"));
+    }
+    if clients_per_team == 0 {
+        return Err(format!("clients per team must be positive (-c)\n{USAGE}"));
+    }
+
     Ok(Config {
         port,
         width,
