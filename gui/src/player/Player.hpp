@@ -7,6 +7,7 @@
 
 #pragma once
 #include <cstddef>
+#include <string>
 #include <sys/types.h>
 #include <utility>
 #include "../network/Socket.hpp"
@@ -32,10 +33,12 @@ namespace zappy {
         bool                                        getIsAlive() const;
         std::pair<std::pair<int, int>, Orientation> getPos() const;
         int                                         getId() const;
+        std::string                                 getTeam() const;
         void                                        setLevel(u_int8_t lvl);
         void                                        setIsAlive(bool alive);
         void                                        setPos(std::pair<std::pair<int, int>, Orientation> pos);
         void                                        setId();
+        void                                        setTeam(std::string& name);
         void                                        updateResources(int i, Socket& socket);
 
       private:
@@ -49,6 +52,7 @@ namespace zappy {
         size_t                                      _totalPhiras    = 0;
         size_t                                      _totalThystame  = 0;
         bool                                        _isAlive        = true;
+        std::string                                 _team           = "unk";
         std::pair<std::pair<int, int>, Orientation> _pos;
     };
 

@@ -16,7 +16,6 @@
 namespace zappy {
 
     Server::~Server() {}
-
     void Server::handleServerUpdate() {
         const std::string                     message = _socket.readFromSocket();
         std::vector<std::vector<std::string>> wordsByLine;
@@ -41,14 +40,17 @@ namespace zappy {
                     players.resize(static_cast<std::size_t>(number) + 1);
                     for (; oldSize < static_cast<int>(players.size()); oldSize++)
                         _players.checkAlive(oldSize, _socket, _logs);
-                    if (wordsByLine[i][0] == "pnw")
-                        _logs.push_back("New player " + std::to_string(number + 1) + " connected");
                 }
                 parser.parsePlayerPositionLine(wordsByLine[i], players[number]);
                 players[number].setIsAlive(true);
+                if (wordsByLine[i][0] == "pnw" && wordsByLine[i].size() == 7) {
+                    _logs.push_back("New player " + std::to_string(number + 1) + " connected");
+                    if (!wordsByLine[i][6].empty()) {
+                        players[number].setTeam(wordsByLine[i][6]);
+                    }
+                }
                 if (wordsByLine[i][0] == "ppo") {
                     int orientCode = std::atoi(wordsByLine[i][4].c_str());
-
                     if (orientCode == 1)
                         dir = "North";
                     else if (orientCode == 2)
@@ -66,35 +68,7 @@ namespace zappy {
                     players[number].setIsAlive(false);
                 _logs.push_back("Player " + std::to_string(number + 1) + " died");
             }
-            if (wordsByLine[i][0] == "pbc") {
-                const int number  = std::atoi(wordsByLine[i][1].substr(1).c_str());
-                int       oldSize = static_cast<int>(players.size());
-                if (static_cast<std::size_t>(number) >= players.size()) {
-                    players.resize(static_cast<std::size_t>(number) + 1);
-                    for (; oldSize < static_cast<int>(players.size()); oldSize++)
-                        _players.checkAlive(oldSize, _socket, _logs);
-                }
-                _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + wordsByLine[i][2]);
-                _players.addBroadcaster(number);
-            }
-            if (wordsByLine[i][0] == "seg" && wordsByLine[i].size() == 2) {
-                _world.setWinner(wordsByLine[i][1]);
-                _logs.push_back("Team " + wordsByLine[i][1] + " wins!");
-            }
-            if (wordsByLine[i][0] == "bct" && wordsByLine[i].size() == 10) {
-                int              x = std::stoi(wordsByLine[i][1]);
-                int              y = std::stoi(wordsByLine[i][2]);
-                std::vector<int> resources;
-                for (int r = 3; r <= 9; ++r)
-                    resources.push_back(std::stoi(wordsByLine[i][r]));
-                _world.updateTile(x, y, resources);
-            }
         }
-        for (int i = 0; i < players.size(); i++)
-            _players.checkAlive(i, _socket, _logs);
-        _players.getAllAlive();
-        _resources.updateResources(_world.getTiles());
-        _players.updatePlayerpos(_socket, _logs);
     }
 
     void Server::updateTiles() {
