@@ -30,14 +30,8 @@ class SimpleLawnMowerAgent:
                 self.state = state.collection_picking
             elif self.state == state.collection_picking:
                 if awaiting_pickup_list == []:
-                    for obj, count in self.ai_interface.completed_actions[-1][
-                        "response"
-                    ][0].items():
-                        if (
-                            obj != interface.object_type.player
-                            and obj != interface.object_type.egg
-                            and count > 0
-                        ):
+                    for obj, count in self.ai_interface.completed_actions[-1]["response"][0].items():
+                        if obj != interface.object_type.player and obj != interface.object_type.egg and count > 0:
                             for _ in range(count):
                                 awaiting_pickup_list.append(obj)
                 if awaiting_pickup_list != []:

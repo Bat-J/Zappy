@@ -77,31 +77,23 @@ class WinnerAgent:
                     self.ai_interface.last_known_number_of_unused_slots is not None
                     and self.ai_interface.last_known_number_of_unused_slots == 0
                     and self.ai_interface.last_known_inventory is not None
-                    and self.ai_interface.last_known_inventory[
-                        interface.object_type.food
-                    ]
+                    and self.ai_interface.last_known_inventory[interface.object_type.food]
                     >= self.minimum_food_for_egg_laying
                 ):
                     self.state = WinnerAgent.State.egg_laying
                 elif (
-                    self.elevation_broadcast_direction
-                    is None  # no one is active elevating
+                    self.elevation_broadcast_direction is None  # no one is active elevating
                     and self.ai_interface.has_enough_ressources_for_next_level()
                     and self.ai_interface.last_known_inventory is not None
-                    and self.ai_interface.last_known_inventory[
-                        interface.object_type.food
-                    ]
+                    and self.ai_interface.last_known_inventory[interface.object_type.food]
                     >= self.minimum_food_for_active_elevation
                 ):
                     self.elevation_ressources_dropped = False
                     self.state = WinnerAgent.State.active_elevating
                 elif (
-                    self.elevation_broadcast_direction
-                    is not None  # someone is already active elevating
+                    self.elevation_broadcast_direction is not None  # someone is already active elevating
                     and self.ai_interface.last_known_inventory is not None
-                    and self.ai_interface.last_known_inventory[
-                        interface.object_type.food
-                    ]
+                    and self.ai_interface.last_known_inventory[interface.object_type.food]
                     >= self.minimum_food_for_passive_elevation
                 ):
                     self.state = WinnerAgent.State.passive_elevating
@@ -127,12 +119,8 @@ class WinnerAgent:
                 # ressources needed for the next two incantations
                 needed_ressources = self.ai_interface.subtract_objects_dicts(
                     self.ai_interface.add_objects_dicts(
-                        self.ai_interface.get_ressources_needed_for_level(
-                            self.ai_interface.level + 1
-                        ),
-                        self.ai_interface.get_ressources_needed_for_level(
-                            self.ai_interface.level
-                        ),
+                        self.ai_interface.get_ressources_needed_for_level(self.ai_interface.level + 1),
+                        self.ai_interface.get_ressources_needed_for_level(self.ai_interface.level),
                     ),
                     self.ai_interface.last_known_inventory,  # pyright: ignore[reportArgumentType]
                 )
@@ -148,37 +136,28 @@ class WinnerAgent:
                 self.ai_interface.send_inventory_action_and_block_until_response()
                 if (
                     self.ai_interface.last_known_inventory
-                    and self.ai_interface.last_known_inventory[
-                        interface.object_type.food
-                    ]
+                    and self.ai_interface.last_known_inventory[interface.object_type.food]
                     < self.low_food_elevation_abort_threshold
                 ):  # critically low on food abort, also means the elavation did not succeed
                     self.state = WinnerAgent.State.none
                     self.need_for_more_players += 1
 
-                if self.elevation_ressources_dropped == False:
+                if not self.elevation_ressources_dropped:
                     for (
                         resource,
                         required_amount,
-                    ) in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(
-                        self.ai_interface.level, {}
-                    ).items():
+                    ) in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.ai_interface.level, {}).items():
                         current_amount = (
-                            self.ai_interface.completed_actions[-1]["response"][0].get(
-                                resource, 0
-                            )
+                            self.ai_interface.completed_actions[-1]["response"][0].get(resource, 0)
                             if self.ai_interface.completed_actions
-                            and self.ai_interface.completed_actions[-1]["action_type"]
-                            == interface.action_type.look
+                            and self.ai_interface.completed_actions[-1]["action_type"] == interface.action_type.look
                             and self.ai_interface.completed_actions[-1]["response"]
                             and self.ai_interface.completed_actions[-1]["response"][0]
                             else 0
                         )
                         if required_amount > current_amount:
                             for _ in range(required_amount - current_amount):
-                                self.ai_interface.send_set_object_down_action_and_block_until_response(
-                                    resource
-                                )
+                                self.ai_interface.send_set_object_down_action_and_block_until_response(resource)
                     self.elevation_ressources_dropped = True
 
                 self.ai_interface.send_start_incantation_action_and_block_until_response()
@@ -186,22 +165,18 @@ class WinnerAgent:
                     self.ai_interface.completed_actions
                     and self.ai_interface.completed_actions[-1]["action_type"]
                     == interface.action_type.start_incantation
-                    and self.ai_interface.completed_actions[-1]["success"] == True
+                    and self.ai_interface.completed_actions[-1]["success"]
                 ):
                     self.state = WinnerAgent.State.none
                     self.need_for_more_players = 0
                 else:
-                    self.ai_interface.send_broadcast_action_and_block_until_response(
-                        f"wawa_{self.ai_interface.level}"
-                    )
+                    self.ai_interface.send_broadcast_action_and_block_until_response(f"wawa_{self.ai_interface.level}")
 
             elif self.state == WinnerAgent.State.passive_elevating:
                 self.ai_interface.send_inventory_action_and_block_until_response()
                 if (
                     self.ai_interface.last_known_inventory
-                    and self.ai_interface.last_known_inventory[
-                        interface.object_type.food
-                    ]
+                    and self.ai_interface.last_known_inventory[interface.object_type.food]
                     < self.low_food_elevation_abort_threshold
                 ):  # critically low on food abort, also means the elavation did not succeed
                     self.state = WinnerAgent.State.none
@@ -211,15 +186,13 @@ class WinnerAgent:
                     if self.elevation_broadcast_direction == interface.direction.none:
                         self.ai_interface.send_start_incantation_action_and_block_until_response()
                     else:
-                        self.ai_interface.move_towards_absolute_direction(
-                            self.elevation_broadcast_direction
-                        )
+                        self.ai_interface.move_towards_absolute_direction(self.elevation_broadcast_direction)
 
                 if (
                     self.ai_interface.completed_actions
                     and self.ai_interface.completed_actions[-1]["action_type"]
                     == interface.action_type.start_incantation
-                    and self.ai_interface.completed_actions[-1]["success"] == True
+                    and self.ai_interface.completed_actions[-1]["success"]
                 ):
                     self.state = WinnerAgent.State.none
                     self.need_for_more_players = 0

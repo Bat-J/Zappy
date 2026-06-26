@@ -373,10 +373,7 @@ class AI_server_interface:
         elif message.startswith("Current level: "):
             if len(self.pending_response_actions) == 0:
                 return
-            if (
-                self.pending_response_actions
-                and self.pending_response_actions[0] == action_type.start_incantation
-            ):
+            if self.pending_response_actions and self.pending_response_actions[0] == action_type.start_incantation:
                 self.pending_response_actions.pop(0)
             self.level = int(message.split(":")[1].strip())
             self.completed_actions.append(
@@ -391,9 +388,7 @@ class AI_server_interface:
             self.message_history.append(
                 {
                     "text": message[11:],
-                    "direction": parse_direction(
-                        int(message[8:9])
-                    ).add_cardinal_direction(self.relative_direction),
+                    "direction": parse_direction(int(message[8:9])).add_cardinal_direction(self.relative_direction),
                     "raw_direction": parse_direction(int(message[8:9])),
                 }
             )
@@ -514,7 +509,7 @@ class AI_server_interface:
         self.send_look_action_and_block_until_response()
         if (
             self.completed_actions[-1]["action_type"] != action_type.look
-            or not self.completed_actions[-1]["success"] == True
+            or not self.completed_actions[-1]["success"]
             or not self.completed_actions[-1]["response"]
             or not isinstance(self.completed_actions[-1]["response"], list)
         ):
@@ -527,9 +522,7 @@ class AI_server_interface:
                         self.send_take_action(obj)
         self.block_until_all_responses_received()
 
-    def are_ressources_sufficient_for_level_up(
-        self, amount: dict, needed_amount: dict
-    ) -> bool:
+    def are_ressources_sufficient_for_level_up(self, amount: dict, needed_amount: dict) -> bool:
         """Checks if the Trantorian has enough ressources in its inventory for the next level."""
         if amount is None or needed_amount is None:
             return False
@@ -545,9 +538,7 @@ class AI_server_interface:
         requirements = RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(self.level, None)
         if requirements is None:
             return False
-        return self.are_ressources_sufficient_for_level_up(
-            self.last_known_inventory, requirements
-        )
+        return self.are_ressources_sufficient_for_level_up(self.last_known_inventory, requirements)
 
     def get_ressources_needed_for_level(self, level: int) -> dict:
         """Returns a dictionary of the ressources needed for the specified level."""
