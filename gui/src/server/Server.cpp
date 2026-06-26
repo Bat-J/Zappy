@@ -8,9 +8,7 @@
 #include "Server.hpp"
 #include "ServerParser.hpp"
 #include <cstdlib>
-#include <iostream>
 #include <mutex>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -59,6 +57,33 @@ namespace zappy {
         const std::string&   cmd     = words[0];
         std::vector<Player>& players = _players.getPlayer();
 
+        if (cmd == "pbc") {
+            const int number  = std::atoi(words[1].substr(1).c_str());
+            ensurePlayer(number);
+            _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + words[2]);
+            _players.addBroadcaster(number);
+        }
+        if (cmd == "msz" && words.size() == 3) {
+            const int x = std::atoi(words[1].c_str());
+            const int y = std::atoi(words[2].c_str());
+            _world.setMapSize(x, y);
+            std::vector<Tile> newTiles;
+            newTiles.reserve(x * y);
+            for (int currY = 0; currY < y; ++currY) {
+                for (int currX = 0; currX < x; ++currX) {
+                    Tile t;
+                    t.setPosition(currX, currY);
+                    t.setRessources({0, 0, 0, 0, 0, 0, 0});
+                    newTiles.push_back(t);
+                }
+            }
+            _world.setTiles(newTiles);
+            return;
+        }
+        if (cmd == "sgt" && words.size() == 2) {
+            _world.setTimeReference(std::atoi(words[1].c_str()));
+            return;
+        }
         if ((cmd == "ppo" && words.size() == 5) || (cmd == "pnw" && words.size() == 7)) {
             const int number = std::atoi(words[1].substr(1).c_str());
             if (number < 0)
@@ -141,63 +166,18 @@ namespace zappy {
         }
     }
 
-    void Server::updateResources() {
-        std::lock_guard<std::mutex> lock(_dataMutex);
-        _resources.updateResources(world().getTiles());
+    void Server::updateResources()
+    {
+        std::vector<Tile> tiles;
+        {
+            std::lock_guard<std::mutex> lock(_dataMutex);
+            tiles = _world.getTiles();
+        }
+        _resources.updateResources(tiles);
     }
 
     void Server::getInfo() {
         std::string mess = "GRAPHIC\n";
         _socket.writeToSocket(mess);
-        std::string              infos = _socket.readFromSocket();
-        std::stringstream        stream(infos);
-        std::string              token;
-        std::vector<std::string> _tokens;
-
-        _tokens.clear();
-        std::vector<Tile> tiles = world().getTiles();
-        tiles.clear();
-        while (stream >> token) {
-            _tokens.push_back(token);
-        }
-        for (std::size_t i = 0; i < _tokens.size(); ++i) {
-            if (_tokens[i] == "msz" && i + 2 < _tokens.size()) {
-                int x = std::stoi(_tokens[i + 1]);
-                int y = std::stoi(_tokens[i + 2]);
-                _world.setMapSize(x, y);
-                i += 2;
-            } else if (_tokens[i] == "sgt" && i + 1 < _tokens.size()) {
-                _world.setTimeReference(std::stoi(_tokens[i + 1]));
-                i += 1;
-            } else if (_tokens[i] == "bct" && i + 9 < _tokens.size()) {
-                const size_t tileIndex = tiles.size();
-                tiles.emplace_back();
-                int x = std::stoi(_tokens[i + 1]);
-                int y = std::stoi(_tokens[i + 2]);
-                tiles[tileIndex].setPosition(x, y);
-                std::vector<int> resources;
-                for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    resources.push_back(std::stoi(_tokens[i + resourceIndex]));
-                }
-                tiles[tileIndex].setRessources(resources);
-                i += 9;
-            } else if (_tokens[i] == "pnw" && i + 7 < _tokens.size()) {
-                std::vector<Player>& players = _players.getPlayer();
-                std::cout << _tokens[i] << std::endl;
-                const int number = std::atoi(_tokens[i + 1].substr(1).c_str());
-                std::cout << number << std::endl;
-                if (number < 0)
-                    return;
-                ensurePlayer(number);
-                ServerParser::parsePlayerPositionLine(_tokens, players[number]);
-                players[number].setIsAlive(true);
-                std::string team = _tokens[i + 6];
-                players[number].setTeam(team);
-                players[number].setLevel(static_cast<u_int8_t>(std::atoi(_tokens[i + 5].c_str())));
-                _logs.push_back("New player " + std::to_string(number + 1) + " connected");
-                i += 7;
-            }
-        }
-        _world.setTiles(tiles);
     }
 }

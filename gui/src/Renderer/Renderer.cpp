@@ -83,33 +83,65 @@ namespace zappy {
         _font.DrawText("Sibur: " + std::to_string(tile->getRessources()[3]), x + 800, y + 205, _fontSize, _spacing, _colors.getTextColor());
         _font.DrawText("Mendiane: " + std::to_string(tile->getRessources()[4]), x, y + 230, _fontSize, _spacing, _colors.getTextColor());
         _font.DrawText("Phiras: " + std::to_string(tile->getRessources()[5]), x + 150, y + 230, _fontSize, _spacing, _colors.getTextColor());
-        _font.DrawText("Thystame: " + std::to_string(tile->getRessources()[5]), x + 300, y + 230, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Thystame: " + std::to_string(tile->getRessources()[6]), x + 300, y + 230, _fontSize, _spacing, _colors.getTextColor());
     }
 
-    void Renderer::displaySelectedPlayer(const Server& server) {
-        int   x       = 1000;
-        int   y       = 200;
-        auto& players = server.players().getPlayer();
-        if (!_selectedPlayerId) {
-            _font.DrawText("No Player selected or found.", x + 200, 400, 20, _spacing, _colors.getTextColor());
+    void Renderer::displaySelectedPlayer(const Server& server)
+    {
+        const int x = 1000;
+        const int y = 200;
+        const auto &players = server.players().getPlayer();
+        if (!_selectedPlayerId.has_value()) {
+            _font.DrawText("No player selected.", x + 200, 400, 20,
+                _spacing, _colors.getTextColor());
             return;
         }
-        auto p = std::find_if(players.begin(), players.end(), [&](const Player& p) { return p.getId() == *_selectedPlayerId; });
-        _font.DrawText("SELECTED Player : " + std::to_string(_selectedPlayerId.value() + 1), x + 300, y + 200, _fontSize + 10, _spacing, _colors.getTextColor());
-        if (!p->getIsAlive()) {
-            _font.DrawText("Status : DEAD", x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
-        } else {
-            _font.DrawText("Status : ALIVE", x + 300, y + 250, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Level : " + std::to_string(p->getLevel()), x + 300, y + 280, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Food : " + std::to_string(p->getFood()), x + 300, y + 310, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Linemate : " + std::to_string(p->getLinemate()), x + 300, y + 340, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Deraumere : " + std::to_string(p->getDeraumere()), x + 300, y + 370, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Sibur : " + std::to_string(p->getSibur()), x + 300, y + 400, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Mendiane : " + std::to_string(p->getMendiane()), x + 300, y + 430, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Phiras : " + std::to_string(p->getPhiras()), x + 300, y + 460, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Thystame : " + std::to_string(p->getThystame()), x + 300, y + 490, _fontSize, _spacing, _colors.getTextColor());
-            _font.DrawText("Team : " + p->getTeam(), x + 300, y + 520, _fontSize, _spacing, _colors.getTextColor());
+        auto it = std::find_if(players.begin(), players.end(),
+            [&](const Player &player)
+            {
+                return player.getId() == _selectedPlayerId.value();
+            });
+        if (it == players.end()) {
+            _selectedPlayerId.reset();
+            _font.DrawText("Selected player no longer exists.", x + 200, 400,
+                20, _spacing, _colors.getTextColor());
+            return;
         }
+        const Player &player = *it;
+        _font.DrawText(
+            "SELECTED PLAYER : " + std::to_string(player.getId() + 1),
+            x + 300,
+            y + 200,
+            _fontSize + 10,
+            _spacing,
+            _colors.getTextColor());
+        _font.DrawText(
+            std::string("Status : ") + (player.getIsAlive() ? "ALIVE" : "DEAD"),
+            x + 300,
+            y + 250,
+            _fontSize,
+            _spacing,
+            _colors.getTextColor());
+        if (!player.getIsAlive())
+            return;
+        _font.DrawText("Level : " + std::to_string(player.getLevel()),
+            x + 300, y + 280, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Food : " + std::to_string(player.getFood()),
+            x + 300, y + 310, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Linemate : " + std::to_string(player.getLinemate()),
+            x + 300, y + 340, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Deraumere : " + std::to_string(player.getDeraumere()),
+            x + 300, y + 370, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Sibur : " + std::to_string(player.getSibur()),
+            x + 300, y + 400, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Mendiane : " + std::to_string(player.getMendiane()),
+            x + 300, y + 430, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Phiras : " + std::to_string(player.getPhiras()),
+            x + 300, y + 460, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Thystame : " + std::to_string(player.getThystame()),
+            x + 300, y + 490, _fontSize, _spacing, _colors.getTextColor());
+        _font.DrawText("Team : " + player.getTeam(),
+            x + 300, y + 520, _fontSize, _spacing, _colors.getTextColor());
     }
 
     void Renderer::displayPlayers(Server& server, int offsetX, int offsetY, int tileSizeClamped) {
@@ -145,12 +177,14 @@ namespace zappy {
         const int                       hudHeight       = 100;
         const int                       padding         = 10;
         const int                       availableWidth  = (_window.GetWidth() / 2) - 2 * 10;
-        const int                       tileSize        = std::min(availableWidth / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
-        const int                       tileSizeClamped = tileSize;
         const int                       offsetX         = 10;
         const int                       offsetY         = 100 + padding;
         const std::vector<Tile>         tiles           = server.world().getTiles();
         const Tile                      fallbackTile{};
+        if (mapWidth <= 0)
+                return;
+        const int                       tileSize        = std::min(availableWidth / mapWidth, (_window.GetHeight() - hudHeight - 2 * padding) / mapHeight);
+        const int                       tileSizeClamped = tileSize;
 
         _drawnTiles.clear();
         _tileResources.clear();
@@ -212,16 +246,18 @@ namespace zappy {
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
         const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
         const int                       tileSize       = std::min(availableWidth / (int)mapSize.first, (_window.GetHeight() - 120) / (int)mapSize.second);
+        auto& allPlayers = server.players().getPlayer();
 
         for (int i = 0; i < (int)vec.size(); i++) {
-            Player    player  = server.players().getPlayer()[vec[i]];
-            const int x       = player.getPos().first.first;
-            const int y       = player.getPos().first.second;
-            const int playerX = offsetX + x * tileSize + tileSize / 2;
-            const int playerY = offsetY + y * tileSize + tileSize / 2;
-
-            if (player.getIsAlive() == true)
-                _broadcasters.push_back({playerX, playerY, std::chrono::high_resolution_clock::now()});
+            if (vec[i] >= 0 && static_cast<size_t>(vec[i]) < allPlayers.size()) {
+                Player& player = allPlayers[vec[i]];
+                const int x       = player.getPos().first.first;
+                const int y       = player.getPos().first.second;
+                const int playerX = offsetX + x * tileSize + tileSize / 2;
+                const int playerY = offsetY + y * tileSize + tileSize / 2;
+                if (player.getIsAlive() == true)
+                    _broadcasters.push_back({playerX, playerY, std::chrono::high_resolution_clock::now()});
+            }
         }
     }
 
@@ -231,14 +267,17 @@ namespace zappy {
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
         const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
         const int                       tileSize       = std::min(availableWidth / (int)mapSize.first, (_window.GetHeight() - 120) / (int)mapSize.second);
-
-        for (int i = 0; i < (int)vec.size(); i++) {
-            Player    player  = server.players().getPlayer()[vec[i]];
+        auto &players = server.players().getPlayer();
+        for (int id : vec) {
+            if (id < 0 || static_cast<size_t>(id) >= players.size())
+                continue;
+            Player &player = players[id];
+            if (!player.getIsAlive())
+                continue;
             const int x       = player.getPos().first.first;
             const int y       = player.getPos().first.second;
             const int playerX = offsetX + x * tileSize + tileSize / 2;
             const int playerY = offsetY + y * tileSize + tileSize / 2;
-
             if (player.getIsAlive() == true)
                 _increasers.push_back({playerX, playerY, std::chrono::high_resolution_clock::now()});
         }
@@ -279,7 +318,7 @@ namespace zappy {
                                          }),
                           _increasers.end());
         BeginBlendMode(BLEND_ALPHA);
-        for (const BroadcastCircle& c : _broadcasters) {
+        for (const BroadcastCircle& c : _increasers) {
             float         elapsed = std::chrono::duration<float>(now - c.spawnTime).count();
             float         t       = elapsed / MAX_LIFETIME_S;
             float         radius  = t * MAX_RADIUS;
@@ -305,17 +344,21 @@ namespace zappy {
     }
 
     void Renderer::displayServerElements(Server& server) {
-        const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
-        const std::pair<size_t, size_t> mapSize        = server.world().getMapSize();
-        const int                       tileSize       = std::min(availableWidth / mapSize.first, (_window.GetHeight() - 120) / mapSize.second);
-        displayTiles(server);
-        displayPlayers(server, 10, 110, tileSize);
         _font.DrawText("ZAPFRITES", (_window.GetSize().GetX() / 2) - 3 * 50, 20, 50, 5, _colors.getTextColor());
         displayStats(server);
         displayLastLogs(server);
         displayTotalResources(server);
         displaySelectedTile(server);
         displaySelectedPlayer(server);
+        const std::pair<size_t, size_t> mapSize = server.world().getMapSize();
+        if (mapSize.first == 0 || mapSize.second == 0) {
+            _font.DrawText("Waiting for map data...", 10, 150, 20, 1.0f, _colors.getTextColor());
+            return;
+        }
+        const int availableWidth = (_window.GetWidth() / 2) - 2 * 10;
+        const int tileSize       = std::min(availableWidth / mapSize.first, (_window.GetHeight() - 120) / mapSize.second);
+        displayTiles(server);
+        displayPlayers(server, 10, 110, tileSize);
     }
 
     void Renderer::displayAll(Server& server, bool isFpsDisplayed, bool isCursorDefault) {
