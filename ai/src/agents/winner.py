@@ -14,13 +14,20 @@ class WinnerAgent:
         none = 0
         collecting_ressources = 1
         egg_laying = 2
-        elevating = 3
+        active_elevating = 3
+        passive_elevating = 4
 
     def __init__(self, ai_interface: interface.AI_server_interface):
         self.ai_interface = ai_interface
         self.state = WinnerAgent.State.none
+        self.elevation_ressources_dropped = False
         self.elevation_broadcast_direction = None
         self.need_for_more_players = 0
+
+        self.low_food_elevation_abort_threshold = 10
+        self.minimum_food_for_active_elevation = 25
+        self.minimum_food_for_passive_elevation = 20
+        self.minimum_food_for_egg_laying = 15
 
     def run(self):
         while True:
@@ -32,7 +39,7 @@ class WinnerAgent:
                 print("Trantorian is no longer alive.")
                 break
 
-            if self.need_for_more_players >= self.ai_interface.level:
+            if self.need_for_more_players >= self.ai_interface.level * 2:
                 print("Spawning a new player to help with elevation...")
                 Popen(
                     [
@@ -67,21 +74,39 @@ class WinnerAgent:
                 self.ai_interface.send_inventory_action()
                 self.ai_interface.send_connect_nbr_action_and_block_until_response()
                 if (
-                    self.ai_interface.last_known_inventory
+                    self.ai_interface.last_known_number_of_unused_slots is not None
+                    and self.ai_interface.last_known_number_of_unused_slots == 0
+                    and self.ai_interface.last_known_inventory is not None
                     and self.ai_interface.last_known_inventory[
                         interface.object_type.food
                     ]
-                    < 15
-                ) or not self.ai_interface.has_enough_ressources_for_next_level():
-                    self.state = WinnerAgent.State.collecting_ressources
-                elif (
-                    self.ai_interface.last_known_number_of_unused_slots is not None
-                    and self.ai_interface.last_known_number_of_unused_slots == 0
+                    >= self.minimum_food_for_egg_laying
                 ):
                     self.state = WinnerAgent.State.egg_laying
+                elif (
+                    self.elevation_broadcast_direction
+                    is None  # no one is active elevating
+                    and self.ai_interface.has_enough_ressources_for_next_level()
+                    and self.ai_interface.last_known_inventory is not None
+                    and self.ai_interface.last_known_inventory[
+                        interface.object_type.food
+                    ]
+                    >= self.minimum_food_for_active_elevation
+                ):
+                    self.elevation_ressources_dropped = False
+                    self.state = WinnerAgent.State.active_elevating
+                elif (
+                    self.elevation_broadcast_direction
+                    is not None  # someone is already active elevating
+                    and self.ai_interface.last_known_inventory is not None
+                    and self.ai_interface.last_known_inventory[
+                        interface.object_type.food
+                    ]
+                    >= self.minimum_food_for_passive_elevation
+                ):
+                    self.state = WinnerAgent.State.passive_elevating
                 else:
-                    self.elevation_broadcast_direction = interface.direction.none
-                    self.state = WinnerAgent.State.elevating
+                    self.state = WinnerAgent.State.collecting_ressources
 
             if self.state == WinnerAgent.State.collecting_ressources:
                 if (
@@ -119,125 +144,76 @@ class WinnerAgent:
                 self.ai_interface.send_fork_action_and_block_until_response()
                 self.state = WinnerAgent.State.none
 
-            elif self.state == WinnerAgent.State.elevating:
+            elif self.state == WinnerAgent.State.active_elevating:
                 self.ai_interface.send_inventory_action_and_block_until_response()
                 if (
                     self.ai_interface.last_known_inventory
                     and self.ai_interface.last_known_inventory[
                         interface.object_type.food
                     ]
-                    < 5
+                    < self.low_food_elevation_abort_threshold
                 ):  # critically low on food abort, also means the elavation did not succeed
                     self.state = WinnerAgent.State.none
                     self.need_for_more_players += 1
-                elif not self.ai_interface.has_enough_ressources_for_next_level():
-                    self.state = WinnerAgent.State.none
-                else:  # try to level up
-                    if (
-                        self.ai_interface.level == 1
-                    ):  # level 1 is special because it only requires 1 player
-                        for (
-                            type,
-                            count,
-                        ) in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP[1].items():
-                            for _ in range(count):
-                                self.ai_interface.send_set_object_down_action_and_block_until_response(
-                                    type
-                                )
-                        self.ai_interface.send_start_incantation_action_and_block_until_response()
-                    else:  # for higher levels, check if we can already level up or if we need to wait for more players and ressources
-                        self.ai_interface.send_look_action_and_block_until_response()
-                        if (
-                            self.ai_interface.completed_actions
+
+                if self.elevation_ressources_dropped == False:
+                    for (
+                        resource,
+                        required_amount,
+                    ) in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(
+                        self.ai_interface.level, {}
+                    ).items():
+                        current_amount = (
+                            self.ai_interface.completed_actions[-1]["response"][0].get(
+                                resource, 0
+                            )
+                            if self.ai_interface.completed_actions
                             and self.ai_interface.completed_actions[-1]["action_type"]
                             == interface.action_type.look
                             and self.ai_interface.completed_actions[-1]["response"]
-                            and isinstance(
-                                self.ai_interface.completed_actions[-1]["response"],
-                                list,
-                            )
-                            and self.ai_interface.completed_actions[-1]["response"][0][
-                                interface.object_type.player
-                            ]
-                            >= interface.PLAYER_COUNT_REQUIREMENTS_FOR_LEVEL_UP.get(
-                                self.ai_interface.level, 0
-                            )
-                        ):  # if there are enough players, check if we have enough ressources to level up
-                            if (
-                                self.ai_interface.completed_actions
-                                and self.ai_interface.completed_actions[-1][
-                                    "action_type"
-                                ]
-                                == interface.action_type.look
-                                and self.ai_interface.completed_actions[-1]["response"]
-                                and self.ai_interface.completed_actions[-1]["response"][
-                                    0
-                                ]
-                                and self.ai_interface.are_ressources_sufficient_for_level_up(
-                                    self.ai_interface.completed_actions[-1]["response"][
-                                        0
-                                    ],
-                                    interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(
-                                        self.ai_interface.level, {}
-                                    ),
+                            and self.ai_interface.completed_actions[-1]["response"][0]
+                            else 0
+                        )
+                        if required_amount > current_amount:
+                            for _ in range(required_amount - current_amount):
+                                self.ai_interface.send_set_object_down_action_and_block_until_response(
+                                    resource
                                 )
-                            ):
-                                self.ai_interface.send_start_incantation_action_and_block_until_response()
-                                self.need_for_more_players = 0
-                            else:
-                                for (
-                                    resource,
-                                    required_amount,
-                                ) in interface.RESSOURSE_REQUIREMENTS_FOR_LEVEL_UP.get(
-                                    self.ai_interface.level, {}
-                                ).items():
-                                    current_amount = (
-                                        self.ai_interface.completed_actions[-1][
-                                            "response"
-                                        ][0].get(resource, 0)
-                                        if self.ai_interface.completed_actions
-                                        and self.ai_interface.completed_actions[-1][
-                                            "action_type"
-                                        ]
-                                        == interface.action_type.look
-                                        and self.ai_interface.completed_actions[-1][
-                                            "response"
-                                        ]
-                                        and self.ai_interface.completed_actions[-1][
-                                            "response"
-                                        ][0]
-                                        else 0
-                                    )
-                                    if required_amount > current_amount:
-                                        for _ in range(
-                                            required_amount - current_amount
-                                        ):
-                                            self.ai_interface.send_set_object_down_action_and_block_until_response(
-                                                resource
-                                            )
-                        else:
-                            if (
-                                self.elevation_broadcast_direction is not None
-                                and random.random() < 0.5
-                            ):
-                                self.ai_interface.move_towards_absolute_direction(
-                                    self.elevation_broadcast_direction
-                                )
-                            if (
-                                self.elevation_broadcast_direction is not None
-                                or self.elevation_broadcast_direction
-                                != interface.direction.none
-                            ):
-                                self.ai_interface.send_broadcast_action_and_block_until_response(
-                                    f"wawa_{self.ai_interface.level}"
-                                )
-                                self.ai_interface.send_broadcast_action_and_block_until_response(
-                                    f"wawa_{self.ai_interface.level}"
-                                )
-                                self.ai_interface.send_broadcast_action_and_block_until_response(
-                                    f"wawa_{self.ai_interface.level}"
-                                )
-                            self.elevation_broadcast_direction = None
+                    self.elevation_ressources_dropped = True
+
+                self.ai_interface.send_start_incantation_action_and_block_until_response()
+                if (
+                    self.ai_interface.completed_actions
+                    and self.ai_interface.completed_actions[-1]["action_type"]
+                    == interface.action_type.start_incantation
+                    and self.ai_interface.completed_actions[-1]["success"] == True
+                ):
+                    self.state = WinnerAgent.State.none
+                    self.need_for_more_players = 0
+                else:
+                    self.ai_interface.send_broadcast_action_and_block_until_response(
+                        f"wawa_{self.ai_interface.level}"
+                    )
+
+            elif self.state == WinnerAgent.State.passive_elevating:
+                self.ai_interface.send_inventory_action_and_block_until_response()
+                if (
+                    self.ai_interface.last_known_inventory
+                    and self.ai_interface.last_known_inventory[
+                        interface.object_type.food
+                    ]
+                    < self.low_food_elevation_abort_threshold
+                ):  # critically low on food abort, also means the elavation did not succeed
+                    self.state = WinnerAgent.State.none
+                    self.need_for_more_players += 1
+
+                if self.elevation_broadcast_direction is not None:
+                    if self.elevation_broadcast_direction == interface.direction.none:
+                        self.ai_interface.send_start_incantation_action_and_block_until_response()
+                    else:
+                        self.ai_interface.move_towards_absolute_direction(
+                            self.elevation_broadcast_direction
+                        )
 
                 if (
                     self.ai_interface.completed_actions
@@ -247,3 +223,10 @@ class WinnerAgent:
                 ):
                     self.state = WinnerAgent.State.none
                     self.need_for_more_players = 0
+                else:
+                    self.ai_interface.send_look_action_and_block_until_response()  # waiting
+                    # self.ai_interface.send_broadcast_action_and_block_until_response(
+                    #    f"wawa_{self.ai_interface.level}"
+                    # )
+
+            self.elevation_broadcast_direction = None

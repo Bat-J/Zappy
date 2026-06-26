@@ -81,13 +81,13 @@ class direction(Enum):
     def add_cardinal_direction(self, cardinal_direction: cardinal_direction):
         if cardinal_direction == cardinal_direction.none or self == direction.none:
             return direction.none
-        rotation = cardinal_direction.value * 2 - 2
+        rotation = cardinal_direction.value * 2 - 1
         return direction(self.__wrap_around(self.value + rotation - 1))
 
     def sub_cardinal_direction(self, cardinal_direction: cardinal_direction):
         if cardinal_direction == cardinal_direction.none or self == direction.none:
             return direction.none
-        rotation = cardinal_direction.value * 2 - 2
+        rotation = cardinal_direction.value * 2 - 1
         return direction(self.__wrap_around(self.value - rotation - 1))
 
 
