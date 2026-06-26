@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <utility>
 #include <vector>
-#include "../network/Socket.hpp"
 
 namespace zappy {
     enum Orientation {
