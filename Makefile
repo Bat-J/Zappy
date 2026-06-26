@@ -8,7 +8,6 @@ SHELL := /usr/bin/env bash
 
 all: server ai gui
 
-
 server: $(SERVER_BIN)
 
 $(SERVER_BIN): clean_serv

@@ -8,6 +8,7 @@
 #include "Server.hpp"
 #include "ServerParser.hpp"
 #include <cstdlib>
+#include <iostream>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -180,6 +181,21 @@ namespace zappy {
                 }
                 tiles[tileIndex].setRessources(resources);
                 i += 9;
+            } else if (_tokens[i] == "pnw" && i + 7 < _tokens.size()) {
+                std::vector<Player>& players = _players.getPlayer();
+                std::cout << _tokens[i] << std::endl;
+                const int number = std::atoi(_tokens[i + 1].substr(1).c_str());
+                std::cout << number << std::endl;
+                if (number < 0)
+                    return;
+                ensurePlayer(number);
+                ServerParser::parsePlayerPositionLine(_tokens, players[number]);
+                players[number].setIsAlive(true);
+                std::string team = _tokens[i + 6];
+                players[number].setTeam(team);
+                players[number].setLevel(static_cast<u_int8_t>(std::atoi(_tokens[i + 5].c_str())));
+                _logs.push_back("New player " + std::to_string(number + 1) + " connected");
+                i += 7;
             }
         }
         _world.setTiles(tiles);
