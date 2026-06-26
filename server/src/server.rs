@@ -133,10 +133,12 @@ impl Server {
     pub fn execute_ready_commands(&mut self, config: &Config, game: &mut Game) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
-            println!(
-                "EXECUTE: client {} - {}",
-                scheduled.client_id, scheduled.command
-            );
+            if command_logging_enabled() {
+                println!(
+                    "EXECUTE: client {} - {}",
+                    scheduled.client_id, scheduled.command
+                );
+            }
 
             let idx = match self
                 .clients
@@ -620,23 +622,46 @@ impl Server {
         client_id: u32,
         player: &Player,
     ) -> bool {
-        let owned_players: Vec<Player> = clients
-            .iter()
-            .filter_map(|c| match &c.state {
-                ClientState::Ai { player, .. } => Some(player.clone()),
-                _ => None,
-            })
-            .collect();
+        // Enforce the per-client command buffer cap *before* parsing, so a command
+        // we are going to drop never produces side effects (e.g. parsing an
+        // Incantation emits a GUI `pic`). Dropped silently, matching the protocol.
+        if time_manager.is_client_queue_full(client_id) {
+            if command_logging_enabled() {
+                eprintln!(
+                    "AI command from {} dropped: command buffer full (max {})",
+                    clients[client_idx].addr,
+                    crate::time_manager::MAX_PENDING_PER_CLIENT
+                );
+            }
+            return false;
+        }
+
+        // Only `Command::parse`'s Incantation branch needs the full player list
+        // (to build the GUI `pic`). Build it lazily for that one command instead
+        // of deep-cloning every player on every single command line.
+        let owned_players: Vec<Player> = if line.split_whitespace().next() == Some("Incantation") {
+            clients
+                .iter()
+                .filter_map(|c| match &c.state {
+                    ClientState::Ai { player, .. } => Some(player.clone()),
+                    _ => None,
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
         let list: Vec<&Player> = owned_players.iter().collect();
         let addr = clients[client_idx].addr;
 
         match Command::parse(line, &list, player, clients) {
             Ok(cmd) => {
                 let execute_at = time_manager.schedule(cmd.clone(), client_id);
-                println!(
-                    "AI command from {}: {} (execute at {:?})",
-                    addr, cmd, execute_at
-                );
+                if command_logging_enabled() {
+                    println!(
+                        "AI command from {}: {} (execute at {:?})",
+                        addr, cmd, execute_at
+                    );
+                }
                 false
             }
             Err(err) => {
@@ -729,6 +754,15 @@ impl Server {
             }
         }
     }
+}
+
+/// Per-command logging (`EXECUTE` / `AI command`) is the server's biggest source
+/// of stdout I/O at high frequency. Setting `ZAPPY_QUIET=1` suppresses just those
+/// two lines (read once); win / hatch / starve / disconnect logging is unaffected.
+/// Default is unchanged (logging on) so this is a pure opt-in perf toggle.
+fn command_logging_enabled() -> bool {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ENABLED.get_or_init(|| std::env::var_os("ZAPPY_QUIET").is_none())
 }
 
 fn broadcast_k(

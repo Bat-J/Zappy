@@ -35,6 +35,10 @@ namespace zappy {
     }
 
     bool ServerParser::parsePlayerPositionLine(const std::vector<std::string>& words, Player& player) {
+        // Expected: "ppo #id X Y O" -> 5 tokens. Bail out on a truncated or
+        // malformed line instead of indexing past the end of the vector (UB).
+        if (words.size() < 5)
+            return false;
         std::pair<std::pair<int, int>, Orientation> pos;
         pos.first.first  = std::atoi(words[2].c_str());
         pos.first.second = std::atoi(words[3].c_str());
