@@ -147,7 +147,7 @@ impl Server {
             let mut incantation_result = false;
 
             let response = match &scheduled.command {
-                Command::Forward => move_forward(&mut self.clients[idx], config),
+                Command::Forward => move_forward(&mut self.clients[idx], config, game),
                 Command::Right => turn_right(&mut self.clients[idx]),
                 Command::Left => turn_left(&mut self.clients[idx]),
                 Command::Look => look(&self.clients[idx], &game.map),

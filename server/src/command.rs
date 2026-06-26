@@ -663,28 +663,42 @@ pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>
     msg
 }
 
-pub fn move_forward(client: &mut Client, config: &Config) -> String {
+pub fn move_forward(client: &mut Client, config: &Config, game: &mut Game) -> String {
+    let old_x;
+    let old_y;
+    let player_id;
+    let new_x;
+    let new_y;
     match &mut client.state {
-        ClientState::Ai { player, .. } => match player.orientation {
-            Orientation::North => {
-                if player.y == 0 {
-                    player.y = config.height - 1;
-                } else {
-                    player.y -= 1;
+        ClientState::Ai { player, .. } => {
+            old_x = player.x;
+            old_y = player.y;
+            player_id = player.id;
+            match player.orientation {
+                Orientation::North => {
+                    if player.y == 0 {
+                        player.y = config.height - 1;
+                    } else {
+                        player.y -= 1;
+                    }
+                }
+                Orientation::East => player.x = (player.x + 1) % config.width,
+                Orientation::South => player.y = (player.y + 1) % config.height,
+                Orientation::West => {
+                    if player.x == 0 {
+                        player.x = config.width - 1;
+                    } else {
+                        player.x -= 1;
+                    }
                 }
             }
-            Orientation::East => player.x = (player.x + 1) % config.width,
-            Orientation::South => player.y = (player.y + 1) % config.height,
-            Orientation::West => {
-                if player.x == 0 {
-                    player.x = config.width - 1;
-                } else {
-                    player.x -= 1;
-                }
-            }
-        },
+            new_x = player.x;
+            new_y = player.y;
+        }
         _ => return "ko\n".to_string(),
     }
+    game.map[old_y as usize][old_x as usize].ais.retain(|x| *x != player_id);
+    game.map[new_y as usize][new_x as usize].ais.push(player_id);
     "ok\n".to_string()
 }
 
@@ -805,7 +819,7 @@ pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
         }
     }
 
-    format!("[{}]\n", cells.join(", "))
+    format!("[ {} ]\n", cells.join(", "))
 }
 
 pub fn get_inventory(client: &Client) -> String {
