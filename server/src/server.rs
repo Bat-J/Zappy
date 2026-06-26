@@ -719,11 +719,8 @@ impl Server {
                 clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
             None => {
-                eprintln!(
-                    "{} refused: unknown team or no slots for '{name}'",
-                    clients[idx].addr
-                );
-                true
+                let response = format!("ko\n");
+                clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
         }
     }
