@@ -10,7 +10,7 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <signal.h>

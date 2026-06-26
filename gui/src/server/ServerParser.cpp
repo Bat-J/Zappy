@@ -20,6 +20,20 @@ namespace zappy {
         return words;
     }
 
+    Orientation ServerParser::parseOrientation(const std::string& token) {
+        // The server encodes orientation as a letter (N/E/S/W). Digit forms
+        // (1-4) are accepted too so the parser stays robust to either encoding.
+        if (token.empty())
+            return NORTH;
+        switch (token[0]) {
+            case '1': return NORTH;
+            case '2': return EAST;
+            case '3': return SOUTH;
+            case '4': return WEST;
+            default: return NORTH;
+        }
+    }
+
     bool ServerParser::parsePlayerPositionLine(const std::vector<std::string>& words, Player& player) {
         std::pair<std::pair<int, int>, Orientation> pos;
         pos.first.first  = std::atoi(words[2].c_str());

@@ -18,8 +18,6 @@ namespace zappy {
         size_t                     getNbPlayers() const;
         size_t                     getNbDeath() const;
         void                       getAllAlive();
-        void                       checkAlive(int pNumber, Socket& socket, std::vector<std::string>& logs);
-        void                       updatePlayerpos(Socket& socket, std::vector<std::string>& logs);
         std::vector<int>           takeBroadcasters();
         void                       clearBroadcasters();
         void                       addBroadcaster(int i);

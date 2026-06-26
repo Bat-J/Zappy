@@ -82,29 +82,15 @@ namespace zappy {
         _team = name;
     }
 
-    void Player::updateResources(int i, Socket& socket) {
-        const std::string mess = "pin #" + std::to_string(i) + "\n";
-        socket.writeToSocket(mess);
-
-        std::string resp = socket.readFromSocket();
-        while (resp.empty())
-            resp = socket.readFromSocket();
-        std::stringstream        ss(resp);
-        std::string              word;
-        std::vector<std::string> tokens;
-        while (ss >> word) {
-            tokens.push_back(word);
-        }
-        if (tokens.size() >= 10 && tokens[0] == "pin") {
-            _totalFood      = std::stoi(tokens[4]);
-            _totalLinemate  = std::stoi(tokens[5]);
-            _totalDeraumere = std::stoi(tokens[6]);
-            _totalSibur     = std::stoi(tokens[7]);
-            _totalMendiane  = std::stoi(tokens[8]);
-            _totalPhiras    = std::stoi(tokens[9]);
-            if (tokens.size() > 10) {
-                _totalThystame = std::stoi(tokens[10]);
-            }
-        }
+    void Player::setInventory(const std::vector<int>& res) {
+        if (res.size() < 7)
+            return;
+        _totalFood      = static_cast<size_t>(res[0]);
+        _totalLinemate  = static_cast<size_t>(res[1]);
+        _totalDeraumere = static_cast<size_t>(res[2]);
+        _totalSibur     = static_cast<size_t>(res[3]);
+        _totalMendiane  = static_cast<size_t>(res[4]);
+        _totalPhiras    = static_cast<size_t>(res[5]);
+        _totalThystame  = static_cast<size_t>(res[6]);
     }
 }

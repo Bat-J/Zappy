@@ -22,7 +22,6 @@ namespace zappy {
 
         void        getInfo();
         void        handleServerUpdate();
-        void        updateTiles();
         void        updateResources();
         std::mutex& getMutex() {
             return _dataMutex;
@@ -44,11 +43,16 @@ namespace zappy {
         }
 
       private:
+        void                     dispatchLine(const std::vector<std::string>& words);
+        void                     ensurePlayer(int number);
+        void                     requestState(const std::vector<int>& alivePlayers);
+
         Socket&                  _socket;
         WorldState               _world;
         PlayerManager            _players;
         ResourceTracker          _resources;
         std::mutex               _dataMutex;
         std::vector<std::string> _logs;
+        std::string              _pending;
     };
 }

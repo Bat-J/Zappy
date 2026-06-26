@@ -163,10 +163,10 @@ pub fn ppo_reply(player: &Player) -> String {
     string.push_str(&player.y.to_string());
     string.push(' ');
     match player.orientation {
-        Orientation::North => string.push('N'),
-        Orientation::East => string.push('E'),
-        Orientation::South => string.push('S'),
-        Orientation::West => string.push('W'),
+        Orientation::North => string.push('1'),
+        Orientation::East => string.push('2'),
+        Orientation::South => string.push('3'),
+        Orientation::West => string.push('4'),
     }
     string.push('\n');
     string
