@@ -23,30 +23,30 @@ where
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.items.len()
+    pub fn len(&self) -> u32 {
+        self.items.len() as u32
     }
 
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 
-    pub fn push(&mut self, value: T) -> usize {
+    pub fn push(&mut self, value: T) -> u32 {
         let key_fn = &self.key;
         let key = key_fn(&value);
         let index = self
             .items
             .partition_point(|existing| key_fn(existing) <= key);
         self.items.insert(index, value);
-        index
+        index as u32
     }
 
-    pub fn get(&self, index: usize) -> Option<&T> {
-        self.items.get(index)
+    pub fn get(&self, index: u32) -> Option<&T> {
+        self.items.get(index as usize)
     }
 
-    pub fn remove(&mut self, index: usize) -> T {
-        self.items.remove(index)
+    pub fn remove(&mut self, index: u32) -> T {
+        self.items.remove(index as usize)
     }
 
     pub fn iter(&self) -> impl ExactSizeIterator<Item = &T> {

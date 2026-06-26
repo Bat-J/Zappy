@@ -4,6 +4,7 @@ import helpers.interface as interface
 import agents.winner
 import agents.simple_lawn_mower
 import agents.mover
+import agents.chatterbox
 
 
 for arg in sys.argv:
@@ -49,9 +50,7 @@ if not ai_interface.connect():
 else:
     print("connected to the server")
     print(f"number of unused slots: {ai_interface.last_known_number_of_unused_slots}")
-    print(
-        f"world dimensions: {ai_interface.world_x_size} x {ai_interface.world_y_size}"
-    )
+    print(f"world dimensions: {ai_interface.world_x_size} x {ai_interface.world_y_size}")
 
 # creating the agent
 
@@ -63,6 +62,8 @@ elif agent_name == "simple_lawn_mower":
     agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
 elif agent_name == "mover":
     agent = agents.mover.MoverAgent(ai_interface)
+elif agent_name == "chatterbox":
+    agent = agents.chatterbox.ChatterboxAgent(ai_interface)
 else:
     print(f"Error: Unknown agent '{agent_name}'.")
     sys.exit(84)

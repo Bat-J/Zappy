@@ -5,7 +5,7 @@
 ** Throw exceptions
 */
 
-#include "../include/Error.hpp"
+#include "Error.hpp"
 
 namespace zappy {
     Error::Error(std::string message) : std::runtime_error(message) {}

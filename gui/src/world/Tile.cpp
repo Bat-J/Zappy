@@ -5,7 +5,7 @@
 ** Tile
 */
 
-#include "../include/Tile.hpp"
+#include "Tile.hpp"
 
 namespace zappy {
 
@@ -25,4 +25,5 @@ namespace zappy {
         _ressources.clear();
         _ressources = vec;
     }
+
 }

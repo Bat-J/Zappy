@@ -7,8 +7,10 @@
 
 #pragma once
 #include <cstddef>
+#include <string>
 #include <sys/types.h>
 #include <utility>
+#include <vector>
 
 namespace zappy {
     enum Orientation {
@@ -30,19 +32,20 @@ namespace zappy {
         size_t                                      getThystame() const;
         bool                                        getIsAlive() const;
         std::pair<std::pair<int, int>, Orientation> getPos() const;
+        int                                         getId() const;
+        std::string                                 getTeam() const;
         void                                        setLevel(u_int8_t lvl);
-        void                                        setFood(size_t food);
-        void                                        setLinemate(size_t linemate);
-        void                                        setDeraumere(size_t deraumere);
-        void                                        setSibur(size_t sibur);
-        void                                        setMendiane(size_t mendiane);
-        void                                        setPhiras(size_t phiras);
-        void                                        setThystame(size_t thystame);
         void                                        setIsAlive(bool alive);
         void                                        setPos(std::pair<std::pair<int, int>, Orientation> pos);
+        void                                        setId();
+        void                                        setTeam(std::string& name);
+        // Sets food + the six craftable resources from a parsed `pin` payload.
+        // res = {food, linemate, deraumere, sibur, mendiane, phiras, thystame}.
+        void setInventory(const std::vector<int>& res);
 
       private:
         u_int8_t                                    _lvl            = 1;
+        int                                         _id             = -1;
         size_t                                      _totalFood      = 0;
         size_t                                      _totalLinemate  = 0;
         size_t                                      _totalDeraumere = 0;
@@ -50,7 +53,8 @@ namespace zappy {
         size_t                                      _totalMendiane  = 0;
         size_t                                      _totalPhiras    = 0;
         size_t                                      _totalThystame  = 0;
-        bool                                        isAlive         = true;
+        bool                                        _isAlive        = true;
+        std::string                                 _team           = "unk";
         std::pair<std::pair<int, int>, Orientation> _pos;
     };
 

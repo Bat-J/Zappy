@@ -3,27 +3,29 @@ use rand::RngExt;
 
 #[derive(Default, Clone)]
 pub struct Tile {
-    food: u32,
-    resources: Resources,
-    _ais: Vec<usize>,
+    pub food: u32,
+    pub resources: Resources,
+    pub ais: Vec<u32>,
 }
 
 #[derive(Default, Clone)]
 pub struct Resources {
-    linemate: u32,
-    deraumere: u32,
-    sibur: u32,
-    mendiane: u32,
-    phiras: u32,
-    thystame: u32,
+    pub linemate: u32,
+    pub deraumere: u32,
+    pub sibur: u32,
+    pub mendiane: u32,
+    pub phiras: u32,
+    pub thystame: u32,
 }
 
 #[derive(Default)]
 pub struct Egg {
-    x: u32,
-    y: u32,
-    id: u32,
-    player_id: i32,
+    pub x: u32,
+    pub y: u32,
+    pub id: u32,
+    pub is_starting: bool,
+    pub player_id: u32,
+    pub team: String,
 }
 
 pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
@@ -31,18 +33,33 @@ pub fn create_map(config: &Config) -> Vec<Vec<Tile>> {
     map
 }
 
-pub fn _remove_ai_from_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: usize) {
-    if x >= config.width || y >= config.height || !map[y as usize][x as usize]._ais.contains(&id) {
-        return;
+pub fn spawn_resources(config: &Config, map: &mut [Vec<Tile>]) {
+    let tiles = (config.width * config.height) as f64;
+    let counts: [(f64, u8); 7] = [
+        (0.5, 0),  // food
+        (0.3, 1),  // linemate
+        (0.15, 2), // deraumere
+        (0.1, 3),  // sibur
+        (0.1, 4),  // mendiane
+        (0.08, 5), // phiras
+        (0.05, 6), // thystame
+    ];
+    for (density, kind) in counts {
+        let total = (tiles * density).round() as u32;
+        for _ in 0..total {
+            let x = rand::rng().random_range(0..config.width) as usize;
+            let y = rand::rng().random_range(0..config.height) as usize;
+            match kind {
+                0 => map[y][x].food += 1,
+                1 => map[y][x].resources.linemate += 1,
+                2 => map[y][x].resources.deraumere += 1,
+                3 => map[y][x].resources.sibur += 1,
+                4 => map[y][x].resources.mendiane += 1,
+                5 => map[y][x].resources.phiras += 1,
+                _ => map[y][x].resources.thystame += 1,
+            }
+        }
     }
-    map[y as usize][x as usize]._ais.retain(|&x| x != id);
-}
-
-pub fn _add_ai_to_tile(x: u32, y: u32, map: &mut [Vec<Tile>], config: &Config, id: usize) {
-    if x >= config.width || y >= config.height || map[x as usize][y as usize]._ais.contains(&id) {
-        return;
-    }
-    map[y as usize][x as usize]._ais.push(id);
 }
 
 pub fn msz_reply(config: &Config) -> String {
@@ -176,7 +193,11 @@ pub fn enw_string(egg: &Egg) -> String {
     string.push_str("enw #");
     string.push_str(&egg.id.to_string());
     string.push_str(" #");
-    string.push_str(&egg.player_id.to_string());
+    if egg.is_starting {
+        string.push_str("-1");
+    } else {
+        string.push_str(&egg.player_id.to_string());
+    }
     string.push(' ');
     string.push_str(&egg.x.to_string());
     string.push(' ');
@@ -185,16 +206,67 @@ pub fn enw_string(egg: &Egg) -> String {
     string
 }
 
+pub fn refill_resources(config: &Config, map: &mut [Vec<Tile>]) {
+    let mut current = [0u32; 7];
+    for row in map.iter() {
+        for tile in row.iter() {
+            current[0] += tile.food;
+            current[1] += tile.resources.linemate;
+            current[2] += tile.resources.deraumere;
+            current[3] += tile.resources.sibur;
+            current[4] += tile.resources.mendiane;
+            current[5] += tile.resources.phiras;
+            current[6] += tile.resources.thystame;
+        }
+    }
+
+    let tiles = (config.width * config.height) as f64;
+    let targets: [u32; 7] = [
+        (tiles * 0.5).round() as u32,
+        (tiles * 0.3).round() as u32,
+        (tiles * 0.15).round() as u32,
+        (tiles * 0.1).round() as u32,
+        (tiles * 0.1).round() as u32,
+        (tiles * 0.08).round() as u32,
+        (tiles * 0.05).round() as u32,
+    ];
+
+    for kind in 0..7usize {
+        if current[kind] >= targets[kind] {
+            continue;
+        }
+        let to_add = targets[kind] - current[kind];
+        for _ in 0..to_add {
+            let x = rand::rng().random_range(0..config.width);
+            let y = rand::rng().random_range(0..config.height);
+            match kind {
+                0 => map[y as usize][x as usize].food += 1,
+                1 => map[y as usize][x as usize].resources.linemate += 1,
+                2 => map[y as usize][x as usize].resources.deraumere += 1,
+                3 => map[y as usize][x as usize].resources.sibur += 1,
+                4 => map[y as usize][x as usize].resources.mendiane += 1,
+                5 => map[y as usize][x as usize].resources.phiras += 1,
+                _ => map[y as usize][x as usize].resources.thystame += 1,
+            }
+        }
+    }
+}
+
 pub fn start_spawn_eggs(config: &Config) -> Vec<Egg> {
     let mut eggs = Vec::new();
-    for id in 0..config.clients_per_team * config.teams.len() {
-        let egg = Egg {
-            x: rand::rng().random_range(0..config.width),
-            y: rand::rng().random_range(0..config.height),
-            id: id as u32,
-            player_id: -1,
-        };
-        eggs.push(egg);
+    let mut id = 0u32;
+    for team in &config.teams {
+        for _ in 0..config.clients_per_team {
+            eggs.push(Egg {
+                x: rand::rng().random_range(0..config.width),
+                y: rand::rng().random_range(0..config.height),
+                id,
+                player_id: 0,
+                is_starting: true,
+                team: team.clone(),
+            });
+            id += 1;
+        }
     }
     eggs
 }
@@ -210,10 +282,65 @@ mod test {
                 x: 5,
                 y: 6,
                 id: 0,
-                player_id: -1,
+                player_id: 0,
+                is_starting: false,
+                team: String::new(),
+            }),
+            "enw #0 #0 5 6\n"
+        );
+    }
+
+    #[test]
+    fn enw_starting() {
+        assert_eq!(
+            enw_string(&Egg {
+                x: 5,
+                y: 6,
+                id: 0,
+                is_starting: true,
+                player_id: 0,
+                team: String::new(),
             }),
             "enw #0 #-1 5 6\n"
         );
+    }
+
+    #[test]
+    fn refill_tops_up_to_target_densities() {
+        let config = Config {
+            port: 0,
+            width: 4,
+            height: 4,
+            teams: vec![],
+            clients_per_team: 0,
+            frequency: 0,
+        };
+        let mut map = create_map(&config);
+
+        let total = |map: &[Vec<Tile>]| {
+            let mut sum = 0u32;
+            for row in map {
+                for t in row {
+                    sum += t.food
+                        + t.resources.linemate
+                        + t.resources.deraumere
+                        + t.resources.sibur
+                        + t.resources.mendiane
+                        + t.resources.phiras
+                        + t.resources.thystame;
+                }
+            }
+            sum
+        };
+
+        // Empty map: refill adds resources up to the target densities.
+        refill_resources(&config, &mut map);
+        let after_first = total(&map);
+        assert!(after_first > 0);
+
+        // Already at target densities: a second refill adds nothing.
+        refill_resources(&config, &mut map);
+        assert_eq!(total(&map), after_first);
     }
 
     #[test]

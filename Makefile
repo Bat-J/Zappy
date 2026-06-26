@@ -9,7 +9,7 @@ all: server ai gui
 
 server: $(SERVER_BIN)
 
-$(SERVER_BIN):
+$(SERVER_BIN): clean_serv
 	@echo "Building server..."
 	@cargo build --release --manifest-path ./server/Cargo.toml
 	@cp ./server/target/release/$(SERVER_BIN) ./
@@ -32,8 +32,7 @@ $(AI_BIN):
 	@if [ ! -d "./ai/.venv" ]; then \
 		python3 -m venv ./ai/.venv; \
 	fi
-	@source ./ai/.venv/bin/activate && \
-	(pip install -r ./ai/requirements.txt) > ai/venv_install.log 2>&1
+	@./ai/.venv/bin/pip install -r ./ai/requirements.txt > ai/venv_install.log 2>&1
 	@cp ./ai/entry.sh ./$(AI_BIN)
 	@chmod +x ./$(AI_BIN)
 

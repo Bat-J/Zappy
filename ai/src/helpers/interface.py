@@ -1,6 +1,8 @@
 import helpers.networking as networking
 from enum import Enum
 from helpers.can_cast import can_cast
+from random import choice, randint
+import helpers.broadcast_strings as broadcast_strings
 
 
 class object_type(Enum):
@@ -219,9 +221,7 @@ class AI_server_interface:
         if received_message is None or received_message.strip() == "ko":
             return False
         try:
-            self.world_x_size, self.world_y_size = map(
-                int, received_message.strip().split()
-            )
+            self.world_x_size, self.world_y_size = map(int, received_message.strip().split())
         except Exception:
             return False
 
@@ -306,9 +306,7 @@ class AI_server_interface:
                 if len(self.pending_response_actions) == 0:
                     return
                 completed_action = self.pending_response_actions.pop(0)
-                self.completed_actions.append(
-                    {"action_type": completed_action, "success": True}
-                )
+                self.completed_actions.append({"action_type": completed_action, "success": True})
                 if completed_action == action_type.turn_right:
                     self.relative_direction = self.relative_direction.right()
                 elif completed_action == action_type.turn_left:
@@ -328,9 +326,7 @@ class AI_server_interface:
                 if len(self.pending_response_actions) == 0:
                     return
                 completed_action = self.pending_response_actions.pop(0)
-                self.completed_actions.append(
-                    {"action_type": completed_action, "success": False}
-                )
+                self.completed_actions.append({"action_type": completed_action, "success": False})
             pass
         elif message.startswith("["):
             if message.startswith("[ player"):
@@ -403,9 +399,7 @@ class AI_server_interface:
             )
             pass
         elif message.startswith("eject: "):
-            direction = parse_direction(int(message[7:])).add_cardinal_direction(
-                self.relative_direction
-            )
+            direction = parse_direction(int(message[7:])).add_cardinal_direction(self.relative_direction)
             if direction == direction.north:
                 self.relative_x_position -= 1
             elif direction == direction.northwest:
@@ -607,11 +601,7 @@ class AI_server_interface:
 
     def block_until_all_responses_received(self):
         """Blocks until all pending response actions have received a response from the server."""
-        while (
-            self.pending_response_actions
-            and self.connection.is_connected()
-            and self.is_alive()
-        ):
+        while self.pending_response_actions and self.connection.is_connected() and self.is_alive():
             self.handle_server_messages_blocking()
 
     def send_forward_action(self):
@@ -666,9 +656,7 @@ class AI_server_interface:
 
     def send_set_object_down_action(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object."""
-        self.connection.send_message(
-            f"{action_type.set_object_down.value} {object_type.value}\n"
-        )
+        self.connection.send_message(f"{action_type.set_object_down.value} {object_type.value}\n")
         self.pending_response_actions.append(action_type.set_object_down)
 
     def send_start_incantation_action(self):
@@ -736,9 +724,7 @@ class AI_server_interface:
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
 
-    def send_set_object_down_action_and_block_until_response(
-        self, object_type: object_type
-    ):
+    def send_set_object_down_action_and_block_until_response(self, object_type: object_type):
         """Sends a set_object_down action to the server for the specified object and blocks until a response is received."""
         self.send_set_object_down_action(object_type)
         self.block_until_all_responses_received()
@@ -749,3 +735,85 @@ class AI_server_interface:
         self.send_start_incantation_action()
         self.block_until_all_responses_received()
         return self.completed_actions[-1]
+
+    def sanitize_broadcast_message(self, message: str) -> str:
+        """sanitizes a broadcast"""
+        return message.replace(" ", "_").replace("\n", "_")
+
+    def generate_fake_broadcast_random_message(self) -> str:
+        return choice(broadcast_strings.RANDOM_MESSAGES)
+
+    def generate_fake_broadcast_response_message(self, message: str) -> str:
+        random_action = randint(0, 9)
+        if random_action == 0:
+            # return the message as is
+            return message
+        elif random_action == 1 and any(char.isdigit() for char in message):
+            # replace digits in the message with random digits
+            for char in message:
+                if char.isdigit():
+                    random_digit = randint(0, 9)
+                    message = message.replace(char, str(random_digit), 1)
+            return message
+        elif random_action == 2:
+            # censor a random word in the message
+            words = message.split("_")
+            if words:
+                random_word_index = randint(0, len(words) - 1)
+                words[random_word_index] = "******"
+                return "_".join(words)
+        elif random_action == 3:
+            # put the message in uppercase
+            return message.upper()
+        elif random_action == 4:
+            # put the message in lowercase
+            return message.lower()
+        elif random_action == 5:
+            # return a random number
+            return str(randint(0, 99))
+        elif random_action == 6:
+            # cesar code the message with a random shift
+            shift = randint(1, 25)
+            encrypted_message = ""
+            for char in message:
+                if char.isalpha():
+                    if char.isupper():
+                        offset = 65
+                    else:
+                        offset = 97
+                    encrypted_char = chr((ord(char) - offset + shift) % 26 + offset)
+                    encrypted_message += encrypted_char
+                else:
+                    encrypted_message += char
+            return encrypted_message
+        elif random_action == 7:
+            # reverse message
+            return message[::-1]
+        elif random_action == 8:
+            # replace vowels with consonants and vice versa
+            vowels = "aeiouyAEIOUY"
+            consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+            for vowel in vowels:
+                message = message.replace(vowel, consonants[randint(0, len(consonants) - 1)])
+            return message
+        elif random_action == 9:
+            # replace consonants with vowels and vice versa
+            vowels = "aeiouyAEIOUY"
+            consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+            for consonant in consonants:
+                message = message.replace(consonant, vowels[randint(0, len(vowels) - 1)])
+            return message
+        return message
+
+    def generate_fake_broadcast_message(self, message: str = "") -> str:
+        """Generates a broadcast message meant to confuse other agents. Message parameter is optional"""
+        output = ""
+        if message is not None and message.strip() != "":
+            # 2/3 response, 1/3 random
+            if randint(0, 2) != 0:
+                output = self.generate_fake_broadcast_response_message(message)
+            else:
+                output = self.generate_fake_broadcast_random_message()
+        else:
+            output = self.generate_fake_broadcast_random_message()
+        return self.sanitize_broadcast_message(output)
