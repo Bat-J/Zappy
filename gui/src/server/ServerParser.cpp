@@ -26,13 +26,9 @@ namespace zappy {
         if (token.empty())
             return NORTH;
         switch (token[0]) {
-            case 'N':
             case '1': return NORTH;
-            case 'E':
             case '2': return EAST;
-            case 'S':
             case '3': return SOUTH;
-            case 'W':
             case '4': return WEST;
             default: return NORTH;
         }
@@ -42,7 +38,7 @@ namespace zappy {
         std::pair<std::pair<int, int>, Orientation> pos;
         pos.first.first  = std::atoi(words[2].c_str());
         pos.first.second = std::atoi(words[3].c_str());
-        pos.second       = parseOrientation(words[4]);
+        pos.second       = static_cast<Orientation>(std::atoi(words[4].c_str()));
         player.setPos(pos);
         return true;
     }
