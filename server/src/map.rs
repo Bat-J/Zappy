@@ -172,10 +172,7 @@ pub fn mct_reply(config: &Config, map: &[Vec<Tile>]) -> Option<String> {
     Some(map_string)
 }
 
-pub fn create_gui_connection_string(
-    game: &Game,
-    clients: &mut [Client],
-) -> Option<String> {
+pub fn create_gui_connection_string(game: &Game, clients: &mut [Client]) -> Option<String> {
     let mut map_string = String::new();
 
     map_string.push_str(&msz_reply(&game.config));
