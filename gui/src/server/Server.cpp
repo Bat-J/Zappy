@@ -58,7 +58,7 @@ namespace zappy {
         std::vector<Player>& players = _players.getPlayer();
 
         if (cmd == "pbc") {
-            const int number  = std::atoi(words[1].substr(1).c_str());
+            const int number = std::atoi(words[1].substr(1).c_str());
             ensurePlayer(number);
             _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + words[2]);
             _players.addBroadcaster(number);
@@ -166,8 +166,7 @@ namespace zappy {
         }
     }
 
-    void Server::updateResources()
-    {
+    void Server::updateResources() {
         std::vector<Tile> tiles;
         {
             std::lock_guard<std::mutex> lock(_dataMutex);
