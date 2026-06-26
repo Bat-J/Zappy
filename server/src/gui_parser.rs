@@ -222,10 +222,10 @@ pub fn pnw_reply(player: &Player, team: &str) -> String {
     string.push_str(&player.y.to_string());
     string.push(' ');
     match player.orientation {
-        Orientation::North => string.push('N'),
-        Orientation::East => string.push('E'),
-        Orientation::South => string.push('S'),
-        Orientation::West => string.push('W'),
+        Orientation::North => string.push('1'),
+        Orientation::East => string.push('2'),
+        Orientation::South => string.push('3'),
+        Orientation::West => string.push('4'),
     }
     string.push(' ');
     string.push_str(&player.level.to_string());
@@ -354,6 +354,17 @@ pub fn seg_reply(team: &str) -> String {
     string.push_str("seg ");
     string.push_str(team);
     string.push('\n');
+    string
+}
+
+pub fn player_spawn(client: &mut Client) -> String {
+    let (team, player) = match &client.state {
+        ClientState::Ai { team, player } => (team.clone(), player.clone()),
+        _ => return "ko\n".to_string(),
+    };
+    let mut string = String::new();
+    string.push_str(&pnw_reply(&player, &team));
+    string.push_str(&pin_reply(&player));
     string
 }
 

@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <string>
 #include <vector>
-#include <sstream>
 
 namespace zappy {
 

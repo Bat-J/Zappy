@@ -8,7 +8,7 @@ use crate::command::{
     Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
     send_string_to_all_guis, set, take, turn_left, turn_right,
 };
-use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, pnw_reply, seg_reply};
+use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, player_spawn, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -413,14 +413,7 @@ impl Server {
             };
             game.next_player_id += 1;
 
-            let player = {
-                match &self.clients[i].state {
-                    ClientState::Ai { player, .. } => player.clone(),
-                    _ => Player::default(),
-                }
-            };
-            gui_notifications.push(pnw_reply(&player, &team));
-            gui_notifications.push(pin_reply(&player));
+            gui_notifications.push(player_spawn(&mut self.clients[i]));
             gui_notifications.push(ebo_reply(&egg));
 
             let response = format!(
@@ -658,7 +651,7 @@ impl Server {
         if name == "GRAPHIC" {
             clients[idx].state = ClientState::Gui;
             println!("{} identified as GUI", clients[idx].addr);
-            match create_gui_connection_string(&game.config, &game.map, &game.eggs) {
+            match create_gui_connection_string(game, clients) {
                 Some(message) => {
                     return clients[idx].stream.write_all(message.as_bytes()).is_err();
                 }
@@ -705,14 +698,8 @@ impl Server {
                         "{} hatched egg at ({}, {}) for team {name} ({remaining} slots left)",
                         clients[idx].addr, egg.x, egg.y
                     );
-                    let (player, team) = {
-                        match &clients[idx].state {
-                            ClientState::Ai { team, player } => (player.clone(), team.clone()),
-                            _ => (Player::default(), "".to_string()),
-                        }
-                    };
-                    send_string_to_all_guis(clients, pnw_reply(&player, &team));
-                    send_string_to_all_guis(clients, pin_reply(&player));
+                    let string = player_spawn(&mut clients[idx]);
+                    send_string_to_all_guis(clients, string);
                     send_string_to_all_guis(clients, ebo_reply(&egg));
                 } else {
                     // No egg yet: park the client until one is laid
