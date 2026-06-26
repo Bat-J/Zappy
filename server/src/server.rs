@@ -719,7 +719,7 @@ impl Server {
                 clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
             None => {
-                let response = format!("ko\n");
+                let response = "ko\n".to_string();
                 clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
         }
