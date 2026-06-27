@@ -57,10 +57,11 @@ namespace zappy {
         const std::string&   cmd     = words[0];
         std::vector<Player>& players = _players.getPlayer();
 
-        if (cmd == "pbc") {
-            const int number = std::atoi(words[1].substr(1).c_str());
+        if (cmd == "pbc" && words.size() >= 2) {
+            const int         number = std::atoi(words[1].substr(1).c_str());
+            const std::string msg    = words.size() >= 3 ? words[2] : "";
             ensurePlayer(number);
-            _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + words[2]);
+            _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + msg);
             _players.addBroadcaster(number);
         }
         if (cmd == "msz" && words.size() == 3) {
