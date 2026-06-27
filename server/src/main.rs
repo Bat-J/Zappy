@@ -69,7 +69,6 @@ fn main() -> std::io::Result<()> {
 
         let ready = server.poll(timeout_ms)?;
         server.accept(&ready)?;
-        server.try_hatch_pending(&mut game);
         let read = server.read(&ready, &mut game)?;
         server.cleanup(ready.disconnected.into_iter().chain(read.disconnected));
 
