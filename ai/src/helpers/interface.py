@@ -329,10 +329,10 @@ class AI_server_interface:
                 self.completed_actions.append({"action_type": completed_action, "success": False})
             pass
         elif message.startswith("["):
-            if len(self.pending_response_actions) == 0:
-                return
-            completed_action = self.pending_response_actions.pop(0)
-            if completed_action == action_type.look:
+            if message.startswith("[ player"):
+                if len(self.pending_response_actions) == 0:
+                    return
+                completed_action = self.pending_response_actions.pop(0)
                 self.completed_actions.append(
                     {
                         "action_type": completed_action,
@@ -341,6 +341,9 @@ class AI_server_interface:
                     }
                 )
             else:
+                if len(self.pending_response_actions) == 0:
+                    return
+                completed_action = self.pending_response_actions.pop(0)
                 inventory = self.__parse_inventory_response(message)
                 self.completed_actions.append(
                     {
