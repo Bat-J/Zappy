@@ -385,25 +385,30 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
     }
 }
 
-pub fn fork(client: &mut Client, game: &mut Game) -> String {
-    let player = match &client.state {
-        ClientState::Ai { player, .. } => player,
-        _ => return "ko\n".to_string(),
-    };
-    let team = match &client.state {
-        ClientState::Ai { team, .. } => team,
+pub fn fork(client: &mut Client, game: &mut Game, team_slots: &mut [(String, u32)]) -> String {
+    let (px, py, pid, team) = match &client.state {
+        ClientState::Ai { player, team } => (player.x, player.y, player.id, team.clone()),
         _ => return "ko\n".to_string(),
     };
 
     game.eggs.push(Egg {
-        x: player.x,
-        y: player.y,
+        x: px,
+        y: py,
         id: game.next_egg_id,
-        player_id: player.id,
+        player_id: pid,
         is_starting: false,
-        team: team.to_string(),
+        team: team.clone(),
     });
     game.next_egg_id += 1;
+
+    // Laying an egg opens a new joinable slot for the team: a fresh AI can now
+    // connect and hatch this egg, growing the team past its initial
+    // `clients_per_team` cap. Without this, forked eggs are unreachable (a new
+    // connection only hatches when the team has a slot left) and reproduction —
+    // the whole win strategy — silently fails once the starting slots are used.
+    if let Some(slot) = team_slots.iter_mut().find(|(name, _)| name == &team) {
+        slot.1 += 1;
+    }
     "ok\n".to_string()
 }
 
