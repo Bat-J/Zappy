@@ -179,4 +179,53 @@ namespace zappy {
         std::string mess = "GRAPHIC\n";
         _socket.writeToSocket(mess);
     }
+
+    void Server::trashLogs(std::size_t maxSize) {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        if (_logs.size() > maxSize)
+            _logs.erase(_logs.begin(), _logs.end() - static_cast<long>(maxSize));
+    }
+
+
+    std::mutex& Server::getMutex()
+    {
+        return _dataMutex;
+    }
+
+    const WorldState& Server::world() const
+    {
+        return _world;
+    }
+
+    PlayerManager& Server::players()
+    {
+        return _players;
+    }
+
+    const PlayerManager& Server::players() const
+    {
+        return _players;
+    }
+
+    const ResourceTracker& Server::resources() const
+    {
+        return _resources;
+    }
+
+    const std::vector<std::string> Server::logs() const
+    {
+        return _logs;
+    }
+
+    std::vector<Tile> Server::getTilesSafe() const
+    {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        return _world.getTiles();
+    }
+
+    std::vector<Player> Server::getPlayersSafe() const
+    {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        return _players.getPlayer();
+    }
 }
