@@ -174,7 +174,7 @@ impl Server {
                 Command::Take(resource) => take(&mut self.clients[idx], game, resource),
                 Command::Set(resource) => set(&mut self.clients[idx], game, resource),
                 Command::Fork => fork(&mut self.clients[idx], game, &mut self.team_slots),
-                Command::Eject => eject(&mut self.clients, idx as u32, game, config),
+                Command::Eject => eject(&mut self.clients, idx as u32, game, config, &mut self.team_slots),
                 Command::Broadcast(msg) => {
                     let (ex, ey, eid) = match &self.clients[idx].state {
                         ClientState::Ai { player, .. } => (player.x, player.y, player.id),

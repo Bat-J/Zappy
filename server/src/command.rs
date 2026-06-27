@@ -412,7 +412,7 @@ pub fn fork(client: &mut Client, game: &mut Game, team_slots: &mut Vec<(String, 
     "ok\n".to_string()
 }
 
-pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config) -> String {
+pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config, team_slots: &mut Vec<(String, u32)>) -> String {
     let (ejector_id, ejector_x, ejector_y, dest_x, dest_y) = {
         let player = match &clients[idx as usize].state {
             ClientState::Ai { player, .. } => player,
@@ -483,6 +483,9 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
     for (i, egg) in game.eggs.iter().enumerate() {
         if egg.x == ejector_x && egg.y == ejector_y {
             send_string_to_all_guis(clients, edi_reply(egg));
+            if let Some(slot) = team_slots.iter_mut().find(|(name, _)| *name == egg.team) {
+                slot.1 -= 1;
+            }
             to_remove.push(i as u32);
         }
     }
