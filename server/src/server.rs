@@ -657,7 +657,9 @@ impl Server {
                             time_left: 126,
                         },
                     };
-                    game.map[egg.y as usize][egg.x as usize].ais.push(game.next_player_id);
+                    game.map[egg.y as usize][egg.x as usize]
+                        .ais
+                        .push(game.next_player_id);
                     game.next_player_id += 1;
 
                     println!(
