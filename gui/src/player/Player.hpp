@@ -20,6 +20,8 @@ namespace zappy {
         WEST  = 4
     };
 
+    std::string orientationToString(Orientation orientation);
+
     class Player {
       public:
         u_int8_t                                    getLevel() const;

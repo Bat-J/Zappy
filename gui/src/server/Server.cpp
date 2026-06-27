@@ -98,7 +98,8 @@ namespace zappy {
                 players[number].setLevel(static_cast<u_int8_t>(std::atoi(words[5].c_str())));
                 _logs.push_back("New player " + std::to_string(number + 1) + " connected");
             } else {
-                _logs.push_back("Player " + std::to_string(number + 1) + " moved to position (" + words[2] + ", " + words[3] + ")");
+                _logs.push_back("Player " + std::to_string(number + 1) + " moved to position (" + words[2] + ", " + words[3] + ") facing " +
+                                orientationToString(players[number].getPos().second));
             }
             return;
         }

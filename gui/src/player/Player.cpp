@@ -12,6 +12,16 @@
 
 namespace zappy {
 
+    std::string orientationToString(Orientation orientation) {
+        switch (orientation) {
+            case NORTH: return "NORTH";
+            case EAST: return "EAST";
+            case SOUTH: return "SOUTH";
+            case WEST: return "WEST";
+            default: return "UNKNOWN";
+        }
+    }
+
     u_int8_t Player::getLevel() const {
         return _lvl;
     }
