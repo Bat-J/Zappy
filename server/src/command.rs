@@ -385,7 +385,7 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
     }
 }
 
-pub fn fork(client: &mut Client, game: &mut Game) -> String {
+pub fn fork(client: &mut Client, game: &mut Game, team_slots: &mut Vec<(String, u32)>) -> String {
     let player = match &client.state {
         ClientState::Ai { player, .. } => player,
         _ => return "ko\n".to_string(),
@@ -404,6 +404,11 @@ pub fn fork(client: &mut Client, game: &mut Game) -> String {
         team: team.to_string(),
     });
     game.next_egg_id += 1;
+    if let Some(slot) = team_slots.iter_mut().find(|(name, _)| name == team) {
+        slot.1 += 1;
+    } else {
+        team_slots.push((team.to_string(), 1));
+    }
     "ok\n".to_string()
 }
 
