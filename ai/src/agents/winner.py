@@ -122,7 +122,9 @@ class WinnerAgent:
                         # Only follow a same-level beacon that is at least as loud as
                         # the loudest leader we've heard recently — this makes every
                         # player converge on the single global-max-priority anchor.
-                        dbg(f"[L{self.ai_interface.level}] heard beacon lvl={beacon_level} prio={beacon_priority} dir={message['direction']}")
+                        dbg(
+                            f"[L{self.ai_interface.level}] heard beacon lvl={beacon_level} prio={beacon_priority} dir={message['direction']}"
+                        )
                         if beacon_level == self.ai_interface.level and beacon_priority >= self.heard_leader_priority:
                             self.heard_leader_priority = beacon_priority
                             # A same-tile beacon (direction.none) means "incantate here";
@@ -276,7 +278,9 @@ class WinnerAgent:
                             self.state = WinnerAgent.State.none
                             self.need_for_more_players = 0
                         else:
-                            dbg(f"[L{self.ai_interface.level}] ANCHOR cast failed -> broadcast wawa_{self.ai_interface.level}_{self.anchor_priority}")
+                            dbg(
+                                f"[L{self.ai_interface.level}] ANCHOR cast failed -> broadcast wawa_{self.ai_interface.level}_{self.anchor_priority}"
+                            )
                             self.ai_interface.send_broadcast_action_and_block_until_response(
                                 f"wawa_{self.ai_interface.level}_{self.anchor_priority}"
                             )
