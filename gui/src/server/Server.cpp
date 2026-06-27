@@ -125,7 +125,7 @@ namespace zappy {
             _logs.push_back("Player " + std::to_string(number + 1) + " laid an egg");
         }
         if (cmd == "edi" && words.size() == 2) {
-            const int number   = std::atoi(words[1].substr(1).c_str());
+            const int number = std::atoi(words[1].substr(1).c_str());
             _logs.push_back("Egg " + std::to_string(number + 1) + " was destroyed");
         }
         if (cmd == "pdr" && words.size() == 3) {

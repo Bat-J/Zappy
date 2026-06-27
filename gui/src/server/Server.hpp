@@ -30,9 +30,10 @@ namespace zappy {
         const std::vector<std::string> logs() const;
         std::vector<Tile>              getTilesSafe() const;
         std::vector<Player>            getPlayersSafe() const;
-      std::string                      resourceIDToString(int id) const;
+        std::string                    resourceIDToString(int id) const;
 
-          private : void dispatchLine(const std::vector<std::string>& words);
+      private:
+        void                     dispatchLine(const std::vector<std::string>& words);
         void                     ensurePlayer(int number);
         void                     requestState(const std::vector<int>& alivePlayers);
         Socket&                  _socket;
