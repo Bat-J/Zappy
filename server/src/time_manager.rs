@@ -1,6 +1,11 @@
 use crate::command::Command;
 use ordered_list::OrderedList;
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
+
+/// Per-client command buffer cap. The protocol allows at most this many queued
+/// commands per player; anything beyond it is dropped (see `is_client_queue_full`).
+pub const MAX_PENDING_PER_CLIENT: u32 = 10;
 
 #[derive(Debug, Clone)]
 pub struct ScheduledCommand {
@@ -12,6 +17,9 @@ pub struct ScheduledCommand {
 pub struct TimeManager {
     queue: OrderedList<ScheduledCommand, Instant, fn(&ScheduledCommand) -> Instant>,
     frequency: u32,
+    /// Number of not-yet-executed commands queued per client, kept in sync with
+    /// `queue` so the per-client cap check is O(1) instead of scanning the queue.
+    pending_per_client: HashMap<u32, u32>,
 }
 
 impl TimeManager {
@@ -21,7 +29,25 @@ impl TimeManager {
         Self {
             queue: OrderedList::new_by(|cmd| cmd.execute_at),
             frequency,
+            pending_per_client: HashMap::new(),
         }
+    }
+
+    /// True when the client already has the maximum number of queued commands.
+    /// Callers should drop further commands from this client without parsing them.
+    pub fn is_client_queue_full(&self, client_id: u32) -> bool {
+        self.pending_per_client
+            .get(&client_id)
+            .copied()
+            .unwrap_or(0)
+            >= MAX_PENDING_PER_CLIENT
+    }
+
+    /// Update the frequency used to scale command durations. Only commands
+    /// scheduled after this call use the new value; already queued commands keep
+    /// their absolute execution time.
+    pub fn set_frequency(&mut self, frequency: u32) {
+        self.frequency = frequency;
     }
 
     /// Schedule a command for execution
@@ -38,6 +64,7 @@ impl TimeManager {
             execute_at,
             client_id,
         });
+        *self.pending_per_client.entry(client_id).or_insert(0) += 1;
         execute_at
     }
 
@@ -48,7 +75,11 @@ impl TimeManager {
 
         while let Some(next) = self.queue.get(0) {
             if next.execute_at <= now {
-                ready.push(self.queue.remove(0));
+                let scheduled = self.queue.remove(0);
+                if let Some(count) = self.pending_per_client.get_mut(&scheduled.client_id) {
+                    *count = count.saturating_sub(1);
+                }
+                ready.push(scheduled);
             } else {
                 break;
             }
@@ -104,6 +135,17 @@ mod tests {
         thread::sleep(Duration::from_millis(20));
         let ready = manager.tick();
         assert_eq!(ready.len(), 3);
+    }
+
+    #[test]
+    fn set_frequency_changes_future_scheduling() {
+        let mut manager = TimeManager::new(100);
+        let slow = manager.schedule(Command::Forward, 0); // 70ms at freq 100
+        manager.set_frequency(400);
+        let fast = manager.schedule(Command::Forward, 1); // ~17ms at freq 400
+        // Raising the frequency makes the same command schedule sooner; the
+        // ~53ms gap dwarfs the few microseconds between the two now() calls.
+        assert!(fast < slow);
     }
 
     #[test]

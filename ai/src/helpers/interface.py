@@ -353,7 +353,6 @@ class AI_server_interface:
                     }
                 )
                 self.last_known_inventory = inventory
-            pass
         elif can_cast(str, int, message) and int(message) >= 0:
             if len(self.pending_response_actions) == 0:
                 return
@@ -371,8 +370,12 @@ class AI_server_interface:
         elif message == "Elevation underway":
             pass
         elif message.startswith("Current level: "):
-            if len(self.pending_response_actions) == 0:
-                return
+            # "Current level: N" can arrive unsolicited: another player's
+            # incantation elevates everyone of that level on the tile, including
+            # us while we're idle with no pending Incantation of our own. Always
+            # apply the new level; only consume a pending action if this was our
+            # own cast completing. The old early-return on an empty queue dropped
+            # passive elevations, leaving the player stuck at its previous level.
             if self.pending_response_actions and self.pending_response_actions[0] == action_type.start_incantation:
                 self.pending_response_actions.pop(0)
             self.level = int(message.split(":")[1].strip())

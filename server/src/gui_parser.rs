@@ -136,10 +136,17 @@ impl Server {
     }
 
     pub fn sst_parse(parts: Vec<&str>, client: &mut Client, game: &mut Game) -> bool {
-        if parts.len() != 2 || parts[1].parse::<u32>().is_err() {
+        // Frequency must be a strictly positive integer: the main loop and the
+        // time manager divide tick/command durations by it, so 0 would panic the
+        // whole server. Reject bad arity, non-numeric, or zero with `sbp`.
+        if parts.len() != 2 {
             return Self::gui_error(client, "sbp\n");
         }
-        game.config.frequency = parts[1].parse::<u32>().unwrap();
+        let frequency = match parts[1].parse::<u32>() {
+            Ok(freq) if freq > 0 => freq,
+            _ => return Self::gui_error(client, "sbp\n"),
+        };
+        game.config.frequency = frequency;
         client
             .stream
             .write_all(("sst ".to_string() + &game.config.frequency.to_string() + "\n").as_bytes())
@@ -222,10 +229,10 @@ pub fn pnw_reply(player: &Player, team: &str) -> String {
     string.push_str(&player.y.to_string());
     string.push(' ');
     match player.orientation {
-        Orientation::North => string.push('N'),
-        Orientation::East => string.push('E'),
-        Orientation::South => string.push('S'),
-        Orientation::West => string.push('W'),
+        Orientation::North => string.push('1'),
+        Orientation::East => string.push('2'),
+        Orientation::South => string.push('3'),
+        Orientation::West => string.push('4'),
     }
     string.push(' ');
     string.push_str(&player.level.to_string());
@@ -354,6 +361,17 @@ pub fn seg_reply(team: &str) -> String {
     string.push_str("seg ");
     string.push_str(team);
     string.push('\n');
+    string
+}
+
+pub fn player_spawn(client: &mut Client) -> String {
+    let (team, player) = match &client.state {
+        ClientState::Ai { team, player } => (team.clone(), player.clone()),
+        _ => return "ko\n".to_string(),
+    };
+    let mut string = String::new();
+    string.push_str(&pnw_reply(&player, &team));
+    string.push_str(&pin_reply(&player));
     string
 }
 

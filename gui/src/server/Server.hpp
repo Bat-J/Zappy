@@ -6,7 +6,6 @@
 */
 
 #pragma once
-
 #include "../network/Socket.hpp"
 #include "../player/PlayerManager.hpp"
 #include "../resources/ResourceTracker.hpp"
@@ -19,39 +18,28 @@ namespace zappy {
       public:
         Server(Socket& socket) : _socket(socket) {}
         ~Server();
-
-        void        getInfo();
-        void        handleServerUpdate();
-        void        updateResources();
-        std::mutex& getMutex() {
-            return _dataMutex;
-        }
-        const WorldState& world() const {
-            return _world;
-        }
-        PlayerManager& players() {
-            return _players;
-        }
-        const PlayerManager& players() const {
-            return _players;
-        }
-        const ResourceTracker& resources() const {
-            return _resources;
-        }
-        const std::vector<std::string> logs() const {
-            return _logs;
-        }
+        void                           getInfo();
+        void                           handleServerUpdate();
+        void                           updateResources();
+        void                           trashLogs(std::size_t maxSize);
+        std::mutex&                    getMutex();
+        const WorldState&              world() const;
+        PlayerManager&                 players();
+        const PlayerManager&           players() const;
+        const ResourceTracker&         resources() const;
+        const std::vector<std::string> logs() const;
+        std::vector<Tile>              getTilesSafe() const;
+        std::vector<Player>            getPlayersSafe() const;
 
       private:
         void                     dispatchLine(const std::vector<std::string>& words);
         void                     ensurePlayer(int number);
         void                     requestState(const std::vector<int>& alivePlayers);
-
         Socket&                  _socket;
         WorldState               _world;
         PlayerManager            _players;
         ResourceTracker          _resources;
-        std::mutex               _dataMutex;
+        mutable std::mutex       _dataMutex;
         std::vector<std::string> _logs;
         std::string              _pending;
     };

@@ -4,8 +4,9 @@ AI_BIN		:= zappy_ai
 
 SHELL := /usr/bin/env bash
 
-all: server ai gui
+.PHONY = all clean fclean re $(SERVER_BIN) $(AI_BIN) $(GUI_BIN) clean_serv server gui ai
 
+all: server ai gui
 
 server: $(SERVER_BIN)
 

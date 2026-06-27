@@ -96,7 +96,7 @@ namespace zappy {
                 });
                 lastUpdate   = std::chrono::steady_clock::now();
             }
-            if (updateFuture.valid() && updateFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+            if (updateFuture.valid()) {
                 updateFuture.get();
             }
             handleEvents(server.players().getPlayer());

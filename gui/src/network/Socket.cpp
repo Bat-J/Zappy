@@ -43,7 +43,7 @@ namespace zappy {
         pollfd      pollFD{_socketFD, POLLIN, 0};
 
         while (true) {
-            if (poll(&pollFD, 1, 100) <= 0)
+            if (poll(&pollFD, 1, 0) <= 0)
                 break;
             const ssize_t bytesRead = recv(_socketFD, chunk, sizeof(chunk) - 1, MSG_DONTWAIT);
             if (bytesRead < 0) {

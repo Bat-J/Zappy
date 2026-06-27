@@ -1,4 +1,8 @@
-use crate::args::Config;
+use crate::{
+    args::Config,
+    gui_parser::{player_spawn, plv_reply},
+    server::{Client, ClientState, Game},
+};
 use rand::RngExt;
 
 #[derive(Default, Clone)]
@@ -168,21 +172,25 @@ pub fn mct_reply(config: &Config, map: &[Vec<Tile>]) -> Option<String> {
     Some(map_string)
 }
 
-pub fn create_gui_connection_string(
-    config: &Config,
-    map: &[Vec<Tile>],
-    eggs: &Vec<Egg>,
-) -> Option<String> {
+pub fn create_gui_connection_string(game: &Game, clients: &mut [Client]) -> Option<String> {
     let mut map_string = String::new();
 
-    map_string.push_str(&msz_reply(config));
-    map_string.push_str(&sgt_reply(config));
-    match mct_reply(config, map) {
+    map_string.push_str(&msz_reply(&game.config));
+    map_string.push_str(&sgt_reply(&game.config));
+    match mct_reply(&game.config, &game.map) {
         Some(string) => map_string.push_str(&string),
         None => return None,
     }
-    map_string.push_str(&tna_reply(config));
-    for egg in eggs {
+    map_string.push_str(&tna_reply(&game.config));
+    for client in clients {
+        let player = match &client.state {
+            ClientState::Ai { player, .. } => player.clone(),
+            _ => continue,
+        };
+        map_string.push_str(&player_spawn(client));
+        map_string.push_str(&plv_reply(&player));
+    }
+    for egg in &game.eggs {
         map_string.push_str(&enw_string(egg));
     }
     Some(map_string)

@@ -385,7 +385,7 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
     }
 }
 
-pub fn fork(client: &mut Client, game: &mut Game) -> String {
+pub fn fork(client: &mut Client, game: &mut Game, team_slots: &mut Vec<(String, u32)>) -> String {
     let player = match &client.state {
         ClientState::Ai { player, .. } => player,
         _ => return "ko\n".to_string(),
@@ -401,13 +401,24 @@ pub fn fork(client: &mut Client, game: &mut Game) -> String {
         id: game.next_egg_id,
         player_id: player.id,
         is_starting: false,
-        team: team.to_string(),
+        team: team.clone(),
     });
     game.next_egg_id += 1;
+    if let Some(slot) = team_slots.iter_mut().find(|(name, _)| name == team) {
+        slot.1 += 1;
+    } else {
+        team_slots.push((team.to_string(), 1));
+    }
     "ok\n".to_string()
 }
 
-pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config) -> String {
+pub fn eject(
+    clients: &mut [Client],
+    idx: u32,
+    game: &mut Game,
+    config: &Config,
+    team_slots: &mut [(String, u32)],
+) -> String {
     let (ejector_id, ejector_x, ejector_y, dest_x, dest_y) = {
         let player = match &clients[idx as usize].state {
             ClientState::Ai { player, .. } => player,
@@ -478,6 +489,9 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
     for (i, egg) in game.eggs.iter().enumerate() {
         if egg.x == ejector_x && egg.y == ejector_y {
             send_string_to_all_guis(clients, edi_reply(egg));
+            if let Some(slot) = team_slots.iter_mut().find(|(name, _)| *name == egg.team) {
+                slot.1 -= 1;
+            }
             to_remove.push(i as u32);
         }
     }
@@ -663,28 +677,44 @@ pub fn incantation(clients: &mut [Client], idx: usize, map: &mut [Vec<map::Tile>
     msg
 }
 
-pub fn move_forward(client: &mut Client, config: &Config) -> String {
+pub fn move_forward(client: &mut Client, config: &Config, game: &mut Game) -> String {
+    let old_x;
+    let old_y;
+    let player_id;
+    let new_x;
+    let new_y;
     match &mut client.state {
-        ClientState::Ai { player, .. } => match player.orientation {
-            Orientation::North => {
-                if player.y == 0 {
-                    player.y = config.height - 1;
-                } else {
-                    player.y -= 1;
+        ClientState::Ai { player, .. } => {
+            old_x = player.x;
+            old_y = player.y;
+            player_id = player.id;
+            match player.orientation {
+                Orientation::North => {
+                    if player.y == 0 {
+                        player.y = config.height - 1;
+                    } else {
+                        player.y -= 1;
+                    }
+                }
+                Orientation::East => player.x = (player.x + 1) % config.width,
+                Orientation::South => player.y = (player.y + 1) % config.height,
+                Orientation::West => {
+                    if player.x == 0 {
+                        player.x = config.width - 1;
+                    } else {
+                        player.x -= 1;
+                    }
                 }
             }
-            Orientation::East => player.x = (player.x + 1) % config.width,
-            Orientation::South => player.y = (player.y + 1) % config.height,
-            Orientation::West => {
-                if player.x == 0 {
-                    player.x = config.width - 1;
-                } else {
-                    player.x -= 1;
-                }
-            }
-        },
+            new_x = player.x;
+            new_y = player.y;
+        }
         _ => return "ko\n".to_string(),
     }
+    game.map[old_y as usize][old_x as usize]
+        .ais
+        .retain(|x| *x != player_id);
+    game.map[new_y as usize][new_x as usize].ais.push(player_id);
     "ok\n".to_string()
 }
 
@@ -805,7 +835,7 @@ pub fn look(client: &Client, map: &[Vec<map::Tile>]) -> String {
         }
     }
 
-    format!("[{}]\n", cells.join(", "))
+    format!("[ {} ]\n", cells.join(", "))
 }
 
 pub fn get_inventory(client: &Client) -> String {
