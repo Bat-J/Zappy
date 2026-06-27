@@ -174,7 +174,13 @@ impl Server {
                 Command::Take(resource) => take(&mut self.clients[idx], game, resource),
                 Command::Set(resource) => set(&mut self.clients[idx], game, resource),
                 Command::Fork => fork(&mut self.clients[idx], game, &mut self.team_slots),
-                Command::Eject => eject(&mut self.clients, idx as u32, game, config),
+                Command::Eject => eject(
+                    &mut self.clients,
+                    idx as u32,
+                    game,
+                    config,
+                    &mut self.team_slots,
+                ),
                 Command::Broadcast(msg) => {
                     let (ex, ey, eid) = match &self.clients[idx].state {
                         ClientState::Ai { player, .. } => (player.x, player.y, player.id),
@@ -367,79 +373,6 @@ impl Server {
         }
 
         Ok(ReadOutcome { disconnected })
-    }
-
-    /// Call this whenever a new egg is added to `game.eggs`, to hatch any
-    /// clients that were queued waiting for one.
-    pub fn try_hatch_pending(&mut self, game: &mut Game) {
-        let indices: Vec<usize> = self
-            .clients
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| matches!(c.state, ClientState::AwaitingEgg { .. }))
-            .map(|(i, _)| i)
-            .collect();
-
-        let mut gui_notifications: Vec<String> = Vec::new();
-
-        for i in indices {
-            let team = match &self.clients[i].state {
-                ClientState::AwaitingEgg { team } => team.clone(),
-                _ => continue,
-            };
-
-            let egg_idx = match game.eggs.iter().position(|e| e.team == team) {
-                Some(idx) => idx,
-                None => continue,
-            };
-
-            let egg = game.eggs.swap_remove(egg_idx);
-            let remaining = self
-                .team_slots
-                .iter()
-                .find(|(n, _)| n == &team)
-                .map(|(_, s)| *s)
-                .unwrap_or(0);
-
-            self.clients[i].state = ClientState::Ai {
-                team: team.clone(),
-                player: Player {
-                    x: egg.x,
-                    y: egg.y,
-                    id: game.next_player_id,
-                    orientation: Orientation::North,
-                    level: 1,
-                    inventory: Resources {
-                        linemate: 0,
-                        deraumere: 0,
-                        sibur: 0,
-                        mendiane: 0,
-                        phiras: 0,
-                        thystame: 0,
-                    },
-                    food: 9,
-                    time_left: 126,
-                },
-            };
-            game.next_player_id += 1;
-
-            gui_notifications.push(player_spawn(&mut self.clients[i]));
-            gui_notifications.push(ebo_reply(&egg));
-
-            // CLIENT-NUM + dimensions were already sent when this client was
-            // parked as AwaitingEgg (see handle_team_name); the AI consumed them
-            // during its handshake. Re-sending here would inject a stray slot
-            // count + "W H" line into the live command stream and desync the
-            // client's response matching, so we only log and notify the GUIs.
-            println!(
-                "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
-                self.clients[i].addr, egg.x, egg.y
-            );
-        }
-
-        for msg in gui_notifications {
-            send_string_to_all_guis(&mut self.clients, msg);
-        }
     }
 
     pub fn cleanup(&mut self, disconnected: impl IntoIterator<Item = u32>) {

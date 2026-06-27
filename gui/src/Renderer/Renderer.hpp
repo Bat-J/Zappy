@@ -26,7 +26,7 @@ namespace zappy {
         void                                        displayPlayers(Server& server, int offsetX, int offsetY, int tileSizeClamped);
         void                                        setupColors();
         void                                        displayStats(const Server& server);
-        void                                        displayLastLogs(const Server& server);
+        void                                        displayLastLogs(Server& server);
         void                                        displaySelectedTile(const Server& server);
         void                                        displaySelectedPlayer(const Server& server);
         void                                        displayTotalResources(const Server& server);

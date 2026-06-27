@@ -385,34 +385,40 @@ pub fn set(client: &mut Client, game: &mut Game, resource: &str) -> String {
     }
 }
 
-pub fn fork(client: &mut Client, game: &mut Game, team_slots: &mut [(String, u32)]) -> String {
-    let (px, py, pid, team) = match &client.state {
-        ClientState::Ai { player, team } => (player.x, player.y, player.id, team.clone()),
+pub fn fork(client: &mut Client, game: &mut Game, team_slots: &mut Vec<(String, u32)>) -> String {
+    let player = match &client.state {
+        ClientState::Ai { player, .. } => player,
+        _ => return "ko\n".to_string(),
+    };
+    let team = match &client.state {
+        ClientState::Ai { team, .. } => team,
         _ => return "ko\n".to_string(),
     };
 
     game.eggs.push(Egg {
-        x: px,
-        y: py,
+        x: player.x,
+        y: player.y,
         id: game.next_egg_id,
-        player_id: pid,
+        player_id: player.id,
         is_starting: false,
         team: team.clone(),
     });
     game.next_egg_id += 1;
-
-    // Laying an egg opens a new joinable slot for the team: a fresh AI can now
-    // connect and hatch this egg, growing the team past its initial
-    // `clients_per_team` cap. Without this, forked eggs are unreachable (a new
-    // connection only hatches when the team has a slot left) and reproduction —
-    // the whole win strategy — silently fails once the starting slots are used.
-    if let Some(slot) = team_slots.iter_mut().find(|(name, _)| name == &team) {
+    if let Some(slot) = team_slots.iter_mut().find(|(name, _)| name == team) {
         slot.1 += 1;
+    } else {
+        team_slots.push((team.to_string(), 1));
     }
     "ok\n".to_string()
 }
 
-pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config) -> String {
+pub fn eject(
+    clients: &mut [Client],
+    idx: u32,
+    game: &mut Game,
+    config: &Config,
+    team_slots: &mut [(String, u32)],
+) -> String {
     let (ejector_id, ejector_x, ejector_y, dest_x, dest_y) = {
         let player = match &clients[idx as usize].state {
             ClientState::Ai { player, .. } => player,
@@ -483,6 +489,9 @@ pub fn eject(clients: &mut [Client], idx: u32, game: &mut Game, config: &Config)
     for (i, egg) in game.eggs.iter().enumerate() {
         if egg.x == ejector_x && egg.y == ejector_y {
             send_string_to_all_guis(clients, edi_reply(egg));
+            if let Some(slot) = team_slots.iter_mut().find(|(name, _)| *name == egg.team) {
+                slot.1 -= 1;
+            }
             to_remove.push(i as u32);
         }
     }
