@@ -637,12 +637,13 @@ impl Server {
                     // An egg is available: hatch it immediately
                     let egg = game.eggs.swap_remove(egg_idx);
 
+                    let spawn_id = game.next_player_id;
                     clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
                             x: egg.x,
                             y: egg.y,
-                            id: game.next_player_id,
+                            id: spawn_id,
                             orientation: Orientation::North,
                             level: 1,
                             inventory: Resources {
@@ -657,9 +658,7 @@ impl Server {
                             time_left: 126,
                         },
                     };
-                    game.map[egg.y as usize][egg.x as usize]
-                        .ais
-                        .push(game.next_player_id);
+                    game.map[egg.y as usize][egg.x as usize].ais.push(spawn_id);
                     game.next_player_id += 1;
 
                     println!(
