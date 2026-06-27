@@ -87,9 +87,9 @@ namespace zappy {
     }
 
     void Renderer::displaySelectedPlayer(const Server& server) {
-        const int          x       = 1000;
-        const int          y       = 200;
-        const auto         players = server.getPlayersSafe();
+        const int  x       = 1000;
+        const int  y       = 200;
+        const auto players = server.getPlayersSafe();
         if (!_selectedPlayerId.has_value()) {
             _font.DrawText("No player selected.", x + 200, 400, 20, _spacing, _colors.getTextColor());
             return;
@@ -121,7 +121,7 @@ namespace zappy {
 
         {
             std::lock_guard<std::mutex> lock(server.getMutex());
-            auto& realPlayers = server.players().getPlayer();
+            auto&                       realPlayers = server.players().getPlayer();
             for (auto& player : realPlayers) {
                 if (player.getId() < 0)
                     player.setId();
@@ -137,8 +137,8 @@ namespace zappy {
             const int y = player.getPos().first.second;
             if (x < 0 || y < 0)
                 continue;
-            const int playerX = offsetX + x * tileSizeClamped + tileSizeClamped / 2;
-            const int playerY = offsetY + y * tileSizeClamped + tileSizeClamped / 2;
+            const int      playerX = offsetX + x * tileSizeClamped + tileSizeClamped / 2;
+            const int      playerY = offsetY + y * tileSizeClamped + tileSizeClamped / 2;
             raylib::Circle circle;
             circle.CircleDraw(playerX, playerY, std::max(4, tileSizeClamped / 6), _colors.getPlayerColor());
             _font.DrawText("P" + std::to_string(id), playerX - 6, playerY - 8, 12, 1.0f, _colors.getPlayerNumberColor());
@@ -155,7 +155,7 @@ namespace zappy {
         const int                       availableWidth = (_window.GetWidth() / 2) - 2 * 10;
         const int                       offsetX        = 10;
         const int                       offsetY        = 100 + padding;
-        const std::vector<Tile> tiles = server.getTilesSafe();
+        const std::vector<Tile>         tiles          = server.getTilesSafe();
         const Tile                      fallbackTile{};
         if (mapWidth <= 0)
             return;
@@ -308,8 +308,8 @@ namespace zappy {
     void Renderer::displayLastLogs(Server& server) {
         server.trashLogs(15);
         const std::vector<std::string> logs = server.logs();
-        int                             x    = 960;
-        int                             y    = 400;
+        int                            x    = 960;
+        int                            y    = 400;
         _font.DrawText("LOGS :", x, y, 25, 1.0f, _colors.getTextColor());
         y += 35;
         for (const std::string& log : logs) {
