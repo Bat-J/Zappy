@@ -217,7 +217,6 @@ pub fn pin_reply(player: &Player) -> String {
     string
 }
 
-#[allow(dead_code)]
 pub fn pnw_reply(player: &Player, team: &str) -> String {
     let mut string = String::new();
 
@@ -303,7 +302,6 @@ pub fn pfk_reply(player: &Player) -> String {
     string
 }
 
-#[allow(dead_code)]
 pub fn pdr_reply(player: &Player, ressource: u8) -> String {
     let mut string = String::new();
 
@@ -344,7 +342,6 @@ pub fn ebo_reply(egg: &Egg) -> String {
     string
 }
 
-#[allow(dead_code)]
 pub fn edi_reply(egg: &Egg) -> String {
     let mut string = String::new();
 
@@ -354,7 +351,6 @@ pub fn edi_reply(egg: &Egg) -> String {
     string
 }
 
-#[allow(dead_code)]
 pub fn seg_reply(team: &str) -> String {
     let mut string = String::new();
 

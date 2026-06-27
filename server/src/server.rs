@@ -32,7 +32,6 @@ unsafe extern "C" {
 }
 
 #[derive(Clone, Default)]
-#[allow(dead_code)]
 pub enum Orientation {
     #[default]
     North = 1,
@@ -241,7 +240,6 @@ impl Server {
         }
     }
 
-    #[allow(dead_code)]
     pub fn check_win_condition(&self) -> Option<String> {
         use std::collections::HashMap;
         let mut team_level8: HashMap<&str, u32> = HashMap::new();
