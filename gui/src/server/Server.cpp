@@ -110,6 +110,30 @@ namespace zappy {
             _logs.push_back("Player " + std::to_string(number + 1) + " died");
             return;
         }
+        if (cmd == "pgt" && words.size() == 3) {
+            const int number   = std::atoi(words[1].substr(1).c_str());
+            const int resource = std::atoi(words[2].c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " picked up " + resourceIDToString(resource));
+            return;
+        }
+        if (cmd == "pex" && words.size() == 2) {
+            const int number = std::atoi(words[1].substr(1).c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " tried to push others");
+        }
+        if (cmd == "pfk" && words.size() == 2) {
+            const int number = std::atoi(words[1].substr(1).c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " laid an egg");
+        }
+        if (cmd == "edi" && words.size() == 2) {
+            const int number   = std::atoi(words[1].substr(1).c_str());
+            _logs.push_back("Egg " + std::to_string(number + 1) + " was destroyed");
+        }
+        if (cmd == "pdr" && words.size() == 3) {
+            const int number   = std::atoi(words[1].substr(1).c_str());
+            const int resource = std::atoi(words[2].c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " dropped " + resourceIDToString(resource));
+            return;
+        }
         if (cmd == "pin" && words.size() >= 11) {
             const int number = std::atoi(words[1].substr(1).c_str());
             if (number < 0 || static_cast<std::size_t>(number) >= players.size())
@@ -140,6 +164,18 @@ namespace zappy {
                 res.push_back(std::atoi(words[k].c_str()));
             _world.updateTile(x, y, res);
             return;
+        }
+    }
+
+    std::string Server::resourceIDToString(int id) const {
+        switch (id) {
+            case 0: return "Food";
+            case 1: return "Linemate";
+            case 2: return "deraumere";
+            case 3: return "Sibur";
+            case 4: return "Mendiane";
+            case 5: return "Phiras";
+            default: return "Unknown";
         }
     }
 
