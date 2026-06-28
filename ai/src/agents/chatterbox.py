@@ -38,7 +38,7 @@ class ChatterboxAgent:
                         if obj != "player" and obj != "egg" and count > 0:
                             for _ in range(count):
                                 awaiting_pickup_list.append(obj)
-                    if awaiting_pickup_list == []:
+                    if len(awaiting_pickup_list) == 1:
                         # Nothing worth picking up here — emit a single fake broadcast.
                         random_action = randint(0, 2)
                         if random_action == 0:

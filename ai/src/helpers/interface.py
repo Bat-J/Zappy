@@ -510,11 +510,12 @@ class AI_server_interface:
     def collect_matching_tile_ressources(self, ressources: dict):
         """Collects the specified amount of ressources on the current tile. blocking"""
         self.send_look_action_and_block_until_response()
+        last_action = self.completed_actions[-1]
         if (
             self.completed_actions[-1]["action_type"] != action_type.look
-            or not self.completed_actions[-1]["success"]
-            or not self.completed_actions[-1]["response"]
-            or not isinstance(self.completed_actions[-1]["response"], list)
+            or not last_action.get("success")
+            or not last_action.get("response")
+            or not isinstance(last_action.get("response"), list)
         ):
             return
         for obj, count in self.completed_actions[-1]["response"][0].items():
