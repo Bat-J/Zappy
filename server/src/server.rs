@@ -606,9 +606,10 @@ impl Server {
                 false
             }
             Err(err) => {
-                eprintln!("Parse error from {}: {}", addr, err);
                 if err == "ko\n" {
                     send_string_to_all_guis(clients, pie_reply(player.x, player.y, false));
+                } else {
+                    eprintln!("Parse error from {}: {}", addr, err);
                 }
                 clients[client_idx].stream.write_all(b"ko\n").is_err()
             }
