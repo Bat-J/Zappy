@@ -288,7 +288,7 @@ pub fn pie_reply(x: u32, y: u32, success: bool) -> String {
     string.push(' ');
     string.push_str(&y.to_string());
     string.push(' ');
-    string.push_str(&success.to_string());
+    string.push_str(if success { "1" } else { "0" });
     string.push('\n');
     string
 }
