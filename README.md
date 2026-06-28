@@ -14,10 +14,6 @@
 ./zappy_ai -p [port] -h [hostname] -n [team_name]
 ```
 
-## Server
-
-//TODO
-
 ## Gui
 
 each circle of the sides of a tile represent one or more ressources of a type.
