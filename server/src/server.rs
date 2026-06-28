@@ -8,7 +8,7 @@ use crate::command::{
     Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
     send_string_to_all_guis, set, take, turn_left, turn_right,
 };
-use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, player_spawn, seg_reply};
+use crate::gui_parser::{ebo_reply, pdi_reply, pie_reply, pin_reply, player_spawn, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -607,6 +607,9 @@ impl Server {
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", addr, err);
+                if err == "ko\n" {
+                    send_string_to_all_guis(clients, pie_reply(player.x, player.y, false));
+                }
                 clients[client_idx].stream.write_all(b"ko\n").is_err()
             }
         }

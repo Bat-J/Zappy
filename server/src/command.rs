@@ -80,29 +80,15 @@ impl Command {
                     ClientState::Ai { player, .. } => {
                         (player.x as usize, player.y as usize, player.level)
                     }
-                    _ => {
-                        let _ = clients[idx]
-                            .stream
-                            .write_all("ko\n".to_string().as_bytes())
-                            .is_ok();
-                        return Err("ko\n".to_string());
-                    }
+                    _ => return Err("ko\n".to_string()),
                 };
 
                 if requirements_for(level).is_none() {
                     // Already at max level (8), or invalid level.
-                    let _ = clients[idx]
-                        .stream
-                        .write_all("ko\n".to_string().as_bytes())
-                        .is_ok();
                     return Err("ko\n".to_string());
                 }
 
                 if !meets_requirements(clients, &game.map[y][x], level) {
-                    let _ = clients[idx]
-                        .stream
-                        .write_all("ko\n".to_string().as_bytes())
-                        .is_ok();
                     return Err("ko\n".to_string());
                 }
                 Ok(Command::Incantation)
