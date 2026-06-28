@@ -45,6 +45,7 @@ Here are the available agents:
 - lawn_mower: ai agent that moves around the map in a lawn mower pattern to collect all ressources
 - pusher: a lawn mower agent that pushes other encountered players out of the way
 - chatterbox: a lawn mower agent that sends disruptive broadcast messages spontaneously or in response to other broadcasts
+- winner2: a modified version of the winner agent that uses a slightly different strategy to win the game
 
 AIs where implemented using a 'interface' class that encapsulates the basic network logic and provides an API for the AI agents to interact with the game server.  
 You can add new AI agents by creating a new agent class similar to the existing ones in the `ai/src/agents` directory and implementing your own logic for the agent's behavior.  
