@@ -1,6 +1,6 @@
 use std::env;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Config {
     pub port: u16,
     pub width: u32,
