@@ -503,9 +503,15 @@ impl Server {
             ClientState::AwaitingTeamName => {
                 Self::handle_team_name(clients, client_idx, line, team_slots, game)
             }
-            ClientState::Ai { player, .. } => {
-                Self::handle_ai_command(clients, line, time_manager, client_idx, client_id, &player, game)
-            }
+            ClientState::Ai { player, .. } => Self::handle_ai_command(
+                clients,
+                line,
+                time_manager,
+                client_idx,
+                client_id,
+                &player,
+                game,
+            ),
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
             ClientState::Gui => Self::handle_gui_command(clients, client_idx, line, game),

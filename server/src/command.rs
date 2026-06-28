@@ -77,11 +77,9 @@ impl Command {
             "Incantation" => {
                 send_string_to_all_guis(clients, pic_reply(source, list));
                 let (x, y, level) = match &clients[idx].state {
-                    ClientState::Ai { player, .. } => (
-                        player.x as usize,
-                        player.y as usize,
-                        player.level,
-                    ),
+                    ClientState::Ai { player, .. } => {
+                        (player.x as usize, player.y as usize, player.level)
+                    }
                     _ => {
                         let _ = clients[idx]
                             .stream
