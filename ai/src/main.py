@@ -2,6 +2,7 @@ import sys
 from helpers.print_help import print_help
 import helpers.interface as interface
 import agents.winner
+import agents.winner2
 import agents.simple_lawn_mower
 import agents.mover
 import agents.chatterbox
@@ -58,6 +59,8 @@ if agent_name == "default":
     agent = agents.winner.WinnerAgent(ai_interface)
 elif agent_name == "winner":
     agent = agents.winner.WinnerAgent(ai_interface)
+elif agent_name == "winner2":
+    agent = agents.winner2.WinnerAgent2(ai_interface)
 elif agent_name == "simple_lawn_mower":
     agent = agents.simple_lawn_mower.SimpleLawnMowerAgent(ai_interface)
 elif agent_name == "mover":
