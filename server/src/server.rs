@@ -8,7 +8,7 @@ use crate::command::{
     Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
     send_string_to_all_guis, set, take, turn_left, turn_right,
 };
-use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, pnw_reply, seg_reply};
+use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, player_spawn, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -32,7 +32,6 @@ unsafe extern "C" {
 }
 
 #[derive(Clone, Default)]
-#[allow(dead_code)]
 pub enum Orientation {
     #[default]
     North = 1,
@@ -124,13 +123,21 @@ impl Server {
         self.time_manager.next_timeout_ms().unwrap_or(-1)
     }
 
+    /// Propagate a runtime frequency change (e.g. from a GUI `sst`) to command
+    /// scheduling, keeping execution speed in sync with the food/spawn cadence.
+    pub fn set_frequency(&mut self, frequency: u32) {
+        self.time_manager.set_frequency(frequency);
+    }
+
     pub fn execute_ready_commands(&mut self, config: &Config, game: &mut Game) {
         let ready = self.time_manager.tick();
         for scheduled in ready {
-            println!(
-                "EXECUTE: client {} - {}",
-                scheduled.client_id, scheduled.command
-            );
+            if command_logging_enabled() {
+                println!(
+                    "EXECUTE: client {} - {}",
+                    scheduled.client_id, scheduled.command
+                );
+            }
 
             let idx = match self
                 .clients
@@ -147,7 +154,7 @@ impl Server {
             let mut incantation_result = false;
 
             let response = match &scheduled.command {
-                Command::Forward => move_forward(&mut self.clients[idx], config),
+                Command::Forward => move_forward(&mut self.clients[idx], config, game),
                 Command::Right => turn_right(&mut self.clients[idx]),
                 Command::Left => turn_left(&mut self.clients[idx]),
                 Command::Look => look(&self.clients[idx], &game.map),
@@ -165,8 +172,14 @@ impl Server {
                 }
                 Command::Take(resource) => take(&mut self.clients[idx], game, resource),
                 Command::Set(resource) => set(&mut self.clients[idx], game, resource),
-                Command::Fork => fork(&mut self.clients[idx], game),
-                Command::Eject => eject(&mut self.clients, idx as u32, game, config),
+                Command::Fork => fork(&mut self.clients[idx], game, &mut self.team_slots),
+                Command::Eject => eject(
+                    &mut self.clients,
+                    idx as u32,
+                    game,
+                    config,
+                    &mut self.team_slots,
+                ),
                 Command::Broadcast(msg) => {
                     let (ex, ey, eid) = match &self.clients[idx].state {
                         ClientState::Ai { player, .. } => (player.x, player.y, player.id),
@@ -178,6 +191,8 @@ impl Server {
                     let h = config.height;
                     for other in self.clients.iter_mut() {
                         let line = match &other.state {
+                            // The emitter never receives its own broadcast.
+                            ClientState::Ai { player, .. } if player.id == eid => None,
                             ClientState::Ai { player, .. } => {
                                 let k = broadcast_k(
                                     ex,
@@ -225,7 +240,6 @@ impl Server {
         }
     }
 
-    #[allow(dead_code)]
     pub fn check_win_condition(&self) -> Option<String> {
         use std::collections::HashMap;
         let mut team_level8: HashMap<&str, u32> = HashMap::new();
@@ -357,87 +371,6 @@ impl Server {
         }
 
         Ok(ReadOutcome { disconnected })
-    }
-
-    /// Call this whenever a new egg is added to `game.eggs`, to hatch any
-    /// clients that were queued waiting for one.
-    pub fn try_hatch_pending(&mut self, game: &mut Game) {
-        let indices: Vec<usize> = self
-            .clients
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| matches!(c.state, ClientState::AwaitingEgg { .. }))
-            .map(|(i, _)| i)
-            .collect();
-
-        let mut gui_notifications: Vec<String> = Vec::new();
-
-        for i in indices {
-            let team = match &self.clients[i].state {
-                ClientState::AwaitingEgg { team } => team.clone(),
-                _ => continue,
-            };
-
-            let egg_idx = match game.eggs.iter().position(|e| e.team == team) {
-                Some(idx) => idx,
-                None => continue,
-            };
-
-            let egg = game.eggs.swap_remove(egg_idx);
-            let remaining = self
-                .team_slots
-                .iter()
-                .find(|(n, _)| n == &team)
-                .map(|(_, s)| *s)
-                .unwrap_or(0);
-
-            self.clients[i].state = ClientState::Ai {
-                team: team.clone(),
-                player: Player {
-                    x: egg.x,
-                    y: egg.y,
-                    id: game.next_player_id,
-                    orientation: Orientation::North,
-                    level: 1,
-                    inventory: Resources {
-                        linemate: 0,
-                        deraumere: 0,
-                        sibur: 0,
-                        mendiane: 0,
-                        phiras: 0,
-                        thystame: 0,
-                    },
-                    food: 9,
-                    time_left: 126,
-                },
-            };
-            game.next_player_id += 1;
-
-            let player = {
-                match &self.clients[i].state {
-                    ClientState::Ai { player, .. } => player.clone(),
-                    _ => Player::default(),
-                }
-            };
-            gui_notifications.push(pnw_reply(&player, &team));
-            gui_notifications.push(pin_reply(&player));
-            gui_notifications.push(ebo_reply(&egg));
-
-            let response = format!(
-                "{remaining}\n{} {}\n",
-                game.config.width, game.config.height
-            );
-            println!(
-                "{} hatched egg at ({}, {}) for team {team} ({remaining} slots left)",
-                self.clients[i].addr, egg.x, egg.y
-            );
-            let _ = self.clients[i].stream.write_all(response.as_bytes());
-            gui_notifications.push(ebo_reply(&egg));
-        }
-
-        for msg in gui_notifications {
-            send_string_to_all_guis(&mut self.clients, msg);
-        }
     }
 
     pub fn cleanup(&mut self, disconnected: impl IntoIterator<Item = u32>) {
@@ -622,23 +555,46 @@ impl Server {
         client_id: u32,
         player: &Player,
     ) -> bool {
-        let owned_players: Vec<Player> = clients
-            .iter()
-            .filter_map(|c| match &c.state {
-                ClientState::Ai { player, .. } => Some(player.clone()),
-                _ => None,
-            })
-            .collect();
+        // Enforce the per-client command buffer cap *before* parsing, so a command
+        // we are going to drop never produces side effects (e.g. parsing an
+        // Incantation emits a GUI `pic`). Dropped silently, matching the protocol.
+        if time_manager.is_client_queue_full(client_id) {
+            if command_logging_enabled() {
+                eprintln!(
+                    "AI command from {} dropped: command buffer full (max {})",
+                    clients[client_idx].addr,
+                    crate::time_manager::MAX_PENDING_PER_CLIENT
+                );
+            }
+            return false;
+        }
+
+        // Only `Command::parse`'s Incantation branch needs the full player list
+        // (to build the GUI `pic`). Build it lazily for that one command instead
+        // of deep-cloning every player on every single command line.
+        let owned_players: Vec<Player> = if line.split_whitespace().next() == Some("Incantation") {
+            clients
+                .iter()
+                .filter_map(|c| match &c.state {
+                    ClientState::Ai { player, .. } => Some(player.clone()),
+                    _ => None,
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
         let list: Vec<&Player> = owned_players.iter().collect();
         let addr = clients[client_idx].addr;
 
         match Command::parse(line, &list, player, clients) {
             Ok(cmd) => {
                 let execute_at = time_manager.schedule(cmd.clone(), client_id);
-                println!(
-                    "AI command from {}: {} (execute at {:?})",
-                    addr, cmd, execute_at
-                );
+                if command_logging_enabled() {
+                    println!(
+                        "AI command from {}: {} (execute at {:?})",
+                        addr, cmd, execute_at
+                    );
+                }
                 false
             }
             Err(err) => {
@@ -658,7 +614,7 @@ impl Server {
         if name == "GRAPHIC" {
             clients[idx].state = ClientState::Gui;
             println!("{} identified as GUI", clients[idx].addr);
-            match create_gui_connection_string(&game.config, &game.map, &game.eggs) {
+            match create_gui_connection_string(game, clients) {
                 Some(message) => {
                     return clients[idx].stream.write_all(message.as_bytes()).is_err();
                 }
@@ -679,12 +635,13 @@ impl Server {
                     // An egg is available: hatch it immediately
                     let egg = game.eggs.swap_remove(egg_idx);
 
+                    let spawn_id = game.next_player_id;
                     clients[idx].state = ClientState::Ai {
                         team: name.to_string(),
                         player: Player {
                             x: egg.x,
                             y: egg.y,
-                            id: game.next_player_id,
+                            id: spawn_id,
                             orientation: Orientation::North,
                             level: 1,
                             inventory: Resources {
@@ -699,20 +656,15 @@ impl Server {
                             time_left: 126,
                         },
                     };
+                    game.map[egg.y as usize][egg.x as usize].ais.push(spawn_id);
                     game.next_player_id += 1;
 
                     println!(
                         "{} hatched egg at ({}, {}) for team {name} ({remaining} slots left)",
                         clients[idx].addr, egg.x, egg.y
                     );
-                    let (player, team) = {
-                        match &clients[idx].state {
-                            ClientState::Ai { team, player } => (player.clone(), team.clone()),
-                            _ => (Player::default(), "".to_string()),
-                        }
-                    };
-                    send_string_to_all_guis(clients, pnw_reply(&player, &team));
-                    send_string_to_all_guis(clients, pin_reply(&player));
+                    let string = player_spawn(&mut clients[idx]);
+                    send_string_to_all_guis(clients, string);
                     send_string_to_all_guis(clients, ebo_reply(&egg));
                 } else {
                     // No egg yet: park the client until one is laid
@@ -732,14 +684,20 @@ impl Server {
                 clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
             None => {
-                eprintln!(
-                    "{} refused: unknown team or no slots for '{name}'",
-                    clients[idx].addr
-                );
-                true
+                let response = "ko\n".to_string();
+                clients[idx].stream.write_all(response.as_bytes()).is_err()
             }
         }
     }
+}
+
+/// Per-command logging (`EXECUTE` / `AI command`) is the server's biggest source
+/// of stdout I/O at high frequency. Setting `ZAPPY_QUIET=1` suppresses just those
+/// two lines (read once); win / hatch / starve / disconnect logging is unaffected.
+/// Default is unchanged (logging on) so this is a pure opt-in perf toggle.
+fn command_logging_enabled() -> bool {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ENABLED.get_or_init(|| std::env::var_os("ZAPPY_QUIET").is_none())
 }
 
 fn broadcast_k(

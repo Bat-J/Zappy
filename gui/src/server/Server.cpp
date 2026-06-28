@@ -9,7 +9,6 @@
 #include "ServerParser.hpp"
 #include <cstdlib>
 #include <mutex>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -58,6 +57,34 @@ namespace zappy {
         const std::string&   cmd     = words[0];
         std::vector<Player>& players = _players.getPlayer();
 
+        if (cmd == "pbc" && words.size() >= 2) {
+            const int         number = std::atoi(words[1].substr(1).c_str());
+            const std::string msg    = words.size() >= 3 ? words[2] : "";
+            ensurePlayer(number);
+            _logs.push_back("Player " + std::to_string(number + 1) + " sent the message " + msg);
+            _players.addBroadcaster(number);
+        }
+        if (cmd == "msz" && words.size() == 3) {
+            const int x = std::atoi(words[1].c_str());
+            const int y = std::atoi(words[2].c_str());
+            _world.setMapSize(x, y);
+            std::vector<Tile> newTiles;
+            newTiles.reserve(x * y);
+            for (int currY = 0; currY < y; ++currY) {
+                for (int currX = 0; currX < x; ++currX) {
+                    Tile t;
+                    t.setPosition(currX, currY);
+                    t.setRessources({0, 0, 0, 0, 0, 0, 0});
+                    newTiles.push_back(t);
+                }
+            }
+            _world.setTiles(newTiles);
+            return;
+        }
+        if (cmd == "sgt" && words.size() == 2) {
+            _world.setTimeReference(std::atoi(words[1].c_str()));
+            return;
+        }
         if ((cmd == "ppo" && words.size() == 5) || (cmd == "pnw" && words.size() == 7)) {
             const int number = std::atoi(words[1].substr(1).c_str());
             if (number < 0)
@@ -71,7 +98,8 @@ namespace zappy {
                 players[number].setLevel(static_cast<u_int8_t>(std::atoi(words[5].c_str())));
                 _logs.push_back("New player " + std::to_string(number + 1) + " connected");
             } else {
-                _logs.push_back("Player " + std::to_string(number + 1) + " moved to position (" + words[2] + ", " + words[3] + ")");
+                _logs.push_back("Player " + std::to_string(number + 1) + " moved to position (" + words[2] + ", " + words[3] + ") facing " +
+                                orientationToString(players[number].getPos().second));
             }
             return;
         }
@@ -80,6 +108,30 @@ namespace zappy {
             if (number >= 0 && static_cast<std::size_t>(number) < players.size())
                 players[number].setIsAlive(false);
             _logs.push_back("Player " + std::to_string(number + 1) + " died");
+            return;
+        }
+        if (cmd == "pgt" && words.size() == 3) {
+            const int number   = std::atoi(words[1].substr(1).c_str());
+            const int resource = std::atoi(words[2].c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " picked up " + resourceIDToString(resource));
+            return;
+        }
+        if (cmd == "pex" && words.size() == 2) {
+            const int number = std::atoi(words[1].substr(1).c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " tried to push others");
+        }
+        if (cmd == "pfk" && words.size() == 2) {
+            const int number = std::atoi(words[1].substr(1).c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " laid an egg");
+        }
+        if (cmd == "edi" && words.size() == 2) {
+            const int number = std::atoi(words[1].substr(1).c_str());
+            _logs.push_back("Egg " + std::to_string(number + 1) + " was destroyed");
+        }
+        if (cmd == "pdr" && words.size() == 3) {
+            const int number   = std::atoi(words[1].substr(1).c_str());
+            const int resource = std::atoi(words[2].c_str());
+            _logs.push_back("Player " + std::to_string(number + 1) + " dropped " + resourceIDToString(resource));
             return;
         }
         if (cmd == "pin" && words.size() >= 11) {
@@ -115,6 +167,18 @@ namespace zappy {
         }
     }
 
+    std::string Server::resourceIDToString(int id) const {
+        switch (id) {
+            case 0: return "Food";
+            case 1: return "Linemate";
+            case 2: return "deraumere";
+            case 3: return "Sibur";
+            case 4: return "Mendiane";
+            case 5: return "Phiras";
+            default: return "Unknown";
+        }
+    }
+
     // Grows the player vector to include `number`, marking any newly created
     // gap entries as not-alive so phantom players are never rendered. Must be
     // called with _dataMutex held.
@@ -141,47 +205,56 @@ namespace zappy {
     }
 
     void Server::updateResources() {
-        std::lock_guard<std::mutex> lock(_dataMutex);
-        _resources.updateResources(world().getTiles());
+        std::vector<Tile> tiles;
+        {
+            std::lock_guard<std::mutex> lock(_dataMutex);
+            tiles = _world.getTiles();
+        }
+        _resources.updateResources(tiles);
     }
 
     void Server::getInfo() {
         std::string mess = "GRAPHIC\n";
         _socket.writeToSocket(mess);
-        std::string              infos = _socket.readFromSocket();
-        std::stringstream        stream(infos);
-        std::string              token;
-        std::vector<std::string> _tokens;
+    }
 
-        _tokens.clear();
-        std::vector<Tile> tiles = world().getTiles();
-        tiles.clear();
-        while (stream >> token) {
-            _tokens.push_back(token);
-        }
-        for (std::size_t i = 0; i < _tokens.size(); ++i) {
-            if (_tokens[i] == "msz" && i + 2 < _tokens.size()) {
-                int x = std::stoi(_tokens[i + 1]);
-                int y = std::stoi(_tokens[i + 2]);
-                _world.setMapSize(x, y);
-                i += 2;
-            } else if (_tokens[i] == "sgt" && i + 1 < _tokens.size()) {
-                _world.setTimeReference(std::stoi(_tokens[i + 1]));
-                i += 1;
-            } else if (_tokens[i] == "bct" && i + 9 < _tokens.size()) {
-                const size_t tileIndex = tiles.size();
-                tiles.emplace_back();
-                int x = std::stoi(_tokens[i + 1]);
-                int y = std::stoi(_tokens[i + 2]);
-                tiles[tileIndex].setPosition(x, y);
-                std::vector<int> resources;
-                for (size_t resourceIndex = 3; resourceIndex <= 9; ++resourceIndex) {
-                    resources.push_back(std::stoi(_tokens[i + resourceIndex]));
-                }
-                tiles[tileIndex].setRessources(resources);
-                i += 9;
-            }
-        }
-        _world.setTiles(tiles);
+    void Server::trashLogs(std::size_t maxSize) {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        if (_logs.size() > maxSize)
+            _logs.erase(_logs.begin(), _logs.end() - static_cast<long>(maxSize));
+    }
+
+    std::mutex& Server::getMutex() {
+        return _dataMutex;
+    }
+
+    const WorldState& Server::world() const {
+        return _world;
+    }
+
+    PlayerManager& Server::players() {
+        return _players;
+    }
+
+    const PlayerManager& Server::players() const {
+        return _players;
+    }
+
+    const ResourceTracker& Server::resources() const {
+        return _resources;
+    }
+
+    const std::vector<std::string> Server::logs() const {
+        return _logs;
+    }
+
+    std::vector<Tile> Server::getTilesSafe() const {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        return _world.getTiles();
+    }
+
+    std::vector<Player> Server::getPlayersSafe() const {
+        std::lock_guard<std::mutex> lock(_dataMutex);
+        return _players.getPlayer();
     }
 }

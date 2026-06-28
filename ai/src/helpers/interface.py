@@ -353,7 +353,6 @@ class AI_server_interface:
                     }
                 )
                 self.last_known_inventory = inventory
-            pass
         elif can_cast(str, int, message) and int(message) >= 0:
             if len(self.pending_response_actions) == 0:
                 return
@@ -371,8 +370,12 @@ class AI_server_interface:
         elif message == "Elevation underway":
             pass
         elif message.startswith("Current level: "):
-            if len(self.pending_response_actions) == 0:
-                return
+            # "Current level: N" can arrive unsolicited: another player's
+            # incantation elevates everyone of that level on the tile, including
+            # us while we're idle with no pending Incantation of our own. Always
+            # apply the new level; only consume a pending action if this was our
+            # own cast completing. The old early-return on an empty queue dropped
+            # passive elevations, leaving the player stuck at its previous level.
             if self.pending_response_actions and self.pending_response_actions[0] == action_type.start_incantation:
                 self.pending_response_actions.pop(0)
             self.level = int(message.split(":")[1].strip())
@@ -507,11 +510,12 @@ class AI_server_interface:
     def collect_matching_tile_ressources(self, ressources: dict):
         """Collects the specified amount of ressources on the current tile. blocking"""
         self.send_look_action_and_block_until_response()
+        last_action = self.completed_actions[-1]
         if (
             self.completed_actions[-1]["action_type"] != action_type.look
-            or not self.completed_actions[-1]["success"]
-            or not self.completed_actions[-1]["response"]
-            or not isinstance(self.completed_actions[-1]["response"], list)
+            or not last_action.get("success")
+            or not last_action.get("response")
+            or not isinstance(last_action.get("response"), list)
         ):
             return
         for obj, count in self.completed_actions[-1]["response"][0].items():
