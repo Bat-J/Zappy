@@ -32,8 +32,10 @@ impl Command {
     pub fn parse(
         input: &str,
         list: &Vec<&Player>,
+        idx: usize,
         source: &Player,
         clients: &mut [Client],
+        game: &Game,
     ) -> Result<Self, String> {
         let trimmed = input.trim();
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
@@ -74,6 +76,21 @@ impl Command {
             }
             "Incantation" => {
                 send_string_to_all_guis(clients, pic_reply(source, list));
+                let (x, y, level) = match &clients[idx].state {
+                    ClientState::Ai { player, .. } => {
+                        (player.x as usize, player.y as usize, player.level)
+                    }
+                    _ => return Err("ko\n".to_string()),
+                };
+
+                if requirements_for(level).is_none() {
+                    // Already at max level (8), or invalid level.
+                    return Err("ko\n".to_string());
+                }
+
+                if !meets_requirements(clients, &game.map[y][x], level) {
+                    return Err("ko\n".to_string());
+                }
                 Ok(Command::Incantation)
             }
             _ => Err(format!("unknown command: {}", parts[0])),
@@ -876,48 +893,88 @@ mod tests {
     #[test]
     fn parse_simple_commands() {
         assert_eq!(
-            Command::parse("Forward", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
+            Command::parse(
+                "Forward",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .unwrap(),
             Command::Forward
         );
         assert_eq!(
-            Command::parse("Right", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
+            Command::parse(
+                "Right",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .unwrap(),
             Command::Right
         );
         assert_eq!(
-            Command::parse("Left", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
+            Command::parse(
+                "Left",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .unwrap(),
             Command::Left
         );
         assert_eq!(
-            Command::parse("Look", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
+            Command::parse(
+                "Look",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .unwrap(),
             Command::Look
         );
         assert_eq!(
             Command::parse(
                 "Inventory",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .unwrap(),
             Command::Inventory
         );
         assert_eq!(
-            Command::parse("Fork", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
+            Command::parse(
+                "Fork",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .unwrap(),
             Command::Fork
         );
         assert_eq!(
-            Command::parse("Eject", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
-            Command::Eject
-        );
-        assert_eq!(
             Command::parse(
-                "Incantation",
+                "Eject",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .unwrap(),
-            Command::Incantation
+            Command::Eject
         );
     }
 
@@ -927,8 +984,10 @@ mod tests {
             Command::parse(
                 "Broadcast hello world",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .unwrap(),
             Command::Broadcast("hello world".to_string())
@@ -937,14 +996,24 @@ mod tests {
             Command::parse(
                 "Take linemate",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .unwrap(),
             Command::Take("linemate".to_string())
         );
         assert_eq!(
-            Command::parse("Set food", &Vec::new(), &Player::default(), &mut Vec::new()).unwrap(),
+            Command::parse(
+                "Set food",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .unwrap(),
             Command::Set("food".to_string())
         );
     }
@@ -955,8 +1024,10 @@ mod tests {
             Command::parse(
                 "  Forward  ",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .unwrap(),
             Command::Forward
@@ -965,8 +1036,10 @@ mod tests {
             Command::parse(
                 "Broadcast   message with spaces",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .unwrap(),
             Command::Broadcast("message with spaces".to_string())
@@ -976,19 +1049,49 @@ mod tests {
     #[test]
     fn parse_invalid_commands() {
         assert!(
-            Command::parse("Unknown", &Vec::new(), &Player::default(), &mut Vec::new()).is_err()
+            Command::parse(
+                "Unknown",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .is_err()
         );
-        assert!(Command::parse("", &Vec::new(), &Player::default(), &mut Vec::new()).is_err());
+        assert!(
+            Command::parse(
+                "",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .is_err()
+        );
         assert!(
             Command::parse(
                 "Broadcast",
                 &Vec::new(),
+                0,
                 &Player::default(),
-                &mut Vec::new()
+                &mut Vec::new(),
+                &Game::default()
             )
             .is_err()
         );
-        assert!(Command::parse("Take", &Vec::new(), &Player::default(), &mut Vec::new()).is_err());
+        assert!(
+            Command::parse(
+                "Take",
+                &Vec::new(),
+                0,
+                &Player::default(),
+                &mut Vec::new(),
+                &Game::default()
+            )
+            .is_err()
+        );
     }
 
     #[test]

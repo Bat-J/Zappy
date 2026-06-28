@@ -8,7 +8,7 @@ use crate::command::{
     Command, eject, fork, get_inventory, incantation, look, move_forward, send_ai_command_to_gui,
     send_string_to_all_guis, set, take, turn_left, turn_right,
 };
-use crate::gui_parser::{ebo_reply, pdi_reply, pin_reply, player_spawn, seg_reply};
+use crate::gui_parser::{ebo_reply, pdi_reply, pie_reply, pin_reply, player_spawn, seg_reply};
 use crate::map::{Egg, Tile};
 use crate::map::{Resources, create_gui_connection_string};
 use crate::time_manager::TimeManager;
@@ -68,6 +68,7 @@ pub struct Client {
     pending: String,
 }
 
+#[derive(Default)]
 pub struct Game {
     pub map: Vec<Vec<Tile>>,
     pub config: Config,
@@ -502,9 +503,15 @@ impl Server {
             ClientState::AwaitingTeamName => {
                 Self::handle_team_name(clients, client_idx, line, team_slots, game)
             }
-            ClientState::Ai { player, .. } => {
-                Self::handle_ai_command(clients, line, time_manager, client_idx, client_id, &player)
-            }
+            ClientState::Ai { player, .. } => Self::handle_ai_command(
+                clients,
+                line,
+                time_manager,
+                client_idx,
+                client_id,
+                &player,
+                game,
+            ),
             // Client is waiting for an egg to be laid — ignore all input until hatched
             ClientState::AwaitingEgg { .. } => false,
             ClientState::Gui => Self::handle_gui_command(clients, client_idx, line, game),
@@ -554,6 +561,7 @@ impl Server {
         client_idx: usize,
         client_id: u32,
         player: &Player,
+        game: &Game,
     ) -> bool {
         // Enforce the per-client command buffer cap *before* parsing, so a command
         // we are going to drop never produces side effects (e.g. parsing an
@@ -586,7 +594,7 @@ impl Server {
         let list: Vec<&Player> = owned_players.iter().collect();
         let addr = clients[client_idx].addr;
 
-        match Command::parse(line, &list, player, clients) {
+        match Command::parse(line, &list, client_idx, player, clients, game) {
             Ok(cmd) => {
                 let execute_at = time_manager.schedule(cmd.clone(), client_id);
                 if command_logging_enabled() {
@@ -599,6 +607,9 @@ impl Server {
             }
             Err(err) => {
                 eprintln!("Parse error from {}: {}", addr, err);
+                if err == "ko\n" {
+                    send_string_to_all_guis(clients, pie_reply(player.x, player.y, false));
+                }
                 clients[client_idx].stream.write_all(b"ko\n").is_err()
             }
         }
