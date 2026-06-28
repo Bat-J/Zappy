@@ -20,7 +20,25 @@
 
 ## Gui
 
-//TODO
+each circle of the sides of a tile represent one or more ressources of a type.
+ressources types:
+- red: food
+- green: linemate
+- blue: deraumere
+- yellow: sibur
+- purple: mendiane
+- orange: phiras
+- pink: thystame
+
+commands:
+- ```1``` cycle through tile background colors
+- ```2``` cycle through tile border colors
+- ```3``` cycle through background colors
+- ```4``` cycle through text colors
+- ```+``` select next player
+- ```-``` select previous player
+- ```LMB``` select tile hovered by mouse
+- ```F11``` toggle fullscreen
 
 ## AI
 
@@ -28,7 +46,9 @@ Different AI implementations have been created in order to test out features and
 When starting an appy_ai intsance, you can specify the agent by using the `-a` flag followed by the agent name.  
 Here are the available agents:
 - winner (default): ai agent made to win the game in most situations  
-//TODO
+- lawn_mower: ai agent that moves around the map in a lawn mower pattern to collect all ressources
+- pusher: a lawn mower agent that pushes other encountered players out of the way
+- chatterbox: a lawn mower agent that sends disruptive broadcast messages spontaneously or in response to other broadcasts
 
 AIs where implemented using a 'interface' class that encapsulates the basic network logic and provides an API for the AI agents to interact with the game server.  
 You can add new AI agents by creating a new agent class similar to the existing ones in the `ai/src/agents` directory and implementing your own logic for the agent's behavior.  
